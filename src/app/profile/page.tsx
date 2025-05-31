@@ -1,0 +1,1335 @@
+// src/app/profile/page.tsx
+"use client";
+
+import React, { useState, useEffect, useCallback, ChangeEvent } from 'react';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, Controller } from "react-hook-form";
+import { z } from "zod";
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel as ShadCnFormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel as UiSelectLabel,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import {
+    User, Target as TargetIcon, Utensils, Activity, Save, Sparkles, Settings,
+    Ruler, Weight, Calendar, TrendingUp, ShieldQuestion, MapPin, Loader2, AlertCircle,
+    RefreshCw, Info, Salad, Vegan, WheatOff, Shell, CircleHelp, Flame, Droplet,
+    Dumbbell, Egg, Fish, Milk, Bean, Sprout, ChefHat, HeartHandshake, Languages, Target,
+    CheckCircle, Star, Zap, Heart
+} from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { useAuth } from '@/context/AuthContext';
+import { getUserProfile, saveUserProfile, isDisplayNameTaken } from '@/services/firestore';
+import { calculateDailyTargets, CalculateTargetsInput } from '@/ai/flows/dashboard-update';
+import type { StoredUserProfile, Gender, FitnessGoal, ActivityLevel, DietaryStyle, CommonAllergy, TranslatePreference } from '@/app/dashboard/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { dietaryStyleValues, fitnessGoalValues, activityLevelValues, commonAllergyValues, genderOptions, translatePreferenceOptions } from '@/app/dashboard/types';
+import { createFirestoreServiceError } from '@/services/firestore/utils';
+import { Label } from "@/components/ui/label";
+import AnimatedWrapper, { FadeInWrapper, SlideUpWrapper, StaggerContainer } from "@/components/ui/animated-wrapper";
+
+
+const profileFormSchema = z.object({
+    displayName: z.string().min(3, "Display name must be at least 3 characters").max(30, "Display name cannot exceed 30 characters").regex(/^[a-zA-Z0-9_]+$/, "Display name can only contain letters, numbers, and underscores.").optional().transform(val => val || ""),
+    height: z.coerce.number().min(1, "Height must be positive").min(50, "Height seems too low (cm)").max(300, "Height seems too high (cm)").optional().nullable(),
+    weight: z.coerce.number().min(1, "Weight must be positive").min(20, "Weight seems too low (kg)").max(500, "Weight seems too high (kg)").optional().nullable(),
+    age: z.coerce.number().int().min(1, "Age must be positive").min(10, "Age must be at least 10").max(120, "Age seems too high").optional().nullable(),
+    gender: z.enum(genderOptions.map(g => g.value) as [Gender, ...Gender[]]).optional(),
+    fitnessGoal: z.enum(fitnessGoalValues as [FitnessGoal, ...FitnessGoal[]]).optional(),
+    activityLevel: z.enum(activityLevelValues as [ActivityLevel, ...ActivityLevel[]]).optional(),
+    preferFewerRestDays: z.boolean().optional().default(false),
+    dietaryStyles: z.array(z.enum(dietaryStyleValues as [DietaryStyle, ...DietaryStyle[]])).optional(),
+    allergies: z.array(z.enum(commonAllergyValues as [CommonAllergy, ...CommonAllergy[]])).optional(),
+    otherAllergies: z.string().max(200, "Other allergies description is too long.").optional().transform(val => val || ""),
+    foodDislikes: z.string().max(500, "Dislikes description is too long.").optional().transform(val => val || ""),
+    localFoodStyle: z.string().max(100, "Food style description should be under 100 characters.").optional().transform(val => val === undefined || val === null ? "" : val),
+    foodPreferences: z.string().max(500, "General notes should be under 500 characters.").optional().transform(val => val || ""),
+    useAiTargets: z.boolean().default(true),
+    manualTargetCalories: z.coerce.number().min(1, "Calories must be positive").optional().nullable(),
+    manualTargetProtein: z.coerce.number().min(1, "Protein must be positive").optional().nullable(),
+    manualTargetCarbs: z.coerce.number().min(1, "Carbs must be positive").optional().nullable(),
+    manualTargetFat: z.coerce.number().min(1, "Fat must be positive").optional().nullable(),
+    manualTargetActivityCalories: z.coerce.number().min(0, "Activity calories cannot be negative").optional().nullable(),
+    translatePreference: z.enum(translatePreferenceOptions.map(o => o.value) as [TranslatePreference, ...TranslatePreference[]]).optional().default('en'),
+}).superRefine((data, ctx) => {
+    if (!data.displayName?.trim()) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Display Name is required.", path: ["displayName"] }); }
+    if (data.height === null || data.height === undefined) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Height is required.", path: ["height"] }); }
+    if (data.weight === null || data.weight === undefined) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Weight is required.", path: ["weight"] }); }
+    if (data.age === null || data.age === undefined) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Age is required.", path: ["age"] }); }
+    if (!data.gender) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Gender is required.", path: ["gender"] }); }
+    if (!data.fitnessGoal) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Fitness Goal is required.", path: ["fitnessGoal"] }); }
+    if (!data.activityLevel) { ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Activity Level is required.", path: ["activityLevel"] }); }
+
+    if (!data.useAiTargets) {
+        if (data.manualTargetCalories === undefined || data.manualTargetCalories === null || isNaN(data.manualTargetCalories) || data.manualTargetCalories <= 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid manual calorie target is required.", path: ["manualTargetCalories"] });
+        }
+        if (data.manualTargetProtein === undefined || data.manualTargetProtein === null || isNaN(data.manualTargetProtein) || data.manualTargetProtein <= 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid manual protein target is required.", path: ["manualTargetProtein"] });
+        }
+        if (data.manualTargetCarbs === undefined || data.manualTargetCarbs === null || isNaN(data.manualTargetCarbs) || data.manualTargetCarbs <= 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid manual carb target is required.", path: ["manualTargetCarbs"] });
+        }
+        if (data.manualTargetFat === undefined || data.manualTargetFat === null || isNaN(data.manualTargetFat) || data.manualTargetFat <= 0) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid manual fat target is required.", path: ["manualTargetFat"] });
+        }
+        if (data.manualTargetActivityCalories !== undefined && data.manualTargetActivityCalories !== null && (isNaN(data.manualTargetActivityCalories) || data.manualTargetActivityCalories < 0)) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Manual activity calorie target must be a non-negative number.", path: ["manualTargetActivityCalories"] });
+        }
+    }
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
+
+const defaultValues: Partial<ProfileFormValues> = {
+    displayName: "", height: undefined, weight: undefined, age: undefined,
+    gender: undefined, fitnessGoal: undefined, activityLevel: undefined,
+    dietaryStyles: [], allergies: [], otherAllergies: "",
+    foodDislikes: "", localFoodStyle: "", foodPreferences: "",
+    useAiTargets: true,
+    manualTargetCalories: undefined, manualTargetProtein: undefined, manualTargetCarbs: undefined, manualTargetFat: undefined,
+    manualTargetActivityCalories: undefined,
+    preferFewerRestDays: false,
+    translatePreference: 'en',
+};
+
+const goalOptions: { value: FitnessGoal; label: string; icon: React.ElementType }[] = [
+  { value: "weight_loss", label: "Weight Loss", icon: TrendingUp }, { value: "weight_gain", label: "Weight Gain", icon: TrendingUp },
+  { value: "muscle_building", label: "Muscle Building", icon: Dumbbell }, { value: "recomposition", label: "Recomposition", icon: Activity },
+  { value: "stay_fit", label: "Stay Fit", icon: HeartHandshake },
+];
+const activityOptions: { value: ActivityLevel; label: string; description: string }[] = [
+  { value: "sedentary", label: "Sedentary", description: "Little/no exercise" },
+  { value: "lightly_active", label: "Lightly Active", description: "1-3 days/wk" },
+  { value: "moderately_active", label: "Moderately Active", description: "3-5 days/wk" },
+  { value: "very_active", label: "Very Active", description: "6-7 days/wk" },
+  { value: "extra_active", label: "Extra Active", description: "Hard exercise + physical job" },
+];
+const dietaryStyleOptions: { value: DietaryStyle; label: string; icon: React.ElementType }[] = [
+  { value: "non_vegetarian", label: "Non-Vegetarian", icon: Utensils },
+  { value: "vegetarian", label: "Vegetarian", icon: Salad },
+  { value: "vegan", label: "Vegan", icon: Vegan },
+  { value: "eggetarian", label: "Eggetarian", icon: Egg },
+  { value: "jain", label: "Jain", icon: Sprout },
+  { value: "pescatarian", label: "Pescatarian", icon: Fish },
+];
+const allergyOptions: { value: CommonAllergy; label: string; icon: React.ElementType }[] = [
+  { value: "peanuts", label: "Peanuts", icon: Bean },
+  { value: "gluten", label: "Gluten", icon: WheatOff },
+  { value: "dairy", label: "Dairy", icon: Milk },
+  { value: "soy", label: "Soy", icon: Bean },
+  { value: "shellfish", label: "Shellfish", icon: Shell },
+];
+const indianRegions = [
+    "Not Specified", "North Indian (General)", "South Indian (General)", "East Indian (General)", "West Indian (General)",
+    "South Indian (Tamil Nadu)", "South Indian (Kerala)", "South Indian (Karnataka)", "South Indian (Andhra/Telangana)",
+    "Bengali", "Gujarati", "Maharashtrian", "Punjabi", "Rajasthani", "Goan", "Kashmiri", "Odia", "Bihari", "Assamese"
+];
+const otherRegions = ["Asian (General)", "Mediterranean", "Western (General)", "Mexican", "Italian"];
+
+export default function ProfilePage() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const { user, loading: authLoading, userId } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isProcessingAiTargets, setIsProcessingAiTargets] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [initialDisplayName, setInitialDisplayName] = useState<string | undefined>(undefined);
+  const [hasFetchedProfile, setHasFetchedProfile] = useState(false);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues,
+    mode: "onChange",
+  });
+
+  const useAiTargets = form.watch("useAiTargets");
+
+  const loadProfile = useCallback(async () => {
+    if (!userId || hasFetchedProfile) {
+        if (!userId) console.log("[Profile Page] LoadProfile: No userId yet.");
+        if (hasFetchedProfile) console.log("[Profile Page] LoadProfile: Profile already fetched this session.");
+        setIsLoading(false);
+        return;
+    }
+    console.log("[Profile Page] Auth loaded, User ID:", userId, "Fetching profile...");
+    setLoadError(null); setIsLoading(true);
+    try {
+        const profileData = await getUserProfile(userId);
+        console.log("[Profile Page] Loaded profile from service:", profileData);
+
+        if (!profileData) {
+             console.error("[Profile Page] CRITICAL: Failed to load or create user profile in getUserProfile. Returned null/undefined.");
+             throw createFirestoreServiceError("Failed to load or create user profile. Please try again or contact support.", "profile-critical-failure");
+        }
+
+        setInitialDisplayName(profileData.displayName ?? "");
+
+        // Convert any potential Date objects from localStorage to numbers/strings if needed by form
+        const formData: ProfileFormValues = {
+            displayName: profileData.displayName ?? "",
+            height: profileData.height ?? null,
+            weight: profileData.weight ?? null,
+            age: profileData.age ?? null,
+            gender: profileData.gender ?? undefined,
+            fitnessGoal: profileData.fitnessGoal ?? undefined,
+            activityLevel: profileData.activityLevel ?? undefined,
+            preferFewerRestDays: profileData.preferFewerRestDays ?? false,
+            dietaryStyles: Array.isArray(profileData.dietaryStyles) ? profileData.dietaryStyles : [],
+            allergies: Array.isArray(profileData.allergies) ? profileData.allergies : [],
+            otherAllergies: profileData.otherAllergies ?? "",
+            foodDislikes: profileData.foodDislikes ?? "",
+            localFoodStyle: profileData.localFoodStyle ?? "",
+            foodPreferences: profileData.foodPreferences ?? "",
+            useAiTargets: profileData.useAiTargets ?? true,
+            manualTargetCalories: profileData.manualTargetCalories ?? null,
+            manualTargetProtein: profileData.manualTargetProtein ?? null,
+            manualTargetCarbs: profileData.manualTargetCarbs ?? null,
+            manualTargetFat: profileData.manualTargetFat ?? null,
+            manualTargetActivityCalories: profileData.manualTargetActivityCalories ?? null,
+            translatePreference: profileData.translatePreference || 'en',
+        };
+        form.reset(formData);
+        setHasFetchedProfile(true);
+    } catch (error: any) {
+      console.error("[Profile Page] Error in loadProfile catch block:", error);
+      setLoadError(error.message || "Could not load or initialize your profile.");
+      toast({ variant: "destructive", title: "Profile Load Error", description: error.message });
+      setHasFetchedProfile(true);
+    } finally { setIsLoading(false); }
+  }, [userId, form, toast, hasFetchedProfile]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!userId) { router.replace('/authorize'); return; }
+    if (!hasFetchedProfile) {
+        loadProfile();
+    }
+  }, [authLoading, userId, router, loadProfile, hasFetchedProfile]);
+
+  useEffect(() => {
+    if (useAiTargets) {
+      form.setValue("manualTargetCalories", null, { shouldValidate: false });
+      form.setValue("manualTargetProtein", null, { shouldValidate: false });
+      form.setValue("manualTargetCarbs", null, { shouldValidate: false });
+      form.setValue("manualTargetFat", null, { shouldValidate: false });
+      form.setValue("manualTargetActivityCalories", null, { shouldValidate: false });
+    }
+  }, [useAiTargets, form]);
+
+  async function onSubmit(data: ProfileFormValues) {
+    if (!userId) { toast({ variant: "destructive", title: "Error", description: "User not authenticated." }); return; }
+    
+    setIsSaving(true); setIsProcessingAiTargets(false);
+
+    // Construct a PLAIN JavaScript object for the server action
+    const plainProfileData: Partial<StoredUserProfile> = {
+        displayName: data.displayName || undefined, // Send undefined if empty, let server handle default
+        height: data.height ?? null,
+        weight: data.weight ?? null,
+        age: data.age ?? null,
+        gender: data.gender ?? null,
+        fitnessGoal: data.fitnessGoal ?? null,
+        activityLevel: data.activityLevel ?? null,
+        preferFewerRestDays: data.preferFewerRestDays ?? false,
+        dietaryStyles: Array.isArray(data.dietaryStyles) ? data.dietaryStyles : [],
+        allergies: Array.isArray(data.allergies) ? data.allergies : [],
+        otherAllergies: data.otherAllergies || "",
+        foodDislikes: data.foodDislikes || "",
+        localFoodStyle: data.localFoodStyle === "Not Specified" ? "" : (data.localFoodStyle || ""),
+        foodPreferences: data.foodPreferences || "",
+        useAiTargets: data.useAiTargets ?? true,
+        translatePreference: data.translatePreference || 'en',
+        // `settings` will be merged server-side if sent, or default if not.
+        // Let's construct it explicitly for clarity if it's part of the form.
+        // For now, assuming settings are not directly on this form, server will merge with existing or default.
+    };
+    
+    // Add settings if they were part of the form (currently they are not in ProfileFormValues)
+    // if (data.settings) {
+    //     plainProfileData.settings = { 
+    //         theme: data.settings.theme, 
+    //         progressViewPermission: data.settings.progressViewPermission 
+    //     };
+    // }
+
+
+    if (data.displayName && data.displayName.trim() && data.displayName !== initialDisplayName) {
+        try {
+            const taken = await isDisplayNameTaken(data.displayName.trim());
+            if (taken) {
+                form.setError("displayName", { type: "manual", message: "This display name is already taken." });
+                setIsSaving(false); return;
+            }
+        } catch (error) {
+            toast({ variant: "destructive", title: "Save Error", description: "Could not verify display name." });
+            setIsSaving(false); return;
+        }
+    }
+
+    try {
+        if (data.useAiTargets) {
+            plainProfileData.manualTargetCalories = null;
+            plainProfileData.manualTargetProtein = null;
+            plainProfileData.manualTargetCarbs = null;
+            plainProfileData.manualTargetFat = null;
+            plainProfileData.manualTargetActivityCalories = null;
+            // AI targets will be calculated and saved in the next step
+        } else {
+            plainProfileData.manualTargetCalories = data.manualTargetCalories ?? null;
+            plainProfileData.manualTargetProtein = data.manualTargetProtein ?? null;
+            plainProfileData.manualTargetCarbs = data.manualTargetCarbs ?? null;
+            plainProfileData.manualTargetFat = data.manualTargetFat ?? null;
+            plainProfileData.manualTargetActivityCalories = data.manualTargetActivityCalories ?? null;
+            
+            // Clear AI targets if manual is chosen
+            plainProfileData.targetCalories = null;
+            plainProfileData.targetProtein = null;
+            plainProfileData.targetCarbs = null;
+            plainProfileData.targetFat = null;
+            plainProfileData.targetActivityCalories = null;
+            plainProfileData.maintenanceCalories = null;
+        }
+        
+        await saveUserProfile(userId, plainProfileData); // Send plain data
+        toast({ title: "Profile Updated", description: "Core information saved." });
+        setInitialDisplayName(data.displayName);
+
+        if (data.useAiTargets) {
+            setIsSaving(false); 
+            setIsProcessingAiTargets(true);
+
+            const aiInput: CalculateTargetsInput = {
+                height: data.height!, weight: data.weight!, age: data.age!,
+                gender: data.gender!, activityLevel: data.activityLevel!, fitnessGoal: data.fitnessGoal!,
+                foodPreferences: data.foodPreferences, localFoodStyle: data.localFoodStyle,
+            };
+
+            try {
+                const calculatedTargetsResult = await calculateDailyTargets(aiInput);
+                const maintenanceCals = calculatedTargetsResult.targetCalories + (data.fitnessGoal === 'weight_loss' ? 500 : ['weight_gain', 'muscle_building'].includes(data.fitnessGoal!) ? -300 : 0);
+                
+                const aiTargetsToSave: Partial<StoredUserProfile> = { // Plain object
+                    targetCalories: calculatedTargetsResult.targetCalories,
+                    targetProtein: calculatedTargetsResult.targetProtein,
+                    targetCarbs: calculatedTargetsResult.targetCarbs,
+                    targetFat: calculatedTargetsResult.targetFat,
+                    targetActivityCalories: calculatedTargetsResult.targetActivityCalories,
+                    maintenanceCalories: maintenanceCals,
+                    useAiTargets: true,
+                };
+                await saveUserProfile(userId, aiTargetsToSave); // Send plain data
+                toast({ title: "AI Targets Calculated & Saved!", description: "Personalized targets are set." });
+                router.push('/dashboard?recalculate_targets=true'); 
+            } catch (aiError: any) {
+                toast({ variant: "destructive", title: "AI Target Error", description: `Could not set AI targets: ${aiError.message}. Please try saving again or set manual targets.` });
+            } finally {
+                setIsProcessingAiTargets(false);
+            }
+        } else {
+            setIsSaving(false);
+            toast({ title: "Manual Targets Saved", description: "Profile updated." });
+            router.push('/dashboard');
+        }
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Save Error", description: error.message || "Could not save profile." });
+        setIsSaving(false);
+        setIsProcessingAiTargets(false);
+    }
+  }
+
+  const renderStyledRadioGroup = (field: any, options: { value: string; label: string }[]) => (
+    <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+      {options.map((option) => (
+        <FormItem key={option.value} className="relative">
+           <FormControl>
+                <RadioGroupItem value={option.value} id={`${field.name}-${option.value}`} className="sr-only peer" />
+           </FormControl>
+           <ShadCnFormLabel
+            htmlFor={`${field.name}-${option.value}`}
+            className={cn(
+               "flex items-center justify-center p-3 text-center text-sm font-medium rounded-lg border-2 border-muted bg-popover hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
+               "h-full min-h-[50px] sm:min-h-[60px] card-interactive",
+               field.value === option.value && "border-primary bg-primary/10 text-primary ring-2 ring-primary/50 ring-offset-1 ring-offset-background"
+           )}>
+             {option.label}
+          </ShadCnFormLabel>
+        </FormItem>
+      ))}
+    </RadioGroup>
+ );
+
+  const renderChips = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
+   <div className="flex flex-wrap gap-2 sm:gap-2.5">
+     {options.map((option, index) => (
+       <Button
+         key={option.value}
+         type="button"
+         variant={field.value === option.value ? "default" : "outline"}
+         className={cn(
+           "rounded-lg text-xs sm:text-sm h-9 px-3 sm:px-4 shadow-sm transition-all transform hover:scale-105 btn",
+           field.value === option.value ? "bg-primary text-primary-foreground border-primary font-semibold" : "border-input hover:bg-accent/50 hover:border-primary/50",
+           "animate-in fade-in zoom-in-95"
+         )}
+         style={{ animationDelay: `${index * 50}ms` }}
+         onClick={() => {
+           form.setValue(field.name, option.value, { shouldValidate: true });
+         }}
+       >
+         {option.icon && React.createElement(option.icon, { className: "mr-1.5 h-3.5 w-3.5" })}
+         {option.label}
+       </Button>
+     ))}
+   </div>
+ );
+
+ const renderMultiSelectCheckbox = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+      {options.map((item, index) => (
+        <FormField key={item.value} control={form.control} name={field.name} render={({ field: controllerField }) => {
+            const currentValue = Array.isArray(controllerField.value) ? controllerField.value : [];
+            const isChecked = currentValue.includes(item.value);
+            return (
+               <ShadCnFormLabel
+                  htmlFor={`checkbox-${field.name}-${item.value}`}
+                  data-state={isChecked ? 'checked' : 'unchecked'}
+                  className={cn(
+                    "flex flex-row items-center space-x-2 space-y-0 rounded-lg border p-2.5 transition-all hover:bg-muted/50 cursor-pointer card-interactive",
+                    "data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:ring-1 data-[state=checked]:ring-primary/30",
+                    "animate-in fade-in zoom-in-95"
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+               >
+                <FormControl>
+                  <Checkbox
+                    id={`checkbox-${field.name}-${item.value}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                        return checked
+                          ? controllerField.onChange([...currentValue, item.value])
+                          : controllerField.onChange(currentValue.filter((value) => value !== item.value))
+                    }}
+                    className="h-4 w-4"
+                  />
+                </FormControl>
+                 <span className="font-normal text-sm flex items-center gap-1.5 flex-grow">
+                    {item.icon && React.createElement(item.icon, { className: "h-4 w-4 text-muted-foreground" })}
+                    {item.label}
+                 </span>
+               </ShadCnFormLabel>
+            );
+          }}
+        />
+      ))}
+    </div>
+ );
+
+  // Main component return JSX
+  if (authLoading || isLoading || !hasFetchedProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl w-full"
+        >
+          <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl">
+            <CardHeader className="text-center p-6 sm:p-8">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="mx-auto mb-4"
+              >
+                <div className="h-16 w-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center">
+                  <User className="h-8 w-8 text-primary-foreground" />
+                </div>
+              </motion.div>
+              <Skeleton className="h-6 w-48 mx-auto bg-muted/50 mb-2" />
+              <Skeleton className="h-4 w-64 mx-auto bg-muted/30" />
+            </CardHeader>
+            <CardContent className="p-6 sm:p-8 space-y-8">
+              {[1, 2, 3, 4].map((i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: i * 0.1 }}
+                  className="space-y-6 p-6 border rounded-xl bg-muted/20 backdrop-blur-sm"
+                >
+                  <Skeleton className="h-5 w-1/3 bg-muted/50" />
+                  <div className="space-y-4">
+                    <Skeleton className="h-12 w-full bg-muted/50" />
+                    <Skeleton className="h-12 w-full bg-muted/50" />
+                    {i === 3 && <Skeleton className="h-24 w-full bg-muted/50" />}
+                  </div>
+                </motion.div>
+              ))}
+            </CardContent>
+            <CardFooter className="pt-6 pb-8 justify-center">
+              <Skeleton className="h-12 w-48 bg-muted/50" />
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="w-full max-w-md text-center border-destructive/50 bg-card/90 backdrop-blur-xl shadow-2xl">
+            <CardHeader className="p-8">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <AlertCircle className="mx-auto h-16 w-16 text-destructive mb-4" />
+              </motion.div>
+              <CardTitle className="text-destructive text-xl">Profile Error</CardTitle>
+              <CardDescription className="text-base mt-2">{loadError}</CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center pb-8">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button onClick={loadProfile} size="lg" className="gap-2">
+                  <RefreshCw className="h-4 w-4" />
+                  Retry
+                </Button>
+              </motion.div>
+            </CardFooter>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (isProcessingAiTargets) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center z-[200]"
+      >
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="bg-card/95 backdrop-blur-xl p-8 rounded-2xl shadow-2xl text-center max-w-sm mx-4 border-primary/20">
+            <div className="flex justify-center items-center mb-6">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="relative"
+              >
+                <div className="h-16 w-16 rounded-full border-4 border-primary/30 border-t-primary"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-primary" />
+                </div>
+              </motion.div>
+            </div>
+            <motion.h3
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-xl font-semibold text-foreground mb-3"
+            >
+              Personalizing Your Targets...
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-sm text-muted-foreground leading-relaxed"
+            >
+              Bago AI is crafting your optimal daily goals. This might take a moment. Please wait.
+            </motion.p>
+          </Card>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-8">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute top-20 left-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            x: [0, 20, 0],
+            y: [0, -10, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-10 w-40 h-40 bg-accent/5 rounded-full blur-2xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            x: [0, -30, 0],
+            y: [0, 15, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </div>
+
+      <div className="relative max-w-4xl mx-auto px-4">
+        <FadeInWrapper>
+          <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden">
+            <motion.div
+              className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10"
+              initial={{ height: 0 }}
+              animate={{ height: "auto" }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <CardHeader className="text-center p-6 sm:p-8 relative overflow-hidden">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2, type: "spring", bounce: 0.4 }}
+                  className="relative mx-auto mb-4"
+                >
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-lg">
+                    <User className="h-8 w-8 text-primary-foreground" />
+                  </div>
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent"
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </motion.div>
+                
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
+                  <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+                    Complete Your Profile
+                  </CardTitle>
+                  <CardDescription className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                    Complete your profile for personalized AI insights and plans. Fields marked * are required.
+                  </CardDescription>
+                </motion.div>
+
+                {/* Decorative elements */}
+                <div className="absolute top-4 left-4">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Star className="h-4 w-4 text-primary/30" />
+                  </motion.div>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <motion.div
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Zap className="h-4 w-4 text-accent/30" />
+                  </motion.div>
+                </div>
+              </CardHeader>
+            </motion.div>
+            
+            <CardContent className="p-6 sm:p-8 font-sans relative">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <StaggerContainer>
+                    {/* About You Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.1 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <Info className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          About You
+                        </h2>
+                      </div>
+
+                      <FormField control={form.control} name="displayName" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                            <User className="h-4 w-4 text-primary" />
+                            Display Name *
+                          </ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Input 
+                                Icon={User} 
+                                placeholder="Choose a unique display name" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                         hover:border-primary/30"
+                              />
+                            </motion.div>
+                          </FormControl>
+                          <FormDescription className="text-xs font-sans text-muted-foreground">
+                            Visible to others if you enable sharing. Letters, numbers, underscores only.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={form.control} name="height" render={({ field }) => (
+                          <FormItem>
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Ruler className="h-4 w-4 text-primary" />
+                              Height (cm) *
+                            </ShadCnFormLabel>
+                            <FormControl>
+                              <motion.div whileFocus={{ scale: 1.02 }}>
+                                <Input 
+                                  Icon={Ruler} 
+                                  type="number" 
+                                  placeholder="e.g., 175" 
+                                  {...field} 
+                                  value={field.value ?? ''} 
+                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                           hover:border-primary/30"
+                                />
+                              </motion.div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="weight" render={({ field }) => (
+                          <FormItem>
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Weight className="h-4 w-4 text-primary" />
+                              Weight (kg) *
+                            </ShadCnFormLabel>
+                            <FormControl>
+                              <motion.div whileFocus={{ scale: 1.02 }}>
+                                <Input 
+                                  Icon={Weight} 
+                                  type="number" 
+                                  placeholder="e.g., 70" 
+                                  {...field} 
+                                  value={field.value ?? ''} 
+                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                           hover:border-primary/30"
+                                />
+                              </motion.div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="age" render={({ field }) => (
+                          <FormItem>
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              Age (years) *
+                            </ShadCnFormLabel>
+                            <FormControl>
+                              <motion.div whileFocus={{ scale: 1.02 }}>
+                                <Input 
+                                  Icon={Calendar} 
+                                  type="number" 
+                                  placeholder="e.g., 25" 
+                                  {...field} 
+                                  value={field.value ?? ''} 
+                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                           hover:border-primary/30"
+                                />
+                              </motion.div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )} />
+                      </div>
+
+                      <FormField control={form.control} name="gender" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                          <ShadCnFormLabel className="text-base font-medium">Gender *</ShadCnFormLabel>
+                          {renderStyledRadioGroup(field, genderOptions)}
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </motion.section>
+
+                    {/* Fitness Details Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <Activity className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          Fitness Details
+                        </h2>
+                      </div>
+
+                      <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-primary" />
+                            Primary Fitness Goal *
+                          </ShadCnFormLabel>
+                          {renderChips(field, goalOptions)}
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="activityLevel" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary" />
+                            Typical Activity Level *
+                          </ShadCnFormLabel>
+                          {renderChips(field, activityOptions)}
+                          <FormDescription className="text-xs mt-3 font-sans text-muted-foreground">
+                            {activityOptions.find(opt => opt.value === field.value)?.description}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="preferFewerRestDays" render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
+                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
+                          <div className="space-y-1 mr-4">
+                            <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                              <ShieldQuestion className="h-4 w-4 text-primary" />
+                              Training Intensity
+                            </ShadCnFormLabel>
+                            <FormDescription className="text-xs font-sans">
+                              Prefer fewer rest days? (Requests a more intense workout plan)
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <motion.div whileTap={{ scale: 0.95 }}>
+                              <Switch 
+                                checked={field.value ?? false} 
+                                onCheckedChange={field.onChange}
+                                className="data-[state=checked]:bg-primary"
+                              />
+                            </motion.div>
+                          </FormControl>
+                        </FormItem>
+                      )} />
+                    </motion.section>
+
+                    {/* Nutrition Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.3 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <ChefHat className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          Personalize Your Nutrition
+                        </h2>
+                      </div>
+                      
+                      <FormDescription className="text-sm italic text-center text-muted-foreground p-3 bg-muted/20 rounded-lg border border-border/20">
+                        This helps tailor meal suggestions and nutritional analysis.
+                      </FormDescription>
+
+                      <FormField control={form.control} name="localFoodStyle" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            Regional Cuisine Preference
+                          </ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Select onValueChange={field.onChange} value={field.value === "" ? "Not Specified" : field.value || "Not Specified"}>
+                                <SelectTrigger className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                                       focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                       hover:border-primary/30">
+                                  <SelectValue placeholder="Select your preferred cuisine..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Not Specified" className="text-muted-foreground italic font-sans">
+                                    Select your preferred cuisine...
+                                  </SelectItem>
+                                  <SelectGroup>
+                                    <UiSelectLabel className="text-xs font-sans">Indian Regions</UiSelectLabel>
+                                    {indianRegions.filter(r => r !== "Not Specified").map(region => 
+                                      <SelectItem key={region} value={region} className="font-sans">{region}</SelectItem>
+                                    )}
+                                  </SelectGroup>
+                                  <SelectGroup>
+                                    <UiSelectLabel className="text-xs font-sans">Other Regions</UiSelectLabel>
+                                    {otherRegions.map(region => 
+                                      <SelectItem key={region} value={region} className="font-sans">{region}</SelectItem>
+                                    )}
+                                  </SelectGroup>
+                                  <SelectItem value="other" className="font-sans">Other (Specify Below)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </motion.div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="dietaryStyles" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
+                            <Salad className="h-4 w-4 text-primary" />
+                            Dietary Style(s)
+                          </ShadCnFormLabel>
+                          {renderMultiSelectCheckbox(field, dietaryStyleOptions)}
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="allergies" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
+                            <CircleHelp className="h-4 w-4 text-primary" />
+                            Allergies/Intolerances
+                          </ShadCnFormLabel>
+                          {renderMultiSelectCheckbox(field, allergyOptions)}
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="otherAllergies" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-sm font-medium">Other Allergies</ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Input 
+                                Icon={Info} 
+                                placeholder="Specify other allergies..." 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                className="text-base md:text-sm h-11 font-sans transition-all duration-300
+                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                         hover:border-primary/30"
+                              />
+                            </motion.div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="foodDislikes" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium">Food Dislikes (Optional)</ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Textarea 
+                                Icon={Info} 
+                                placeholder="List any foods you strongly dislike (e.g., mushrooms, spicy food)" 
+                                className="resize-none text-base md:text-sm min-h-[80px] font-sans transition-all duration-300
+                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                         hover:border-primary/30" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                              />
+                            </motion.div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+
+                      <FormField control={form.control} name="foodPreferences" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium">Other Notes (Optional)</ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Textarea 
+                                Icon={Info} 
+                                placeholder="Any other specific needs? (e.g., No onion/garlic, prefers low-oil cooking)" 
+                                className="resize-none text-base md:text-sm min-h-[80px] font-sans transition-all duration-300
+                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                         hover:border-primary/30" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                              />
+                            </motion.div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </motion.section>
+
+                    {/* Language Preference Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <Languages className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          Language Preference
+                        </h2>
+                      </div>
+
+                      <FormField control={form.control} name="translatePreference" render={({ field }) => (
+                        <FormItem>
+                          <ShadCnFormLabel className="text-base font-medium">Report & AI Chat Language</ShadCnFormLabel>
+                          <FormControl>
+                            <motion.div whileFocus={{ scale: 1.02 }}>
+                              <Select onValueChange={field.onChange} value={field.value || 'en'}>
+                                <SelectTrigger className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                                       focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                       hover:border-primary/30">
+                                  <SelectValue placeholder="Select language..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {translatePreferenceOptions.map(option => (
+                                    <SelectItem key={option.value} value={option.value} className="font-sans">
+                                      {option.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </motion.div>
+                          </FormControl>
+                          <FormDescription className="text-xs font-sans text-muted-foreground">
+                            Select the language for AI-generated reports and chat responses.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </motion.section>
+
+                    {/* Target Settings Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.5 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <TargetIcon className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          Target Settings
+                        </h2>
+                      </div>
+
+                      <FormField control={form.control} name="useAiTargets" render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
+                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
+                          <div className="space-y-1 mr-4">
+                            <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-yellow-500" />
+                              Use AI Personalized Targets
+                            </ShadCnFormLabel>
+                            <FormDescription className="text-xs font-sans">
+                              Let Bago automatically calculate your daily goals for nutrition and activity burn.
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <motion.div whileTap={{ scale: 0.95 }}>
+                              <Switch 
+                                checked={field.value ?? true} 
+                                onCheckedChange={field.onChange}
+                                className="data-[state=checked]:bg-primary"
+                              />
+                            </motion.div>
+                          </FormControl>
+                        </FormItem>
+                      )} />
+
+                      <AnimatePresence mode="wait">
+                        {!useAiTargets && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-4 pt-4"
+                          >
+                            <p className="text-sm text-muted-foreground italic font-sans p-3 bg-muted/20 rounded-lg border border-border/20">
+                              Manually set your daily nutritional and activity targets:
+                            </p>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <FormField control={form.control} name="manualTargetCalories" render={({ field }) => (
+                                <FormItem>
+                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
+                                    <Flame className="h-3 w-3 text-primary" />
+                                    Calories (kcal) *
+                                  </ShadCnFormLabel>
+                                  <FormControl>
+                                    <motion.div whileFocus={{ scale: 1.02 }}>
+                                      <Input 
+                                        Icon={Flame} 
+                                        type="number" 
+                                        placeholder="e.g., 2000" 
+                                        {...field} 
+                                        value={field.value ?? ''} 
+                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                 hover:border-primary/30"
+                                      />
+                                    </motion.div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+
+                              <FormField control={form.control} name="manualTargetProtein" render={({ field }) => (
+                                <FormItem>
+                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
+                                    <Dumbbell className="h-3 w-3 text-primary" />
+                                    Protein (g) *
+                                  </ShadCnFormLabel>
+                                  <FormControl>
+                                    <motion.div whileFocus={{ scale: 1.02 }}>
+                                      <Input 
+                                        Icon={Dumbbell} 
+                                        type="number" 
+                                        placeholder="e.g., 150" 
+                                        {...field} 
+                                        value={field.value ?? ''} 
+                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                 hover:border-primary/30"
+                                      />
+                                    </motion.div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+
+                              <FormField control={form.control} name="manualTargetCarbs" render={({ field }) => (
+                                <FormItem>
+                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
+                                    <Activity className="h-3 w-3 text-primary" />
+                                    Carbs (g) *
+                                  </ShadCnFormLabel>
+                                  <FormControl>
+                                    <motion.div whileFocus={{ scale: 1.02 }}>
+                                      <Input 
+                                        Icon={Activity} 
+                                        type="number" 
+                                        placeholder="e.g., 200" 
+                                        {...field} 
+                                        value={field.value ?? ''} 
+                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                 hover:border-primary/30"
+                                      />
+                                    </motion.div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+
+                              <FormField control={form.control} name="manualTargetFat" render={({ field }) => (
+                                <FormItem>
+                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
+                                    <Droplet className="h-3 w-3 text-primary" />
+                                    Fat (g) *
+                                  </ShadCnFormLabel>
+                                  <FormControl>
+                                    <motion.div whileFocus={{ scale: 1.02 }}>
+                                      <Input 
+                                        Icon={Droplet} 
+                                        type="number" 
+                                        placeholder="e.g., 70" 
+                                        {...field} 
+                                        value={field.value ?? ''} 
+                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                                 hover:border-primary/30"
+                                      />
+                                    </motion.div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )} />
+                            </div>
+
+                            <FormField control={form.control} name="manualTargetActivityCalories" render={({ field }) => (
+                              <FormItem>
+                                <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                                  <Target className="h-4 w-4 text-primary" />
+                                  Manual Target Activity Calories (kcal)
+                                </ShadCnFormLabel>
+                                <FormControl>
+                                  <motion.div whileFocus={{ scale: 1.02 }}>
+                                    <Input 
+                                      Icon={Target} 
+                                      type="number" 
+                                      placeholder="e.g., 300" 
+                                      {...field} 
+                                      value={field.value ?? ''} 
+                                      className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                               focus:ring-2 focus:ring-primary/20 focus:border-primary/50
+                                               hover:border-primary/30"
+                                    />
+                                  </motion.div>
+                                </FormControl>
+                                <FormDescription className="text-xs font-sans text-muted-foreground">
+                                  Your desired daily calorie burn from dedicated exercise.
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )} />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.section>
+                  </StaggerContainer>
+
+                  {/* Submit Button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.6 }}
+                    className="pt-8"
+                  >
+                    <CardFooter className="pt-6 pb-2 justify-center">
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="w-full max-w-md"
+                      >
+                        <Button 
+                          type="submit" 
+                          size="lg" 
+                          className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 
+                                   text-primary-foreground py-3 px-6 text-base font-semibold shadow-lg 
+                                   transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:ring-offset-2
+                                   disabled:opacity-50 disabled:cursor-not-allowed" 
+                          disabled={isSaving || !form.formState.isDirty || isProcessingAiTargets}
+                        >
+                          <AnimatePresence mode="wait">
+                            {(isSaving && !isProcessingAiTargets) && (
+                              <motion.div 
+                                key="saving"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex items-center"
+                              >
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Saving Basic Info...
+                              </motion.div>
+                            )}
+                            {isProcessingAiTargets && (
+                              <motion.div 
+                                key="processing"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex items-center"
+                              >
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Calculating AI Targets...
+                              </motion.div>
+                            )}
+                            {!isSaving && !isProcessingAiTargets && (
+                              <motion.div 
+                                key="update"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex items-center"
+                              >
+                                <Save className="mr-2 h-5 w-5" />
+                                Update Profile
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </Button>
+                      </motion.div>
+                    </CardFooter>
+                  </motion.div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </FadeInWrapper>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,777 @@
+// src/app/overview/page.tsx
+"use client";
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import DashboardProfileHeader from '@/components/dashboard/DashboardProfileHeader';
+import { StoredUserProfile, StoredExerciseLogEntry } from '@/app/dashboard/types';
+import { getOverviewData } from '@/services/firestore/overviewService';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { Flame, Dumbbell, TrendingUp, AlertCircle, Star, Trophy, Activity, Clock, Zap } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import FitnessTip from '@/components/dashboard/FitnessTip';
+import WaterIntakeTip from '@/components/dashboard/WaterIntakeTip';
+import SleepGoals from '@/components/dashboard/SleepGoals';
+import { FitnessTipData } from '@/app/dashboard/types';
+import { motion, AnimatePresence } from 'framer-motion';
+import AnimatedWrapper from '@/components/ui/animated-wrapper';
+
+const fitnessTips: FitnessTipData[] = [
+  { id: 1, type: 'do', text: 'Stay hydrated! Aim for 8 glasses of water throughout the day.' },
+  { id: 2, type: 'do', text: 'Prioritize 7-9 hours of quality sleep for optimal muscle recovery and hormone regulation.' },
+  { id: 3, type: 'dont', text: 'Minimize processed foods, sugary drinks, and excessive saturated fats.' },
+];
+
+interface WeeklyActivitySummary {
+    totalWorkouts: number;
+    totalCaloriesBurned: number;
+    strengthWorkouts: number;
+    cardioWorkouts: number;
+    otherWorkouts: number;
+}
+
+interface PointsData {
+  todayPoints: number;
+  totalPoints: number;
+  lastUpdated: string;
+}
+
+export default function OverviewPage() {
+    const { userId, loading: authLoading } = useAuth();
+    const router = useRouter();
+    const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
+    const [weeklyActivitySummary, setWeeklyActivitySummary] = useState<WeeklyActivitySummary | null>(null);
+    const [pointsData, setPointsData] = useState<PointsData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [randomTip, setRandomTip] = useState<FitnessTipData | null>(null);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => { setIsClient(true); }, []);
+
+    useEffect(() => {
+        if (isClient && !randomTip && fitnessTips.length > 0) {
+            setRandomTip(fitnessTips[Math.floor(Math.random() * fitnessTips.length)]);
+        }
+    }, [isClient, randomTip]);
+
+    useEffect(() => {
+        const fetchOverviewData = async () => {
+            if (!userId) {
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+                const weekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
+
+                console.log(`[Overview Page] Fetching batched data for user: ${userId}`);
+
+                // Fetch all data in a single optimized batch request
+                const overviewData = await getOverviewData(userId, weekStart, weekEnd);
+
+                console.log(`[Overview Page] Batched data received:`, {
+                    profile: !!overviewData.userProfile,
+                    exerciseLogs: overviewData.exerciseLogs.length,
+                    points: !!overviewData.pointsData
+                });
+
+                setUserProfile(overviewData.userProfile);
+                setPointsData(overviewData.pointsData); // pointsData is always defined now
+
+                let totalWorkouts = 0;
+                let totalCaloriesBurned = 0;
+                let strengthWorkouts = 0;
+                let cardioWorkouts = 0;
+                let otherWorkouts = 0;
+
+                overviewData.exerciseLogs.forEach(log => {
+                    totalWorkouts++;
+                    totalCaloriesBurned += log.estimatedCaloriesBurned || 0;
+                    if (log.exerciseType === 'strength') strengthWorkouts++;
+                    else if (log.exerciseType === 'cardio') cardioWorkouts++;
+                    else otherWorkouts++;
+                });
+
+                setWeeklyActivitySummary({
+                    totalWorkouts,
+                    totalCaloriesBurned: Math.round(totalCaloriesBurned),
+                    strengthWorkouts,
+                    cardioWorkouts,
+                    otherWorkouts
+                });
+
+            } catch (err: any) {
+                console.error("[Overview Page] Error fetching data:", err);
+                setError("Could not load overview data. " + err.message);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        if (!authLoading && userId) {
+            fetchOverviewData();
+        } else if (!authLoading && !userId) {
+            router.replace('/authorize');
+        }
+    }, [authLoading, userId, router]);
+
+    // Manual refresh function for retry button
+    const fetchData = useCallback(async () => {
+        if (!userId) return;
+        
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+            const weekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
+
+            console.log(`[Overview Page] Manual refresh - fetching fresh data for user: ${userId}`);
+
+            // Fetch fresh data using optimized batch request
+            const overviewData = await getOverviewData(userId, weekStart, weekEnd);
+
+            console.log(`[Overview Page] Manual refresh - Batched data received:`, {
+                profile: !!overviewData.userProfile,
+                exerciseLogs: overviewData.exerciseLogs.length,
+                points: !!overviewData.pointsData
+            });
+
+            setUserProfile(overviewData.userProfile);
+            setPointsData(overviewData.pointsData); // pointsData is always defined now
+
+            let totalWorkouts = 0;
+            let totalCaloriesBurned = 0;
+            let strengthWorkouts = 0;
+            let cardioWorkouts = 0;
+            let otherWorkouts = 0;
+
+            overviewData.exerciseLogs.forEach(log => {
+                totalWorkouts++;
+                totalCaloriesBurned += log.estimatedCaloriesBurned || 0;
+                if (log.exerciseType === 'strength') strengthWorkouts++;
+                else if (log.exerciseType === 'cardio') cardioWorkouts++;
+                else otherWorkouts++;
+            });
+
+            setWeeklyActivitySummary({
+                totalWorkouts,
+                totalCaloriesBurned: Math.round(totalCaloriesBurned),
+                strengthWorkouts,
+                cardioWorkouts,
+                otherWorkouts
+            });
+
+        } catch (err: any) {
+            console.error("[Overview Page] Manual refresh error:", err);
+            setError("Could not refresh overview data. " + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [userId]);
+
+    const profileHeaderData = useMemo(() => {
+        if (!userProfile) return null;
+        return {
+            displayName: userProfile.displayName || "User",
+            photoURL: userProfile.photoURL || `https://placehold.co/100x100.png?text=${(userProfile.displayName || "U").charAt(0)}`,
+        };
+    }, [userProfile]);
+
+    if (isLoading || authLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
+                {/* Animated Background Elements */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <motion.div
+                        className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl"
+                        animate={{ 
+                            scale: [1, 1.2, 1],
+                            rotate: [0, 180, 360],
+                            opacity: [0.3, 0.5, 0.3]
+                        }}
+                        transition={{ 
+                            duration: 20,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                    />
+                    <motion.div
+                        className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full blur-3xl"
+                        animate={{ 
+                            scale: [1.2, 1, 1.2],
+                            rotate: [360, 180, 0],
+                            opacity: [0.2, 0.4, 0.2]
+                        }}
+                        transition={{ 
+                            duration: 25,
+                            repeat: Infinity,
+                            ease: "linear"
+                        }}
+                    />
+                </div>
+
+                <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 relative z-10">
+                    {/* Profile Header Skeleton */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
+                    >
+                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
+                            <CardHeader>
+                                <div className="flex items-center gap-4">
+                                    <motion.div
+                                        animate={{ 
+                                            scale: [1, 1.05, 1],
+                                            rotate: [0, 5, 0]
+                                        }}
+                                        transition={{ 
+                                            duration: 2,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        <Skeleton className="h-24 w-24 rounded-full" />
+                                    </motion.div>
+                                    <div className="space-y-2">
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: "192px" }}
+                                            transition={{ duration: 1, delay: 0.3 }}
+                                        >
+                                            <Skeleton className="h-6 w-48" />
+                                        </motion.div>
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: "128px" }}
+                                            transition={{ duration: 1, delay: 0.5 }}
+                                        >
+                                            <Skeleton className="h-4 w-32" />
+                                        </motion.div>
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: "96px" }}
+                                            transition={{ duration: 1, delay: 0.7 }}
+                                        >
+                                            <Skeleton className="h-4 w-24" />
+                                        </motion.div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </motion.div>
+
+                    {/* Stats Cards Skeleton */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
+                            <CardHeader>
+                                <motion.div
+                                    animate={{ opacity: [0.5, 1, 0.5] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                >
+                                    <Skeleton className="h-6 w-1/2" />
+                                </motion.div>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4">
+                                {[...Array(4)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ 
+                                            duration: 0.5,
+                                            delay: 0.4 + i * 0.1,
+                                            type: "spring",
+                                            stiffness: 300
+                                        }}
+                                    >
+                                        <Skeleton className="h-16 w-full rounded-lg" />
+                                    </motion.div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    {/* Additional Cards Skeleton */}
+                    {[...Array(3)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 + i * 0.1 }}
+                        >
+                            <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
+                                <CardHeader>
+                                    <motion.div
+                                        animate={{ opacity: [0.5, 1, 0.5] }}
+                                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                                    >
+                                        <Skeleton className="h-6 w-3/4" />
+                                    </motion.div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-3">
+                                        {[...Array(3)].map((_, j) => (
+                                            <motion.div
+                                                key={j}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ 
+                                                    duration: 0.5,
+                                                    delay: 0.6 + i * 0.1 + j * 0.05
+                                                }}
+                                            >
+                                                <Skeleton className="h-4 w-full" />
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <motion.div
+                        className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-destructive/10 to-red-500/10 rounded-full blur-3xl"
+                        animate={{ 
+                            scale: [1, 1.2, 1],
+                            opacity: [0.2, 0.4, 0.2]
+                        }}
+                        transition={{ 
+                            duration: 3,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                        }}
+                    />
+                </div>
+                
+                <div className="max-w-xl mx-auto my-10 p-4 text-center relative z-10">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        transition={{ 
+                            duration: 0.6,
+                            type: "spring",
+                            stiffness: 300
+                        }}
+                    >
+                        <Card className="border-destructive bg-card/60 backdrop-blur-lg shadow-xl">
+                            <CardHeader>
+                                <motion.div
+                                    animate={{ 
+                                        rotate: [0, 10, -10, 0],
+                                        scale: [1, 1.1, 1]
+                                    }}
+                                    transition={{ 
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+                                </motion.div>
+                                <CardTitle className="text-destructive">Error Loading Overview</CardTitle>
+                                <CardDescription>{error}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <motion.div
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    <Button onClick={fetchData} variant="outline">
+                                        Try Again
+                                    </Button>
+                                </motion.div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <motion.div
+                    className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl"
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        rotate: [0, 180, 360],
+                        opacity: [0.3, 0.5, 0.3]
+                    }}
+                    transition={{ 
+                        duration: 20,
+                        repeat: Infinity,
+                        ease: "linear"
+                    }}
+                />
+                <motion.div
+                    className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full blur-3xl"
+                    animate={{ 
+                        scale: [1.2, 1, 1.2],
+                        rotate: [360, 180, 0],
+                        opacity: [0.2, 0.4, 0.2]
+                    }}
+                    transition={{ 
+                        duration: 25,
+                        repeat: Infinity,
+                        ease: "linear"
+                    }}
+                />
+            </div>
+
+            <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 relative z-10">
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <h1 className="text-3xl font-bold text-primary tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        Activity Overview
+                    </h1>
+                </motion.div>
+
+                {profileHeaderData && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
+                            <CardHeader className="pb-4">
+                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                    <motion.div
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ 
+                                            duration: 0.6,
+                                            type: "spring",
+                                            stiffness: 300
+                                        }}
+                                        whileHover={{ 
+                                            scale: 1.05,
+                                            transition: { type: "spring", stiffness: 400 }
+                                        }}
+                                        className="relative"
+                                    >
+                                        <img
+                                            src={profileHeaderData.photoURL}
+                                            alt={`${profileHeaderData.displayName}'s profile`}
+                                            className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-4 border-primary/20 shadow-lg"
+                                            onError={(e) => {
+                                                e.currentTarget.src = `https://placehold.co/80x80.png?text=${profileHeaderData.displayName.charAt(0)}`;
+                                            }}
+                                        />
+                                        <motion.div
+                                            className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-background"
+                                            animate={{ 
+                                                scale: [1, 1.2, 1],
+                                                opacity: [1, 0.8, 1]
+                                            }}
+                                            transition={{ 
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }}
+                                        />
+                                    </motion.div>
+                                    <div className="space-y-1 text-center sm:text-left flex-1">
+                                        <motion.h2 
+                                            className="text-xl sm:text-2xl font-bold text-primary"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.3 }}
+                                        >
+                                            {profileHeaderData.displayName}
+                                        </motion.h2>
+                                        <motion.p 
+                                            className="text-sm sm:text-base text-muted-foreground"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.4 }}
+                                        >
+                                            Welcome to your fitness journey!
+                                        </motion.p>
+                                        <motion.div
+                                            className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-muted-foreground"
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ duration: 0.6, delay: 0.5 }}
+                                        >
+                                            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                            <span>Last active: Today</span>
+                                        </motion.div>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* Today's Points - Moved above This Week's Activity */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.5 }}
+                >
+                    <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 backdrop-blur-lg shadow-xl">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2">
+                                <motion.div
+                                    animate={{ 
+                                        rotate: [0, 360],
+                                        scale: [1, 1.2, 1]
+                                    }}
+                                    transition={{ 
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    }}
+                                >
+                                    <Star className="h-5 w-5 text-yellow-500" />
+                                </motion.div>
+                                Today's Points
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {pointsData ? (
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <motion.p 
+                                            className="text-3xl font-bold text-yellow-600 dark:text-yellow-400"
+                                            animate={{ 
+                                                scale: [1, 1.05, 1]
+                                            }}
+                                            transition={{ 
+                                                duration: 2,
+                                                repeat: Infinity,
+                                                ease: "easeInOut"
+                                            }}
+                                        >
+                                            {pointsData.todayPoints}<span className="text-lg text-muted-foreground">/100</span>
+                                        </motion.p>
+                                        <p className="text-sm text-muted-foreground">Points earned today</p>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <div className="flex items-center gap-1">
+                                            <motion.div
+                                                animate={{ 
+                                                    y: [0, -3, 0],
+                                                    rotate: [0, 10, 0]
+                                                }}
+                                                transition={{ 
+                                                    duration: 2.5,
+                                                    repeat: Infinity,
+                                                    ease: "easeInOut"
+                                                }}
+                                            >
+                                                <Trophy className="h-5 w-5 text-orange-500" />
+                                            </motion.div>
+                                            <span className="text-sm font-medium text-muted-foreground">Total Points</span>
+                                        </div>
+                                        <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">
+                                            {pointsData.totalPoints.toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-1">
+                                        <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                                            0<span className="text-lg text-muted-foreground">/100</span>
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">Points earned today</p>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <div className="flex items-center gap-1">
+                                            <Trophy className="h-5 w-5 text-orange-500" />
+                                            <span className="text-sm font-medium text-muted-foreground">Total Points</span>
+                                        </div>
+                                        <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">0</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.7 }}
+                >
+                    <Card className="shadow-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card/60 backdrop-blur-lg">
+                        <CardHeader>
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.6, delay: 0.8 }}
+                            >
+                                <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                                    <motion.div
+                                        animate={{ 
+                                            rotate: [0, 360],
+                                            scale: [1, 1.1, 1]
+                                        }}
+                                        transition={{ 
+                                            duration: 3,
+                                            repeat: Infinity,
+                                            ease: "easeInOut"
+                                        }}
+                                    >
+                                        <TrendingUp size={22} />
+                                    </motion.div>
+                                    This Week's Activity
+                                </CardTitle>
+                            </motion.div>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                            {weeklyActivitySummary ? (
+                                <>
+                                    {[
+                                        { icon: Dumbbell, color: "blue", label: "Total Workouts", value: weeklyActivitySummary.totalWorkouts },
+                                        { icon: Flame, color: "orange", label: "Calories Burned", value: `${weeklyActivitySummary.totalCaloriesBurned} kcal` },
+                                        { icon: Activity, color: "green", label: "Strength Workouts", value: weeklyActivitySummary.strengthWorkouts },
+                                        { icon: Zap, color: "purple", label: "Cardio Workouts", value: weeklyActivitySummary.cardioWorkouts }
+                                    ].map((item, index) => (
+                                        <motion.div
+                                            key={item.label}
+                                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            transition={{ 
+                                                duration: 0.5,
+                                                delay: 0.9 + index * 0.1,
+                                                type: "spring",
+                                                stiffness: 300
+                                            }}
+                                            whileHover={{ 
+                                                scale: 1.05,
+                                                y: -2,
+                                                transition: { type: "spring", stiffness: 400 }
+                                            }}
+                                            className="group"
+                                        >
+                                            <div className="flex items-center gap-3 p-3 bg-muted/30 backdrop-blur-sm rounded-lg border group-hover:bg-muted/50 transition-all duration-300">
+                                                <motion.div
+                                                    whileHover={{ 
+                                                        rotate: 10,
+                                                        scale: 1.2
+                                                    }}
+                                                    transition={{ type: "spring", stiffness: 400 }}
+                                                >
+                                                    <item.icon className={cn(
+                                                        "h-6 w-6",
+                                                        item.color === "blue" && "text-blue-500",
+                                                        item.color === "orange" && "text-orange-500",
+                                                        item.color === "green" && "text-green-500",
+                                                        item.color === "purple" && "text-purple-500"
+                                                    )} />
+                                                </motion.div>
+                                                <div>
+                                                    <p className="text-muted-foreground">{item.label}</p>
+                                                    <motion.p 
+                                                        className="font-bold text-lg"
+                                                        animate={{ 
+                                                            scale: [1, 1.02, 1]
+                                                        }}
+                                                        transition={{ 
+                                                            duration: 2,
+                                                            repeat: Infinity,
+                                                            ease: "easeInOut",
+                                                            delay: index * 0.2
+                                                        }}
+                                                    >
+                                                        {item.value}
+                                                    </motion.p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </>
+                            ) : (
+                                <motion.p 
+                                    className="text-muted-foreground italic col-span-full text-center py-4"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.6, delay: 0.8 }}
+                                >
+                                    No workout data for this week yet.
+                                </motion.p>
+                            )}
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                {/* Moved components from Dashboard */}
+                <motion.div 
+                    className="space-y-6"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                        duration: 0.6, 
+                        delay: 1.3,
+                        staggerChildren: 0.1
+                    }}
+                >
+                    {randomTip && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 1.4 }}
+                        >
+                            <FitnessTip tip={randomTip} />
+                        </motion.div>
+                    )}
+                    
+                    {/* Sleep Goals and Hydration - Two compact cards in a responsive grid */}
+                    <motion.div 
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ 
+                            duration: 0.6,                        delay: 1.5,
+                        staggerChildren: 0.1
+                    }}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 1.6 }}
+                    >
+                        <SleepGoals />
+                    </motion.div>
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 1.7 }}
+                    >
+                            <WaterIntakeTip />
+                        </motion.div>
+                    </motion.div>
+                </motion.div>
+            </div>
+        </div>
+    );
+}
