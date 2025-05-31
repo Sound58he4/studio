@@ -1,0 +1,76 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js production build files
+/.next
+/out
+
+# Mac specific files
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local configuration files
+# .env*.local
+# .env
+
+# Google Application Credentials
+google-application-credentials.json
+
+# IDE config files
+.idea
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+
+# Optional husky config directory
+.husky
+
+# Optional lint-staged config file
+.lintstagedrc.js
+.lintstagedrc.json
+.lintstagedrc.yaml
+.lintstagedrc.yml
+.lintstagedrc.mjs
+.lintstagedrc.cjs
+
+# Optional CodeCov config file
+.codecov.yml
+
+# Optional Semantic Release config file
+.releaserc
+.releaserc.yaml
+.releaserc.yml
+.releaserc.json
+.releaserc.js
+.releaserc.cjs
+.releaserc.mjs
+
+# Optional conventional-changelog preset config file
+.conventional-changelog-preset
+
+# Optional local patch file
+*.patch
+
+# Turbopack specific files
+.turbo
+
+# Genkit state file
+.genkit/state.json
+
+.firebase

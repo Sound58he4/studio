@@ -1,0 +1,9 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.bagoai.bagoai",
+        "sha256_cert_fingerprints": ["57:7F:68:F1:2E:D4:39:B3:15:04:7F:69:CA:A7:02:8C:6E:52:A8:5E:6C:CA:BD:71:F3:10:DC:4D:4F:B8:CA:C5"]
+      }
+    }]
+    
