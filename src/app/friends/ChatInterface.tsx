@@ -25,6 +25,7 @@ import { usePerformanceMonitor, useFirebasePerformance } from '@/hooks/use-perfo
 import MessageList from '@/components/friends/MessageList';
 import MessageInput from '@/components/friends/MessageInput';
 import AISuggestionBar from '@/components/friends/AISuggestionBar';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -121,7 +122,8 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
             setIsLoadingMessages(false); // Not loading from server for AI
             scrollToBottom();
             focusInput();
-            setShowSuggestions(newMessage.trim() === ''); // Show suggestions if input is empty
+            // Removed automatic suggestion triggering - now only shows on button tap
+            // setShowSuggestions(newMessage.trim() === ''); // Show suggestions if input is empty
         } else {
             setShowSuggestions(false);
         }
@@ -269,6 +271,19 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                             }} 
                             onHide={() => setShowSuggestions(false)} 
                         />
+                    )}
+                    {isAISelected && !showSuggestions && (
+                        <div className="p-2 border-t bg-muted/50 flex justify-center">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowSuggestions(true)}
+                                className="text-xs px-3 py-1 h-7 rounded-md"
+                            >
+                                Show AI Suggestions
+                            </Button>
+                        </div>
                     )}
                     <MessageInput
                         ref={messageInputRef} 

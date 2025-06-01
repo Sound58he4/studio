@@ -54,10 +54,46 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
 
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
     const [exerciseToLog, setExerciseToLog] = useState<ExerciseDetail | null>(null);
-    const [caloriesBurnedInput, setCaloriesBurnedInput] = useState<string>("");
-    const [isExpanded, setIsExpanded] = useState(false); 
+    const [caloriesBurnedInput, setCaloriesBurnedInput] = useState<string>("");    const [isExpanded, setIsExpanded] = useState(false); 
+    const workoutListRef = React.useRef<HTMLDivElement>(null);
+    const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+
+    // Check if content is scrollable
+    React.useEffect(() => {
+        const checkScrollable = () => {
+            if (workoutListRef.current) {
+                const { scrollHeight, clientHeight } = workoutListRef.current;
+                setShowScrollIndicator(scrollHeight > clientHeight);
+            }
+        };
+
+        if (isExpanded) {
+            // Delay check to allow for expansion animation
+            setTimeout(checkScrollable, 400);
+        }
+    }, [isExpanded, todaysPlan]);
 
     const safeCompletedWorkouts = useMemo(() => completedWorkouts || {}, [completedWorkouts]);
+
+    // Scroll to top of workout list when expanding
+    React.useEffect(() => {
+        if (isExpanded && workoutListRef.current) {
+            setTimeout(() => {
+                workoutListRef.current?.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 300); // Wait for expansion animation
+        }
+    }, [isExpanded]);
+
+    // Keyboard navigation for workout list
+    const handleKeyDown = (event: React.KeyboardEvent, exerciseName: string, isCompleted: boolean) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggleComplete(exerciseName, isCompleted);
+        }
+    };
 
     const handleOpenLogModal = (exercise: ExerciseDetail) => {
         setExerciseToLog(exercise);
@@ -112,10 +148,45 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
          </CardContent>
      );
 
-     const renderWorkoutList = () => (
-         <CardContent className="p-0 sm:p-1 md:p-2"> 
-             <ul className="space-y-2 sm:space-y-3 p-2 sm:p-3"> 
-                  <TooltipProvider delayDuration={200}>
+     const renderWorkoutList = () => {
+         const completedCount = todaysPlan.filter(item => safeCompletedWorkouts[item.exercise]?.completed).length;
+         const totalCount = todaysPlan.length;
+         const progressPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+         return (
+             <CardContent className="p-0 sm:p-1 md:p-2"> 
+                 {/* Progress indicator */}
+                 <div className="px-3 pt-3 pb-2">
+                     <div className="flex justify-between items-center mb-2">
+                         <span className="text-xs font-medium text-muted-foreground">
+                             Progress: {completedCount}/{totalCount} exercises
+                         </span>
+                         <div className="flex items-center gap-2">
+                             <span className="text-xs font-medium text-primary">
+                                 {Math.round(progressPercentage)}%
+                             </span>
+                             {progressPercentage === 100 && (
+                                 <span className="text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-2 py-1 rounded-full font-medium">
+                                     Complete! 🎉
+                                 </span>
+                             )}
+                         </div>
+                     </div>
+                     <div className="w-full bg-muted rounded-full h-2">
+                         <div 
+                             className="bg-gradient-to-r from-primary to-accent h-2 rounded-full transition-all duration-700 ease-out"
+                             style={{ width: `${progressPercentage}%` }}
+                         />
+                     </div>
+                 </div>
+
+                 <div className="relative">
+                     <div 
+                         ref={workoutListRef}
+                         className="max-h-[60vh] md:max-h-[50vh] lg:max-h-[60vh] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-accent/30 scrollbar-track-transparent hover:scrollbar-thumb-accent/50 transition-colors scroll-smooth"
+                     >
+                         <ul className="space-y-2 sm:space-y-3 p-2 sm:p-3 pb-4"> 
+                              <TooltipProvider delayDuration={200}>
                   {todaysPlan.map((item, index) => {
                      const completedEntry = safeCompletedWorkouts[item.exercise];
                      const isCompleted = !!completedEntry?.completed; 
@@ -126,19 +197,25 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
 
                      return (
                          <li key={index} className={cn(
-                             "flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3.5 border rounded-lg transition-all duration-300 shadow-sm group relative overflow-hidden hover:shadow-md hover:border-primary/30",
-                             "animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out", 
+                             "flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3.5 border rounded-lg transition-all duration-300 shadow-sm group relative overflow-hidden hover:shadow-md hover:border-primary/30 hover:scale-[1.02] hover:-translate-y-0.5",
+                             "animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out will-change-transform", 
                              isCompleted ? "bg-green-100/50 dark:bg-green-900/30 border-green-300 dark:border-green-700" : "bg-card hover:bg-muted/30",
                              isRestOrWarmup && !isCompleted && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                             isRestOrWarmup && isCompleted && "bg-blue-100/70 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700"
+                             isRestOrWarmup && isCompleted && "bg-blue-100/70 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700",
+                             "scroll-mt-4 focus-within:ring-2 focus-within:ring-primary/20"
                          )}
-                         style={{ animationDelay: `${index * 50}ms` }} 
+                         style={{ 
+                             animationDelay: `${index * 50}ms`,
+                             transform: 'translateZ(0)' // Enable hardware acceleration
+                         }} 
                          >
                              <button
                                 onClick={() => onToggleComplete(item.exercise, isCompleted)}
+                                onKeyDown={(e) => handleKeyDown(e, item.exercise, isCompleted)}
                                 className="mt-0.5 flex-shrink-0 z-10 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded" 
                                 disabled={isCurrentlyEstimating}
                                 title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
+                                aria-label={`${isCompleted ? "Mark as incomplete" : "Mark as complete"}: ${item.exercise}`}
                              >
                                 <div className={cn("h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-200 ease-in-out transform group-hover:scale-110", 
                                    isCompleted && !isRestOrWarmup && "bg-green-500 border-green-600 scale-110",
@@ -235,17 +312,29 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                      );
                   })}
                   </TooltipProvider>
-             </ul>
+                     </ul>
+                 </div>
+                 {/* Gradient overlay to indicate scrollable content */}
+                 {showScrollIndicator && (
+                     <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-card via-card/60 to-transparent pointer-events-none">
+                         <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs text-muted-foreground animate-bounce">
+                             Scroll for more
+                         </div>
+                     </div>
+                 )}
+             </div>
          </CardContent>
-     );
+         );
+     };
 
 
     return (
         <Card className={cn(
-            "shadow-xl border border-accent/30 bg-gradient-to-br from-accent/5 via-card to-card backdrop-blur-sm overflow-hidden group transition-shadow hover:shadow-lg",
+            "shadow-xl border border-accent/30 bg-gradient-to-br from-accent/5 via-card to-card backdrop-blur-sm overflow-hidden group transition-all duration-300 hover:shadow-2xl hover:scale-[1.01]",
+            "scroll-smooth",
             className 
         )}>
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-3 sm:pb-4 pt-4 sm:pt-5 px-4 sm:px-5 bg-gradient-to-r from-accent/10 to-card gap-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}> 
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-3 sm:pb-4 pt-4 sm:pt-5 px-4 sm:px-5 bg-gradient-to-r from-accent/10 to-card gap-2 cursor-pointer transition-all duration-300 hover:from-accent/15" onClick={() => setIsExpanded(!isExpanded)}> 
                 <div className="flex-1">
                     <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2 text-accent">
                         <CalendarCheck2 className="h-4 w-4 sm:h-5 sm:w-5"/> Today's Workout ({today})
@@ -258,15 +347,16 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                             <RefreshCw className={cn("mr-1 h-3 w-3", isLoading && "animate-spin")}/> Regenerate
                         </Button>
                      )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-accent">
-                        {isExpanded ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />}
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-accent hover:bg-accent/10 transition-all duration-300 hover:scale-110" title={isExpanded ? "Collapse workout list" : "Expand workout list"}>
+                        {isExpanded ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 transition-transform duration-300" />}
                     </Button>
                 </div>
             </CardHeader>
 
             <div className={cn(
-                 "transition-all duration-500 ease-out overflow-hidden",
-                 isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0" 
+                 "transition-all duration-700 ease-in-out overflow-hidden",
+                 isExpanded ? "max-h-[85vh] md:max-h-[75vh] lg:max-h-[80vh] opacity-100" : "max-h-0 opacity-0",
+                 "will-change-[max-height,opacity]"
             )}>
                 {isLoading ? renderSkeleton()
                 : !plan ? renderNoPlan()

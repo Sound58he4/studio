@@ -103,7 +103,8 @@ export async function askAIChatAssistant(input: AskAIChatInput): Promise<AskAICh
     }));
 
     const recentExerciseLogs = rawExerciseLogs.map(log => ({
-        exerciseName: log.exerciseName, duration: log.duration,
+        exerciseName: log.exerciseName, 
+        duration: log.duration !== null ? log.duration : undefined,
         estimatedCaloriesBurned: log.estimatedCaloriesBurned,
         formattedTimestamp: formatTimestamp(log.timestamp),
     }));

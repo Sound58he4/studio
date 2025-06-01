@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { auth, db } from '@/lib/firebase/exports';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import BottomNavigationBar from '@/components/layout/BottomNavigationBar';
+import TopNavigationBar from '@/components/layout/TopNavigationBar';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedWrapper from '@/components/ui/animated-wrapper';
 import { RoutePreloader } from '@/lib/route-preloader';
@@ -195,7 +196,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
               duration: 0.6
             }}
           >
-            <div className="container mx-auto flex justify-between items-center max-w-7xl px-2 sm:px-4 lg:px-8">
+            <div className="container mx-auto flex justify-between items-center max-w-7xl px-2 sm:px-4 lg:px-6 xl:px-8 gap-4"
+              style={{ minHeight: '60px' }}
+            >
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -228,97 +231,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               </motion.div>
 
-              <nav className="hidden md:flex items-center gap-1">
-                <motion.div 
-                  className="flex items-center gap-1"
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.3,
-                    staggerChildren: 0.1,
-                    delayChildren: 0.4
-                  }}
-                >
-                  {navLinks.map((link, index) => {
-                    const isActive = pathname === link.href || (pathname.startsWith(link.href) && !['/dashboard', '/overview'].includes(link.href) && pathname.startsWith(link.href) );
-                    // More specific active check for dashboard and overview
-                    if (link.href === '/dashboard' && pathname !== '/dashboard' && pathname !== '/overview') {
-                        // isActive = false;
-                    }
-                    if (link.href === '/overview' && pathname !== '/overview') {
-                        // isActive = false;
-                    }
-
-                    return (
-                      <motion.div
-                        key={link.href}
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 + index * 0.05 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Link href={link.href}>
-                          <Button
-                            variant={isActive ? "secondary" : "ghost"}
-                            size="sm"
-                            className={cn(
-                              "text-sm font-medium transition-all duration-200 ease-out group relative overflow-hidden",
-                              isActive ? "text-primary font-semibold bg-primary/10" : "hover:bg-accent/50 hover:text-accent-foreground",
-                              "transform hover:scale-105"
-                            )}
-                          >
-                            {isActive && (
-                              <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5"
-                                layoutId="activeTab"
-                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                              />
-                            )}
-                            <motion.div className="flex items-center relative z-10">
-                              <motion.div
-                                whileHover={{ 
-                                  scale: 1.1,
-                                  rotate: -3,
-                                  transition: { type: "spring", stiffness: 400 }
-                                }}
-                              >
-                                <link.icon className="mr-1.5 h-4 w-4" />
-                              </motion.div>
-                              {link.label}
-                            </motion.div>
-                          </Button>
-                        </Link>
-                      </motion.div>
-                    )
-                  })}
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6, type: "spring", stiffness: 300 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={handleLogout} 
-                    title="Logout" 
-                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full ml-2 transition-colors duration-200 group relative overflow-hidden"
-                  >
-                    <motion.div
-                      whileHover={{ 
-                        rotate: -3,
-                        scale: 1.1,
-                        transition: { type: "spring", stiffness: 400 }
-                      }}
-                    >
-                      <LogOut className="h-5 w-5" />
-                    </motion.div>
-                  </Button>
-                </motion.div>
-              </nav>
+              <TopNavigationBar 
+                navLinks={navLinks}
+                handleLogout={handleLogout}
+                pathname={pathname}
+              />
               <div className="md:hidden">
               </div>
             </div>

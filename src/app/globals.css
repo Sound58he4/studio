@@ -428,3 +428,39 @@
 .animate-shake {
   animation: shake 0.5s ease-in-out;
 }
+
+/* Smooth scrolling utilities */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+/* Enhanced scrollbar classes for better UX */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thumb-accent\/30::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--accent) / 0.3);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.scrollbar-thumb-accent\/50:hover::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--accent) / 0.5);
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Firefox scrollbar styling */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--accent) / 0.3) transparent;
+}
+
+/* Scroll margin for better focus behavior */
+.scroll-mt-4 {
+  scroll-margin-top: 1rem;
+}

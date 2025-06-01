@@ -218,9 +218,7 @@ export default function PointsPage() {
     };
 
     const unhealthyFoodCount = countUnhealthyFoods(todayFoodLogs);
-    const penalty = calculateUnhealthyFoodPenalty(unhealthyFoodCount);
-
-    return [
+    const penalty = calculateUnhealthyFoodPenalty(unhealthyFoodCount);    return [
       {
         name: 'Calories',
         points: getPointsForGoal(caloriesPercent, 30),
@@ -228,6 +226,7 @@ export default function PointsPage() {
         percentage: Math.min(caloriesPercent, 100),
         icon: Zap,
         color: 'text-orange-500',
+        bgColor: 'bg-orange-500',
       },
       {
         name: 'Protein',
@@ -236,6 +235,7 @@ export default function PointsPage() {
         percentage: Math.min(proteinPercent, 100),
         icon: Target,
         color: 'text-blue-500',
+        bgColor: 'bg-blue-500',
       },
       {
         name: 'Carbs',
@@ -244,14 +244,16 @@ export default function PointsPage() {
         percentage: Math.min(carbsPercent, 100),
         icon: Apple,
         color: 'text-green-500',
+        bgColor: 'bg-green-500',
       },
       {
         name: 'Fat',
         points: getPointsForGoal(fatPercent, 10),
         maxPoints: 10,
         percentage: Math.min(fatPercent, 100),
-        icon: Trophy,
-        color: 'text-yellow-500',
+        icon: TrendingUp,
+        color: 'text-purple-500',
+        bgColor: 'bg-purple-500',
       },
       ...(penalty > 0 ? [{
         name: 'Unhealthy Food Penalty',
@@ -766,28 +768,28 @@ export default function PointsPage() {
                         </Badge>
                       </motion.div>
                     </div>
-                    
-                    {/* Progress Section - Only show for non-penalty items */}
+                      {/* Progress Section - Only show for non-penalty items */}
                     {item.points >= 0 && (
                       <div className="space-y-3 relative z-10">
                         {/* Progress Bar */}
                         <div className="relative">
                           <motion.div 
-                            className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3"
+                            className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 border border-gray-300 dark:border-gray-600"
                             initial={{ scaleX: 0 }}
                             animate={{ scaleX: 1 }}
                             transition={{ duration: 0.8, delay: 0.8 + index * 0.1 }}
-                          >
-                            <motion.div 
+                          >                            <motion.div 
                               className={cn(
-                                "h-3 rounded-full relative overflow-hidden transition-all duration-1000",
-                                item.achieved ? "bg-green-500" : 
-                                item.progress >= 75 ? `${item.bgColor}` :
-                                item.progress >= 50 ? `${item.bgColor}/80` :
-                                item.progress >= 25 ? `${item.bgColor}/60` : `${item.bgColor}/40`
+                                "h-full rounded-full relative overflow-hidden transition-all duration-1000 shadow-inner",
+                                item.achieved ? "bg-green-500" : item.bgColor,
+                                // Apply opacity based on progress level
+                                !item.achieved && item.progress >= 75 ? "opacity-100" :
+                                !item.achieved && item.progress >= 50 ? "opacity-90" :
+                                !item.achieved && item.progress >= 25 ? "opacity-80" :
+                                !item.achieved && item.progress > 0 ? "opacity-60" : "opacity-40"
                               )}
                               initial={{ width: 0 }}
-                              animate={{ width: `${Math.min(item.progress, 100)}%` }}
+                              animate={{ width: `${Math.max(Math.min(item.progress, 100), 3)}%` }}
                               transition={{ 
                                 duration: 1.5, 
                                 delay: 1 + index * 0.1,
@@ -810,19 +812,23 @@ export default function PointsPage() {
                             </motion.div>
                           </motion.div>
                           
-                          {/* Progress percentage */}
+                          {/* Progress percentage - Made more prominent */}
                           <motion.div 
-                            className="absolute right-0 -top-6"
+                            className="absolute right-0 -top-7"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.5 + index * 0.1 }}
                           >
-                            <span className="text-xs font-bold text-gray-600 dark:text-gray-400">
+                            <span className={cn(
+                              "text-sm font-bold px-2 py-1 rounded-md",
+                              item.achieved ? "text-green-600 bg-green-100 dark:bg-green-900/30" :
+                              item.progress >= 50 ? `${item.color} bg-white dark:bg-gray-800 shadow-sm border` :
+                              "text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700"
+                            )}>
                               {Math.round(item.progress)}%
                             </span>
                           </motion.div>
-                        </div>
-                        
+                        </div>                        
                         {/* Status and Points Info */}
                         <div className="flex items-center justify-between text-sm">
                           <motion.span 
@@ -841,7 +847,7 @@ export default function PointsPage() {
                               </>
                             ) : (
                               <>
-                                <span className="text-blue-500">📈</span>
+                                <span className={item.color}>📊</span>
                                 {Math.round(100 - item.progress)}% to go
                               </>
                             )}
@@ -856,6 +862,20 @@ export default function PointsPage() {
                             Max: {item.maxPoints} pts
                           </motion.span>
                         </div>
+                        
+                        {/* Current/Target Display */}
+                        <motion.div 
+                          className="flex items-center justify-between text-xs pt-2 border-t border-gray-200 dark:border-gray-700"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 2.2 + index * 0.1 }}
+                        >
+                          <span className="font-medium text-foreground">
+                            Current: <span className={item.color}>{item.current} {item.unit}</span>
+                          </span>
+                          <span className="font-medium text-muted-foreground">
+                            Target: {item.target} {item.unit}
+                          </span>                        </motion.div>
                       </div>
                     )}
                     
@@ -878,8 +898,7 @@ export default function PointsPage() {
                 </motion.div>
               ))}
             </div>
-            
-            {/* Perfect Day Bonus - Enhanced */}
+              {/* Perfect Day Bonus - Mobile Optimized */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -891,7 +910,8 @@ export default function PointsPage() {
               className="mt-8"
             >
               <div className={cn(
-                "relative overflow-hidden flex items-center justify-between p-6 rounded-xl border-2 transition-all duration-500",
+                "relative overflow-hidden rounded-xl border-2 transition-all duration-500",
+                "p-4 sm:p-6", // Responsive padding
                 achievedAllGoals 
                   ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-green-300 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-green-900/20 dark:border-green-700 shadow-lg shadow-green-200/50 dark:shadow-green-900/20" 
                   : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 dark:from-gray-800 dark:to-gray-700 dark:border-gray-600"
@@ -911,24 +931,24 @@ export default function PointsPage() {
                         ease: "easeInOut"
                       }}
                     />
-                    {/* Floating sparkles */}
-                    {[...Array(6)].map((_, i) => (
+                    {/* Floating sparkles - fewer on mobile */}
+                    {[...Array(4)].map((_, i) => (
                       <motion.div
                         key={i}
-                        className="absolute w-2 h-2 bg-yellow-400 rounded-full"
+                        className="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full"
                         style={{
-                          left: `${20 + i * 12}%`,
+                          left: `${25 + i * 15}%`,
                           top: `${30 + (i % 2) * 40}%`,
                         }}
                         animate={{
-                          y: [-10, -30, -10],
+                          y: [-8, -20, -8],
                           opacity: [0, 1, 0],
                           scale: [0.5, 1, 0.5],
                         }}
                         transition={{
                           duration: 2,
                           repeat: Infinity,
-                          delay: i * 0.3,
+                          delay: i * 0.4,
                           ease: "easeInOut"
                         }}
                       />
@@ -936,71 +956,77 @@ export default function PointsPage() {
                   </>
                 )}
                 
-                <div className="flex items-center gap-4 relative z-10">
+                {/* Mobile-first layout: stacked on small screens, side-by-side on larger */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
+                  
+                  {/* Left side: Icon and content */}
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <motion.div
+                      animate={{ 
+                        rotate: achievedAllGoals ? [0, 360] : 0,
+                        scale: achievedAllGoals ? [1, 1.2, 1] : 1
+                      }}
+                      transition={{ 
+                        duration: achievedAllGoals ? 3 : 0,
+                        repeat: achievedAllGoals ? Infinity : 0,
+                        ease: "easeInOut"
+                      }}
+                      className={cn(
+                        "p-2 sm:p-3 rounded-full flex-shrink-0",
+                        achievedAllGoals 
+                          ? "bg-yellow-100 dark:bg-yellow-900/30" 
+                          : "bg-gray-100 dark:bg-gray-700"
+                      )}
+                    >
+                      <Trophy className={cn(
+                        "h-5 w-5 sm:h-7 sm:w-7", 
+                        achievedAllGoals ? "text-yellow-600" : "text-gray-400"
+                      )} />
+                    </motion.div>
+                    
+                    <div className="min-w-0 flex-1">
+                      <h3 className={cn(
+                        "font-bold text-lg sm:text-xl leading-tight",
+                        achievedAllGoals ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
+                      )}>
+                        Perfect Day Bonus
+                      </h3>
+                      <p className={cn(
+                        "text-xs sm:text-sm mt-0.5 leading-tight",
+                        achievedAllGoals ? "text-green-600 dark:text-green-500" : "text-muted-foreground"
+                      )}>
+                        {achievedAllGoals 
+                          ? "🎉 All nutrition goals completed!" 
+                          : "Complete all nutrition goals for bonus"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Right side: Points badge */}
                   <motion.div
                     animate={{ 
-                      rotate: achievedAllGoals ? [0, 360] : 0,
-                      scale: achievedAllGoals ? [1, 1.2, 1] : 1
+                      scale: achievedAllGoals ? [1, 1.1, 1] : 1,
+                      rotate: achievedAllGoals ? [0, 5, -5, 0] : 0
                     }}
                     transition={{ 
-                      duration: achievedAllGoals ? 3 : 0,
+                      duration: achievedAllGoals ? 2 : 0,
                       repeat: achievedAllGoals ? Infinity : 0,
                       ease: "easeInOut"
                     }}
-                    className={cn(
-                      "p-3 rounded-full",
-                      achievedAllGoals 
-                        ? "bg-yellow-100 dark:bg-yellow-900/30" 
-                        : "bg-gray-100 dark:bg-gray-700"
-                    )}
+                    className="relative z-10 self-start sm:self-center"
                   >
-                    <Trophy className={cn(
-                      "h-7 w-7", 
-                      achievedAllGoals ? "text-yellow-600" : "text-gray-400"
-                    )} />
+                    <Badge 
+                      variant={achievedAllGoals ? "default" : "secondary"}
+                      className={cn(
+                        "text-lg sm:text-xl px-4 py-2 sm:px-6 sm:py-3 font-bold shadow-lg",
+                        "min-w-[80px] sm:min-w-[100px] text-center",
+                        achievedAllGoals && "bg-green-600 hover:bg-green-700 shadow-green-200 dark:shadow-green-900/20"
+                      )}
+                    >                      +{achievedAllGoals ? 10 : 0} pts
+                    </Badge>
                   </motion.div>
-                  
-                  <div>
-                    <h3 className={cn(
-                      "font-bold text-xl",
-                      achievedAllGoals ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
-                    )}>
-                      Perfect Day Bonus
-                    </h3>
-                    <p className={cn(
-                      "text-sm",
-                      achievedAllGoals ? "text-green-600 dark:text-green-500" : "text-muted-foreground"
-                    )}>
-                      {achievedAllGoals 
-                        ? "🎉 Congratulations! All nutrition goals completed!" 
-                        : "Complete all nutrition goals for bonus points"
-                      }
-                    </p>
-                  </div>
                 </div>
-                
-                <motion.div
-                  animate={{ 
-                    scale: achievedAllGoals ? [1, 1.1, 1] : 1,
-                    rotate: achievedAllGoals ? [0, 5, -5, 0] : 0
-                  }}
-                  transition={{ 
-                    duration: achievedAllGoals ? 2 : 0,
-                    repeat: achievedAllGoals ? Infinity : 0,
-                    ease: "easeInOut"
-                  }}
-                  className="relative z-10"
-                >
-                  <Badge 
-                    variant={achievedAllGoals ? "default" : "secondary"}
-                    className={cn(
-                      "text-xl px-6 py-3 font-bold shadow-lg",
-                      achievedAllGoals && "bg-green-600 hover:bg-green-700 shadow-green-200 dark:shadow-green-900/20"
-                    )}
-                  >
-                    +{achievedAllGoals ? 10 : 0} pts
-                  </Badge>
-                </motion.div>
               </div>
             </motion.div>
           </CardContent>

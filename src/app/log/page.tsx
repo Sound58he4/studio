@@ -245,11 +245,7 @@ export default function LogFoodPage() {
       }
   }, [userId]);
 
-  useEffect(() => {
-      if (activeTab === 'manual' && aiSuggestions.length === 0 && !isSuggesting && userId) {
-          fetchSuggestions();
-      }
-  }, [activeTab, aiSuggestions.length, isSuggesting, fetchSuggestions, userId]);
+  // Removed automatic suggestion fetching - now only triggered by button tap
 
 
   const removeItem = (id: string) => {
@@ -349,10 +345,22 @@ export default function LogFoodPage() {
                 <Label htmlFor="manual-food" className="text-base font-medium block mb-1">Describe Your Meal</Label>
                 <Textarea id="manual-food" placeholder="E.g., 'Large bowl of oatmeal with berries and nuts', 'Chicken curry with rice'" value={manualInput} onChange={(e) => setManualInput(e.target.value)} className="min-h-[120px] resize-y text-base p-3 shadow-sm focus:ring-2 focus:ring-primary/50 border-input bg-background/90 transition-shadow hover:shadow-md" disabled={isLoading} rows={4} />
                  <div className="space-y-2 pt-3">
-                     <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                        <BrainCircuit size={16} className="text-primary"/> AI Suggestions
-                        {isSuggesting && <Loader2 size={14} className="animate-spin text-primary"/>}
-                     </Label>
+                     <div className="flex items-center justify-between">
+                         <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                            <BrainCircuit size={16} className="text-primary"/> AI Suggestions
+                            {isSuggesting && <Loader2 size={14} className="animate-spin text-primary"/>}
+                         </Label>
+                         <Button
+                             type="button"
+                             variant="outline"
+                             size="sm"
+                             onClick={fetchSuggestions}
+                             disabled={isSuggesting || !userId}
+                             className="text-xs px-2 py-1 h-6 rounded-md"
+                         >
+                             {isSuggesting ? <Loader2 size={12} className="animate-spin" /> : "Get Suggestions"}
+                         </Button>
+                     </div>
                       {isSuggesting ? (
                          <div className="flex flex-wrap gap-2 animate-pulse">
                              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-9 w-28 rounded-md bg-muted/50" />)}
@@ -412,7 +420,7 @@ export default function LogFoodPage() {
                             </div>
                          </TooltipProvider>
                      ) : (
-                          <p className="text-xs text-muted-foreground italic">No suggestions available currently.</p>
+                          <p className="text-xs text-muted-foreground italic">Click "Get Suggestions" to see AI food recommendations.</p>
                      )}
                  </div>
 

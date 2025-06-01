@@ -28,7 +28,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({ navLinks, han
 
     const mainBottomNavItems = [
         { href: "/dashboard", label: "Dashboard", icon: Activity },
-        { href: "/overview", label: "Overview", icon: LayoutDashboard }, // Added Overview
+        { href: "/overview", label: "Overview", icon: LayoutDashboard },
         { href: "/log", label: "Log Food", icon: ClipboardList },
         { href: "/ai-assistant", label: "AI Chat", icon: Bot },
     ];

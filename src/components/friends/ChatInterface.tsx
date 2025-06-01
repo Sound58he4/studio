@@ -23,6 +23,7 @@ import { debounce } from 'lodash';
 import MessageList from '@/components/friends/MessageList';
 import MessageInput from '@/components/friends/MessageInput';
 import AISuggestionBar from '@/components/friends/AISuggestionBar';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface ChatInterfaceProps {
@@ -85,9 +86,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({ friend, curren
         return () => unsubscribe();
     }, [friend, currentUserId, chatId, scrollToBottom, isAISelected]);
 
-    useEffect(() => {
-        setShowSuggestions(isAISelected && messages.length > 0 && newMessage.trim() === '');
-    }, [isAISelected, messages, newMessage]);
+    // Removed automatic suggestion triggering - now only shows on button tap
+    // useEffect(() => {
+    //     setShowSuggestions(isAISelected && messages.length > 0 && newMessage.trim() === '');
+    // }, [isAISelected, messages, newMessage]);
 
 
     const triggerAIChat = useCallback(async (
@@ -210,6 +212,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({ friend, curren
                             }} 
                             onHide={() => setShowSuggestions(false)} 
                         />
+                    )}
+                    {isAISelected && !showSuggestions && (
+                        <div className="p-2 border-t bg-muted/50 flex justify-center">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowSuggestions(true)}
+                                className="text-xs px-3 py-1 h-7 rounded-md"
+                            >
+                                Show AI Suggestions
+                            </Button>
+                        </div>
                     )}
                     <MessageInput
                         newMessage={newMessage}
