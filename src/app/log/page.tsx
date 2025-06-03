@@ -14,9 +14,9 @@ import { Camera, Mic, Type, Loader2, CheckCircle, AlertCircle, Upload, Trash2, S
 import { useToast } from "@/hooks/use-toast";
 import { foodImageRecognition, FoodImageRecognitionInput, FoodImageRecognitionOutput } from '@/ai/flows/food-image-recognition';
 import { voiceFoodLogging, VoiceFoodLoggingInput, VoiceFoodLoggingOutput } from '@/ai/flows/voice-food-logging';
-import { estimateNutritionFromText, EstimateNutritionInput, EstimateNutritionOutput } from '@/ai/flows/estimate-nutrition-from-text';
-import { identifyFoodFromText, IdentifyFoodInput, IdentifyFoodOutput } from '@/ai/flows/identify-food-from-text';
-import { suggestFoodItems, SuggestFoodItemsInput, SuggestionItem } from '@/ai/flows/suggest-food-items'; 
+import { optimizedFoodLogging, OptimizedFoodLoggingInput, OptimizedFoodLoggingOutput } from '@/ai/flows/optimized-food-logging';
+import { suggestFoodItems, SuggestFoodItemsInput, SuggestionItem } from '@/ai/flows/suggest-food-items';
+import { foodLogCache, FoodCacheUtils } from '@/lib/food-log-cache'; 
 import Image from 'next/image';
 import { Nutrition } from '@/services/nutrition';
 import { cn } from "@/lib/utils";
@@ -31,6 +31,7 @@ interface ProcessedFoodResult extends Nutrition {
   originalDescription?: string;
   identifiedFoodName: string;
   source: 'image' | 'voice' | 'manual';
+  confidence?: number;
 }
 
 export default function LogFoodPage() {
@@ -44,7 +45,10 @@ export default function LogFoodPage() {
   const [error, setError] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<SuggestionItem[]>([]); 
-  const [suggestionError, setSuggestionError] = useState<string | null>(null); 
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [batchInput, setBatchInput] = useState<string[]>([]);
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0); 
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -113,26 +117,69 @@ export default function LogFoodPage() {
   const handleImageSubmit = async () => {
       if (!imagePreview) { setError("Please select an image first."); return; }
       setIsLoading(true); setError(null);
+      
       try {
+          // Try to get from cache first
+          const cacheKey = `image_${imageFile?.lastModified}_${imageFile?.size}`;
+          const cachedResult = await foodLogCache.getCachedAIEstimate(cacheKey);
+          
+          if (cachedResult) {
+              const processedResult: ProcessedFoodResult = {
+                  id: `img-${Date.now()}-0`, 
+                  identifiedFoodName: cachedResult.identifiedFoodName,
+                  ...cachedResult.nutrition, 
+                  source: 'image',
+                  confidence: cachedResult.confidence
+              };
+              setPendingResults(prev => [...prev, processedResult].sort((a,b) => b.calories - a.calories));
+              toast({ title: "Image Processed (Cached)", description: `Added "${cachedResult.identifiedFoodName}" for review.` });
+              resetInputState('image');
+              return;
+          }
+
+          // Use original image recognition flow (since optimized flow is for text descriptions)
           const input: FoodImageRecognitionInput = { photoDataUri: imagePreview };
           const output: FoodImageRecognitionOutput = await foodImageRecognition(input);
+          
           if (!output.foodItems || output.foodItems.length === 0) {
               setError("AI could not identify any food items in the image.");
               toast({ title: "No Items Found", description: "Try a clearer image or manual input.", variant: "destructive" });
               setIsLoading(false); return;
           }
+          
           const processedResults: ProcessedFoodResult[] = output.foodItems.map((item, index) => ({
-            id: `img-${Date.now()}-${index}`, identifiedFoodName: item.foodItem,
-            calories: item.nutrition.calories, protein: item.nutrition.protein,
-            carbohydrates: item.nutrition.carbohydrates, fat: item.nutrition.fat, source: 'image',
+            id: `img-${Date.now()}-${index}`, 
+            identifiedFoodName: item.foodItem,
+            calories: item.nutrition.calories, 
+            protein: item.nutrition.protein,
+            carbohydrates: item.nutrition.carbohydrates, 
+            fat: item.nutrition.fat, 
+            source: 'image',
           }));
+          
+          // Cache the first result for future use
+          if (processedResults.length > 0) {
+              await foodLogCache.cacheAIEstimate(cacheKey, {
+                  identifiedFoodName: processedResults[0].identifiedFoodName,
+                  nutrition: {
+                      calories: processedResults[0].calories,
+                      protein: processedResults[0].protein,
+                      carbohydrates: processedResults[0].carbohydrates,
+                      fat: processedResults[0].fat
+                  }
+              });
+          }
+          
           setPendingResults(prev => [...prev, ...processedResults].sort((a,b) => b.calories - a.calories));
           toast({ title: "Image Processed", description: `${processedResults.length} item(s) added for review.` });
           resetInputState('image');
       } catch (err: any) {
-          console.error("Image recognition error:", err); setError(`Image processing failed: ${err.message}.`);
+          console.error("Image recognition error:", err); 
+          setError(`Image processing failed: ${err.message}.`);
           toast({ title: "Error", description: "Could not process the image.", variant: "destructive" });
-      } finally { setIsLoading(false); }
+      } finally { 
+          setIsLoading(false); 
+      }
   };
 
    const startRecording = async () => {
@@ -169,30 +216,58 @@ export default function LogFoodPage() {
   const handleVoiceSubmit = async () => {
       if (!audioBlob) { setError("Please record your meal description first."); return; }
       setIsLoading(true); setError(null);
-      const reader = new FileReader(); reader.readAsDataURL(audioBlob);
+      
+      const reader = new FileReader(); 
+      reader.readAsDataURL(audioBlob);
       reader.onloadend = async () => {
           const base64Audio = reader.result as string;
           try {
+              // Use original voice logging flow (since optimized flow is for text descriptions)
               const input: VoiceFoodLoggingInput = { voiceRecordingDataUri: base64Audio };
               const output: VoiceFoodLoggingOutput = await voiceFoodLogging(input);
+              
               if (!output.foodItems || output.foodItems.length === 0) {
                   setError("AI could not identify any food items from the recording.");
                   toast({ title: "No Items Found", description: "Try speaking clearly or use manual input.", variant: "destructive" });
                   setIsLoading(false); return;
               }
+              
               const processedResults: ProcessedFoodResult[] = output.foodItems.map((item, index) => ({
-                id: `voice-${Date.now()}-${index}`, identifiedFoodName: item.foodItem, ...item.nutrition, source: 'voice',
+                id: `voice-${Date.now()}-${index}`, 
+                identifiedFoodName: item.foodItem, 
+                ...item.nutrition, 
+                source: 'voice',
               }));
+              
+              // Cache the voice result if available (using the audio description as key)
+              if (processedResults.length > 0) {
+                  const cacheKey = `voice-${Date.now()}`;
+                  await foodLogCache.cacheAIEstimate(cacheKey, {
+                      identifiedFoodName: processedResults[0].identifiedFoodName,
+                      nutrition: {
+                          calories: processedResults[0].calories,
+                          protein: processedResults[0].protein,
+                          carbohydrates: processedResults[0].carbohydrates,
+                          fat: processedResults[0].fat
+                      }
+                  });
+              }
+              
               setPendingResults(prev => [...prev, ...processedResults].sort((a,b) => b.calories - a.calories));
               toast({ title: "Voice Log Processed", description: `${processedResults.length} item(s) added for review.` });
               resetInputState('voice');
           } catch (err: any) {
-              console.error("Voice logging error:", err); setError(`Voice processing failed: ${err.message}.`);
+              console.error("Voice logging error:", err); 
+              setError(`Voice processing failed: ${err.message}.`);
               toast({ title: "Error", description: "Could not process voice input.", variant: "destructive" });
-          } finally { setIsLoading(false); }
+          } finally { 
+              setIsLoading(false); 
+          }
       }
       reader.onerror = (error) => {
-          console.error("Error converting blob:", error); setError("Failed to prepare audio data."); setIsLoading(false);
+          console.error("Error converting blob:", error); 
+          setError("Failed to prepare audio data."); 
+          setIsLoading(false);
           toast({ title: "Error", description: "Failed preparing audio.", variant: "destructive" });
       }
   };
@@ -200,26 +275,65 @@ export default function LogFoodPage() {
   const handleManualSubmit = async () => {
       const description = manualInput.trim();
       if (!description) { setError("Please enter your meal description."); return; }
-      setIsLoading(true); setIsIdentifying(true); setError(null);
+      setIsLoading(true); setError(null);
+      
       try {
-          const identificationInput: IdentifyFoodInput = { foodDescription: description };
-          const identificationOutput: IdentifyFoodOutput = await identifyFoodFromText(identificationInput);
-          const identifiedName = identificationOutput.identifiedFoodName;
-          toast({ title: "Food Identified", description: `"${identifiedName}"`});
-          setIsIdentifying(false);
-          const nutritionInput: EstimateNutritionInput = { foodDescription: description }; // Using the original user description for nutrition
-          const nutritionEstimate: EstimateNutritionOutput = await estimateNutritionFromText(nutritionInput);
+          // Check cache first
+          const cachedResult = await foodLogCache.getCachedAIEstimate(description);
+          if (cachedResult) {
+              const processedResult: ProcessedFoodResult = {
+                  id: `manual-${Date.now()}-0`, 
+                  identifiedFoodName: cachedResult.identifiedFoodName,
+                  originalDescription: description, 
+                  ...cachedResult.nutrition,
+                  source: 'manual',
+                  confidence: cachedResult.confidence
+              };
+              setPendingResults(prev => [...prev, processedResult].sort((a,b) => b.calories - a.calories));
+              setManualInput("");
+              toast({ title: "Food Processed (Cached)", description: `Added "${cachedResult.identifiedFoodName}" for review.` });
+              return;
+          }
+
+          // Use optimized AI flow
+          const input: OptimizedFoodLoggingInput = { foodDescription: description };
+          const output: OptimizedFoodLoggingOutput = await optimizedFoodLogging(input);
+          
+          // Handle the first food item from the array
+          if (!output.foodItems || output.foodItems.length === 0) {
+              setError("AI could not identify any food items from the description.");
+              toast({ title: "No Items Found", description: "Try rephrasing your description.", variant: "destructive" });
+              setIsLoading(false);
+              return;
+          }
+
+          const firstItem = output.foodItems[0];
+          
+          // Cache the result
+          await foodLogCache.cacheAIEstimate(description, {
+              identifiedFoodName: firstItem.identifiedFoodName,
+              nutrition: firstItem.nutrition,
+              confidence: firstItem.confidence
+          });
+          
           const processedResult: ProcessedFoodResult = {
-              id: `manual-${Date.now()}-0`, identifiedFoodName: identifiedName,
-              originalDescription: description, ...nutritionEstimate, source: 'manual',
+              id: `manual-${Date.now()}-0`, 
+              identifiedFoodName: firstItem.identifiedFoodName,
+              originalDescription: description, 
+              ...firstItem.nutrition,
+              source: 'manual',
+              confidence: firstItem.confidence
           };
           setPendingResults(prev => [...prev, processedResult].sort((a,b) => b.calories - a.calories));
           setManualInput("");
-          toast({ title: "Nutrition Estimated", description: `Added "${identifiedName}" for review.` });
+          toast({ title: "Food Processed", description: `Added "${firstItem.identifiedFoodName}" for review.` });
       } catch (err: any) {
-          console.error("Manual logging AI error:", err); setError(`Processing failed: ${err.message}.`);
+          console.error("Manual logging AI error:", err); 
+          setError(`Processing failed: ${err.message}.`);
           toast({ title: "Processing Error", description: `Could not process: ${err.message}`, variant: "destructive" });
-      } finally { setIsLoading(false); setIsIdentifying(false); }
+      } finally { 
+          setIsLoading(false); 
+      }
   };
 
   const fetchSuggestions = useCallback(async () => {
@@ -247,6 +361,105 @@ export default function LogFoodPage() {
 
   // Removed automatic suggestion fetching - now only triggered by button tap
 
+  const processBatchItems = async (items: string[]) => {
+    if (items.length === 0) return;
+    
+    setIsProcessingBatch(true);
+    setProcessingProgress(0);
+    
+    try {
+      const results: ProcessedFoodResult[] = [];
+      
+      for (let i = 0; i < items.length; i++) {
+        const description = items[i].trim();
+        if (!description) continue;
+        
+        try {
+          // Check cache first
+          const cachedResult = await foodLogCache.getCachedAIEstimate(description);
+          
+          let result: ProcessedFoodResult;
+          
+          if (cachedResult) {
+            result = {
+              id: `batch-${Date.now()}-${i}`,
+              identifiedFoodName: cachedResult.identifiedFoodName,
+              originalDescription: description,
+              ...cachedResult.nutrition,
+              source: 'manual',
+              confidence: cachedResult.confidence
+            };
+          } else {
+            // Use optimized AI flow
+            const input: OptimizedFoodLoggingInput = { foodDescription: description };
+            const output: OptimizedFoodLoggingOutput = await optimizedFoodLogging(input);
+            
+            // Handle the first food item from the array
+            if (!output.foodItems || output.foodItems.length === 0) {
+                continue; // Skip this item if nothing was identified
+            }
+
+            const firstItem = output.foodItems[0];
+            
+            // Cache the result
+            await foodLogCache.cacheAIEstimate(description, {
+              identifiedFoodName: firstItem.identifiedFoodName,
+              nutrition: firstItem.nutrition,
+              confidence: firstItem.confidence
+            });
+            
+            result = {
+              id: `batch-${Date.now()}-${i}`,
+              identifiedFoodName: firstItem.identifiedFoodName,
+              originalDescription: description,
+              ...firstItem.nutrition,
+              source: 'manual',
+              confidence: firstItem.confidence
+            };
+          }
+          
+          results.push(result);
+          setProcessingProgress(Math.round(((i + 1) / items.length) * 100));
+          
+          // Small delay to prevent overwhelming the API
+          if (!cachedResult) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          
+        } catch (err) {
+          console.error(`Error processing batch item "${description}":`, err);
+          // Continue with other items
+        }
+      }
+      
+      if (results.length > 0) {
+        setPendingResults(prev => [...prev, ...results].sort((a,b) => b.calories - a.calories));
+        toast({ 
+          title: "Batch Processing Complete", 
+          description: `${results.length} out of ${items.length} items processed successfully.` 
+        });
+      } else {
+        toast({ 
+          title: "Batch Processing Failed", 
+          description: "No items could be processed.", 
+          variant: "destructive" 
+        });
+      }
+      
+    } catch (err: any) {
+      console.error("Batch processing error:", err);
+      toast({ 
+        title: "Batch Processing Error", 
+        description: `Processing failed: ${err.message}`, 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsProcessingBatch(false);
+      setProcessingProgress(0);
+      setBatchInput([]);
+    }
+  };
+
 
   const removeItem = (id: string) => {
     setPendingResults(currentResults => currentResults.filter(item => item.id !== id));
@@ -266,8 +479,10 @@ export default function LogFoodPage() {
         toast({ title: "Error", description: "User not logged in. Cannot save logs.", variant: "destructive"});
         return;
     }
+    
     console.log("Logging confirmed via Firestore Service:", pendingResults, "for user:", userId);
     setIsLoading(true);
+    
     try {
         const logPromises = pendingResults.map(item => {
             const logData: FirestoreFoodLogData = {
@@ -282,19 +497,30 @@ export default function LogFoodPage() {
             };
             return addFoodLog(userId, logData);
         });
+        
         await Promise.all(logPromises);
+        
+        // Update cache and invalidate daily cache
+        await Promise.all([
+            foodLogCache.invalidateDateCache(userId, new Date())
+        ]);
+        
         toast({
             title: "Food Logged Successfully!",
             description: `${pendingResults.length} item(s) saved to your history.`,
             variant: "default",
         });
+        
         setPendingResults([]);
         setError(null);
         resetInputState();
+        
     } catch (e) {
         console.error("Error saving food logs via service:", e);
         toast({ title: "Logging Error", description: "Could not save log to database.", variant: "destructive"});
-    } finally { setIsLoading(false); }
+    } finally { 
+        setIsLoading(false); 
+    }
   };
 
   if (authLoading) {
@@ -335,10 +561,11 @@ export default function LogFoodPage() {
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted/80 h-12 shadow-inner">
+            <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted/80 h-12 shadow-inner">
               <TabsTrigger value="manual" className="flex items-center gap-1.5 py-2.5 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 rounded-l-md"><Type className="h-4 w-4 md:h-5 md:w-5"/>Text</TabsTrigger>
               <TabsTrigger value="image" className="flex items-center gap-1.5 py-2.5 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"><Camera className="h-4 w-4 md:h-5 md:w-5"/>Image</TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-1.5 py-2.5 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 rounded-r-md"><Mic className="h-4 w-4 md:h-5 md:w-5"/>Voice</TabsTrigger>
+              <TabsTrigger value="voice" className="flex items-center gap-1.5 py-2.5 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200"><Mic className="h-4 w-4 md:h-5 md:w-5"/>Voice</TabsTrigger>
+              <TabsTrigger value="batch" className="flex items-center gap-1.5 py-2.5 text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 rounded-r-md"><ListRestart className="h-4 w-4 md:h-5 md:w-5"/>Batch</TabsTrigger>
             </TabsList>
 
             <TabsContent value="manual" className="space-y-5 animate-in fade-in duration-300">
@@ -424,9 +651,8 @@ export default function LogFoodPage() {
                      )}
                  </div>
 
-                 <Button onClick={handleManualSubmit} disabled={!manualInput.trim() || isLoading} className="w-full text-base py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2">
-                   {isLoading && isIdentifying && <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Identifying...</>}
-                   {isLoading && !isIdentifying && <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Estimating...</>}
+                 <Button onClick={handleManualSubmit} disabled={!manualInput.trim() || isLoading || isProcessingBatch} className="w-full text-base py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2">
+                   {isLoading && <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>}
                    {!isLoading && <><Send className="mr-2 h-5 w-5"/> Identify & Estimate</>}
                  </Button>
             </TabsContent>
@@ -480,6 +706,46 @@ export default function LogFoodPage() {
                     {!isRecording && !audioPreviewUrl && ( <p className="text-sm text-muted-foreground mt-2 text-center z-10 px-4">Click "Start Recording" and describe your meal aloud.<br className="sm:hidden"/>(e.g., "I had a grilled chicken salad")</p> )}
               </div>
                <Button onClick={handleVoiceSubmit} disabled={!audioBlob || isLoading || isRecording} className="w-full text-base py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"> {isLoading ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</> : <><Send className="mr-2 h-5 w-5"/> Add from Voice</>} </Button>
+            </TabsContent>
+
+            <TabsContent value="batch" className="space-y-5 animate-in fade-in duration-300">
+                <Label htmlFor="batch-input" className="text-base font-medium block mb-1">Batch Food Entry</Label>
+                <Textarea 
+                    id="batch-input" 
+                    placeholder="Enter multiple food items, one per line:&#10;Large bowl of oatmeal with berries&#10;Coffee with milk&#10;2 slices of toast with avocado&#10;Greek yogurt with honey"
+                    value={batchInput.join('\n')} 
+                    onChange={(e) => setBatchInput(e.target.value.split('\n'))} 
+                    className="min-h-[180px] resize-y text-base p-3 shadow-sm focus:ring-2 focus:ring-primary/50 border-input bg-background/90 transition-shadow hover:shadow-md" 
+                    disabled={isProcessingBatch} 
+                    rows={8} 
+                />
+                
+                {isProcessingBatch && (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                            <span>Processing items...</span>
+                            <span>{processingProgress}%</span>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                            <div 
+                                className="bg-primary h-full transition-all duration-300 ease-out"
+                                style={{ width: `${processingProgress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+                
+                <Button 
+                    onClick={() => processBatchItems(batchInput.filter(item => item.trim()))} 
+                    disabled={batchInput.filter(item => item.trim()).length === 0 || isProcessingBatch || isLoading} 
+                    className="w-full text-base py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"
+                >
+                    {isProcessingBatch ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing {batchInput.filter(item => item.trim()).length} items...</>
+                    ) : (
+                        <><PlusCircle className="mr-2 h-5 w-5"/> Process {batchInput.filter(item => item.trim()).length} Items</>
+                    )}
+                </Button>
             </TabsContent>
           </Tabs>
 

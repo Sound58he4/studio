@@ -250,7 +250,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
       }, []);
 
     return (
-        <div className="flex flex-col h-full bg-background overflow-hidden"> {/* Added overflow-hidden */}
+        <div className="flex flex-col h-full bg-background"> {/* Removed overflow-hidden for mobile */}
             {friend ? (
                 <>
                     <MessageList

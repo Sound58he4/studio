@@ -411,7 +411,7 @@ export default function OverviewPage() {
     }
     
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
@@ -442,13 +442,13 @@ export default function OverviewPage() {
                 />
             </div>
 
-            <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 relative z-10">
+            <div className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-3 py-4 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 relative z-10 pb-12 sm:pb-8">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
-                    <h1 className="text-3xl font-bold text-primary tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent text-center sm:text-left">
                         Activity Overview
                     </h1>
                 </motion.div>
@@ -726,7 +726,7 @@ export default function OverviewPage() {
 
                 {/* Moved components from Dashboard */}
                 <motion.div 
-                    className="space-y-6"
+                    className="space-y-4 sm:space-y-6"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ 
@@ -745,28 +745,31 @@ export default function OverviewPage() {
                         </motion.div>
                     )}
                     
-                    {/* Sleep Goals and Hydration - Two compact cards in a responsive grid */}
+                    {/* Sleep Goals and Hydration - Mobile-first single column, then responsive grid */}
                     <motion.div 
-                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4"
+                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-h-[120px]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ 
-                            duration: 0.6,                        delay: 1.5,
-                        staggerChildren: 0.1
-                    }}
-                >
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 1.6 }}
+                            duration: 0.6,
+                            delay: 1.5,
+                            staggerChildren: 0.1
+                        }}
                     >
-                        <SleepGoals />
-                    </motion.div>
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 1.7 }}
-                    >
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: 1.6 }}
+                            className="w-full"
+                        >
+                            <SleepGoals />
+                        </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: 1.7 }}
+                            className="w-full"
+                        >
                             <WaterIntakeTip />
                         </motion.div>
                     </motion.div>

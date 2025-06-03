@@ -4,9 +4,12 @@
 // Auth exports
 export { 
   signInWithPopup, 
-  GoogleAuthProvider, 
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  deleteUser,
   type User 
 } from "firebase/auth";
 

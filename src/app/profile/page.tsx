@@ -458,7 +458,7 @@ export default function ProfilePage() {
                 };
                 await saveUserProfile(userId, aiTargetsToSave); // Send plain data
                 toast({ title: "AI Targets Calculated & Saved!", description: "Personalized targets are set." });
-                router.push('/dashboard?recalculate_targets=true'); 
+                router.push('/dashboard'); 
             } catch (aiError: any) {
                 toast({ variant: "destructive", title: "AI Target Error", description: `Could not set AI targets: ${aiError.message}. Please try saving again or set manual targets.` });
             } finally {
@@ -477,7 +477,7 @@ export default function ProfilePage() {
   }
 
   const renderStyledRadioGroup = (field: any, options: { value: string; label: string }[]) => (
-    <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+    <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
       {options.map((option) => (
         <FormItem key={option.value} className="relative">
            <FormControl>
@@ -486,8 +486,8 @@ export default function ProfilePage() {
            <ShadCnFormLabel
             htmlFor={`${field.name}-${option.value}`}
             className={cn(
-               "flex items-center justify-center p-3 text-center text-sm font-medium rounded-lg border-2 border-muted bg-popover hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
-               "h-full min-h-[50px] sm:min-h-[60px] card-interactive",
+               "flex items-center justify-center p-2 sm:p-3 text-center text-xs sm:text-sm font-medium rounded-lg border-2 border-muted bg-popover hover:bg-accent/50 hover:border-primary/50 transition-all cursor-pointer peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2",
+               "h-full min-h-[40px] sm:min-h-[44px] md:min-h-[50px] lg:min-h-[60px] card-interactive",
                field.value === option.value && "border-primary bg-primary/10 text-primary ring-2 ring-primary/50 ring-offset-1 ring-offset-background"
            )}>
              {option.label}
@@ -498,14 +498,14 @@ export default function ProfilePage() {
  );
 
   const renderChips = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
-   <div className="flex flex-wrap gap-2 sm:gap-2.5">
+   <div className="flex flex-wrap gap-1.5 sm:gap-2">
      {options.map((option, index) => (
        <Button
          key={option.value}
          type="button"
          variant={field.value === option.value ? "default" : "outline"}
          className={cn(
-           "rounded-lg text-xs sm:text-sm h-9 px-3 sm:px-4 shadow-sm transition-all transform hover:scale-105 btn",
+           "rounded-lg text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-3 md:px-4 shadow-sm transition-all transform hover:scale-105 btn",
            field.value === option.value ? "bg-primary text-primary-foreground border-primary font-semibold" : "border-input hover:bg-accent/50 hover:border-primary/50",
            "animate-in fade-in zoom-in-95"
          )}
@@ -514,15 +514,15 @@ export default function ProfilePage() {
            form.setValue(field.name, option.value, { shouldValidate: true });
          }}
        >
-         {option.icon && React.createElement(option.icon, { className: "mr-1.5 h-3.5 w-3.5" })}
-         {option.label}
+         {option.icon && React.createElement(option.icon, { className: "mr-1 sm:mr-1.5 h-3 w-3 sm:h-3.5 sm:w-3.5" })}
+         <span className="text-xs sm:text-sm">{option.label}</span>
        </Button>
      ))}
    </div>
  );
 
  const renderMultiSelectCheckbox = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2">
       {options.map((item, index) => (
         <FormField key={item.value} control={form.control} name={field.name} render={({ field: controllerField }) => {
             const currentValue = Array.isArray(controllerField.value) ? controllerField.value : [];
@@ -532,9 +532,9 @@ export default function ProfilePage() {
                   htmlFor={`checkbox-${field.name}-${item.value}`}
                   data-state={isChecked ? 'checked' : 'unchecked'}
                   className={cn(
-                    "flex flex-row items-center space-x-2 space-y-0 rounded-lg border p-2.5 transition-all hover:bg-muted/50 cursor-pointer card-interactive",
+                    "flex flex-row items-center space-x-2 space-y-0 rounded-lg border p-2 sm:p-2.5 transition-all hover:bg-muted/50 cursor-pointer card-interactive",
                     "data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:ring-1 data-[state=checked]:ring-primary/30",
-                    "animate-in fade-in zoom-in-95"
+                    "animate-in fade-in zoom-in-95 min-h-[40px] sm:min-h-[44px] flex-1"
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                >
@@ -547,12 +547,12 @@ export default function ProfilePage() {
                           ? controllerField.onChange([...currentValue, item.value])
                           : controllerField.onChange(currentValue.filter((value) => value !== item.value))
                     }}
-                    className="h-4 w-4"
+                    className="h-4 w-4 mt-0.5 flex-shrink-0"
                   />
                 </FormControl>
-                 <span className="font-normal text-sm flex items-center gap-1.5 flex-grow">
-                    {item.icon && React.createElement(item.icon, { className: "h-4 w-4 text-muted-foreground" })}
-                    {item.label}
+                 <span className="font-normal text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 flex-grow leading-tight">
+                    {item.icon && React.createElement(item.icon, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" })}
+                    <span className="break-words">{item.label}</span>
                  </span>
                </ShadCnFormLabel>
             );
@@ -695,11 +695,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-8">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-2 sm:py-4 md:py-8">
+      {/* Animated Background Elements - Hidden on mobile for performance */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         <motion.div
-          className="absolute top-20 left-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl"
+          className="absolute top-10 sm:top-20 left-4 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 bg-primary/5 rounded-full blur-2xl"
           animate={{
             scale: [1, 1.2, 1],
             x: [0, 20, 0],
@@ -712,7 +712,7 @@ export default function ProfilePage() {
           }}
         />
         <motion.div
-          className="absolute bottom-20 right-10 w-40 h-40 bg-accent/5 rounded-full blur-2xl"
+          className="absolute bottom-10 sm:bottom-20 right-4 sm:right-10 w-24 sm:w-40 h-24 sm:h-40 bg-accent/5 rounded-full blur-2xl"
           animate={{
             scale: [1.2, 1, 1.2],
             x: [0, -30, 0],
@@ -726,7 +726,7 @@ export default function ProfilePage() {
         />
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-4">
+      <div className="relative max-w-4xl mx-auto px-2 sm:px-4 md:px-6">
         <FadeInWrapper>
           <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden">
             <motion.div
@@ -735,15 +735,15 @@ export default function ProfilePage() {
               animate={{ height: "auto" }}
               transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <CardHeader className="text-center p-6 sm:p-8 relative overflow-hidden">
+              <CardHeader className="text-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden">
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ duration: 0.6, delay: 0.2, type: "spring", bounce: 0.4 }}
-                  className="relative mx-auto mb-4"
+                  className="relative mx-auto mb-2 sm:mb-3 md:mb-4"
                 >
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-lg">
-                    <User className="h-8 w-8 text-primary-foreground" />
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-lg">
+                    <User className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-primary-foreground" />
                   </div>
                   <motion.div
                     className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent"
@@ -757,63 +757,63 @@ export default function ProfilePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
                 >
-                  <CardTitle className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
+                  <CardTitle className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-1 sm:mb-2">
                     Complete Your Profile
                   </CardTitle>
-                  <CardDescription className="text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                  <CardDescription className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed px-1 sm:px-2 md:px-0">
                     Complete your profile for personalized AI insights and plans. Fields marked * are required.
                   </CardDescription>
                 </motion.div>
 
-                {/* Decorative elements */}
-                <div className="absolute top-4 left-4">
+                {/* Decorative elements - Hidden on mobile for cleaner look */}
+                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 hidden sm:block">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
                   >
-                    <Star className="h-4 w-4 text-primary/30" />
+                    <Star className="h-3 w-3 sm:h-4 sm:w-4 text-primary/30" />
                   </motion.div>
                 </div>
-                <div className="absolute top-4 right-4">
+                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 hidden sm:block">
                   <motion.div
                     animate={{ rotate: -360 }}
                     transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
                   >
-                    <Zap className="h-4 w-4 text-accent/30" />
+                    <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-accent/30" />
                   </motion.div>
                 </div>
               </CardHeader>
             </motion.div>
             
-            <CardContent className="p-6 sm:p-8 font-sans relative">
+            <CardContent className="p-2 sm:p-3 md:p-6 lg:p-8 font-sans relative">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
                   <StaggerContainer>
                     {/* About You Section */}
                     <motion.section
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.1 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
                                shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
+                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
                     >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
                         >
-                          <Info className="h-5 w-5 text-primary" />
+                          <Info className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
                         </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                           About You
                         </h2>
                       </div>
 
                       <FormField control={form.control} name="displayName" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
-                            <User className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                            <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Display Name *
                           </ShadCnFormLabel>
                           <FormControl>
@@ -823,24 +823,24 @@ export default function ProfilePage() {
                                 placeholder="Choose a unique display name" 
                                 {...field} 
                                 value={field.value ?? ''} 
-                                className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                          focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                          hover:border-primary/30"
                               />
                             </motion.div>
                           </FormControl>
-                          <FormDescription className="text-xs font-sans text-muted-foreground">
+                          <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
                             Visible to others if you enable sharing. Letters, numbers, underscores only.
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
                         <FormField control={form.control} name="height" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
-                              <Ruler className="h-4 w-4 text-primary" />
+                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                              <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                               Height (cm) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -851,7 +851,7 @@ export default function ProfilePage() {
                                   placeholder="e.g., 175" 
                                   {...field} 
                                   value={field.value ?? ''} 
-                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                            focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                            hover:border-primary/30"
                                 />
@@ -863,8 +863,8 @@ export default function ProfilePage() {
 
                         <FormField control={form.control} name="weight" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
-                              <Weight className="h-4 w-4 text-primary" />
+                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                              <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                               Weight (kg) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -875,7 +875,7 @@ export default function ProfilePage() {
                                   placeholder="e.g., 70" 
                                   {...field} 
                                   value={field.value ?? ''} 
-                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                            focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                            hover:border-primary/30"
                                 />
@@ -886,9 +886,9 @@ export default function ProfilePage() {
                         )} />
 
                         <FormField control={form.control} name="age" render={({ field }) => (
-                          <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
-                              <Calendar className="h-4 w-4 text-primary" />
+                          <FormItem className="sm:col-span-2 lg:col-span-1">
+                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                               Age (years) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -899,7 +899,7 @@ export default function ProfilePage() {
                                   placeholder="e.g., 25" 
                                   {...field} 
                                   value={field.value ?? ''} 
-                                  className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                            focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                            hover:border-primary/30"
                                 />
@@ -912,7 +912,7 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="gender" render={({ field }) => (
                         <FormItem className="space-y-3">
-                          <ShadCnFormLabel className="text-base font-medium">Gender *</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Gender *</ShadCnFormLabel>
                           {renderStyledRadioGroup(field, genderOptions)}
                           <FormMessage />
                         </FormItem>
@@ -924,26 +924,26 @@ export default function ProfilePage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.2 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
                                shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
+                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
                     >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
                         >
-                          <Activity className="h-5 w-5 text-primary" />
+                          <Activity className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
                         </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                           Fitness Details
                         </h2>
                       </div>
 
                       <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
+                            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Primary Fitness Goal *
                           </ShadCnFormLabel>
                           {renderChips(field, goalOptions)}
@@ -953,12 +953,12 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="activityLevel" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
+                            <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Typical Activity Level *
                           </ShadCnFormLabel>
                           {renderChips(field, activityOptions)}
-                          <FormDescription className="text-xs mt-3 font-sans text-muted-foreground">
+                          <FormDescription className="text-xs mt-2 sm:mt-3 font-sans text-muted-foreground leading-relaxed">
                             {activityOptions.find(opt => opt.value === field.value)?.description}
                           </FormDescription>
                           <FormMessage />
@@ -966,19 +966,19 @@ export default function ProfilePage() {
                       )} />
 
                       <FormField control={form.control} name="preferFewerRestDays" render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
-                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
-                          <div className="space-y-1 mr-4">
-                            <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                              <ShieldQuestion className="h-4 w-4 text-primary" />
+                        <FormItem className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/30 p-3 sm:p-4 
+                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300 sm:space-y-0">
+                          <div className="space-y-1 sm:mr-4">
+                            <ShadCnFormLabel className="text-xs sm:text-sm font-medium flex items-center gap-2">
+                              <ShieldQuestion className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                               Training Intensity
                             </ShadCnFormLabel>
-                            <FormDescription className="text-xs font-sans">
+                            <FormDescription className="text-xs font-sans leading-relaxed">
                               Prefer fewer rest days? (Requests a more intense workout plan)
                             </FormDescription>
                           </div>
                           <FormControl>
-                            <motion.div whileTap={{ scale: 0.95 }}>
+                            <motion.div whileTap={{ scale: 0.95 }} className="flex justify-center sm:justify-end">
                               <Switch 
                                 checked={field.value ?? false} 
                                 onCheckedChange={field.onChange}
@@ -995,36 +995,36 @@ export default function ProfilePage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.3 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
                                shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
+                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
                     >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
                         >
-                          <ChefHat className="h-5 w-5 text-primary" />
+                          <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
                         </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                           Personalize Your Nutrition
                         </h2>
                       </div>
                       
-                      <FormDescription className="text-sm italic text-center text-muted-foreground p-3 bg-muted/20 rounded-lg border border-border/20">
+                      <FormDescription className="text-xs sm:text-sm italic text-center text-muted-foreground p-2 sm:p-3 bg-muted/20 rounded-lg border border-border/20 leading-relaxed">
                         This helps tailor meal suggestions and nutritional analysis.
                       </FormDescription>
 
                       <FormField control={form.control} name="localFoodStyle" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
+                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Regional Cuisine Preference
                           </ShadCnFormLabel>
                           <FormControl>
                             <motion.div whileFocus={{ scale: 1.02 }}>
                               <Select onValueChange={field.onChange} value={field.value === "" ? "Not Specified" : field.value || "Not Specified"}>
-                                <SelectTrigger className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                                        focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                        hover:border-primary/30">
                                   <SelectValue placeholder="Select your preferred cuisine..." />
@@ -1056,8 +1056,8 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="dietaryStyles" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
-                            <Salad className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
+                            <Salad className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Dietary Style(s)
                           </ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, dietaryStyleOptions)}
@@ -1067,8 +1067,8 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="allergies" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium flex items-center gap-2">
-                            <CircleHelp className="h-4 w-4 text-primary" />
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
+                            <CircleHelp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
                             Allergies/Intolerances
                           </ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, allergyOptions)}
@@ -1078,7 +1078,7 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="otherAllergies" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium">Other Allergies</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-xs sm:text-sm font-medium">Other Allergies</ShadCnFormLabel>
                           <FormControl>
                             <motion.div whileFocus={{ scale: 1.02 }}>
                               <Input 
@@ -1086,7 +1086,7 @@ export default function ProfilePage() {
                                 placeholder="Specify other allergies..." 
                                 {...field} 
                                 value={field.value ?? ''} 
-                                className="text-base md:text-sm h-11 font-sans transition-all duration-300
+                                className="text-sm sm:text-base h-11 sm:h-12 font-sans transition-all duration-300
                                          focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                          hover:border-primary/30"
                               />
@@ -1098,13 +1098,13 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="foodDislikes" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium">Food Dislikes (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Food Dislikes (Optional)</ShadCnFormLabel>
                           <FormControl>
                             <motion.div whileFocus={{ scale: 1.02 }}>
                               <Textarea 
                                 Icon={Info} 
                                 placeholder="List any foods you strongly dislike (e.g., mushrooms, spicy food)" 
-                                className="resize-none text-base md:text-sm min-h-[80px] font-sans transition-all duration-300
+                                className="resize-none text-sm sm:text-base min-h-[80px] sm:min-h-[100px] font-sans transition-all duration-300
                                          focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                          hover:border-primary/30" 
                                 {...field} 
@@ -1118,13 +1118,13 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="foodPreferences" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium">Other Notes (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Other Notes (Optional)</ShadCnFormLabel>
                           <FormControl>
                             <motion.div whileFocus={{ scale: 1.02 }}>
                               <Textarea 
                                 Icon={Info} 
                                 placeholder="Any other specific needs? (e.g., No onion/garlic, prefers low-oil cooking)" 
-                                className="resize-none text-base md:text-sm min-h-[80px] font-sans transition-all duration-300
+                                className="resize-none text-sm sm:text-base min-h-[80px] sm:min-h-[100px] font-sans transition-all duration-300
                                          focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                          hover:border-primary/30" 
                                 {...field} 
@@ -1142,29 +1142,29 @@ export default function ProfilePage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.4 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
                                shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
+                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
                     >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
                         >
-                          <Languages className="h-5 w-5 text-primary" />
+                          <Languages className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
                         </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                           Language Preference
                         </h2>
                       </div>
 
                       <FormField control={form.control} name="translatePreference" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-base font-medium">Report & AI Chat Language</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Report & AI Chat Language</ShadCnFormLabel>
                           <FormControl>
                             <motion.div whileFocus={{ scale: 1.02 }}>
                               <Select onValueChange={field.onChange} value={field.value || 'en'}>
-                                <SelectTrigger className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
                                                        focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                        hover:border-primary/30">
                                   <SelectValue placeholder="Select language..." />
@@ -1179,7 +1179,7 @@ export default function ProfilePage() {
                               </Select>
                             </motion.div>
                           </FormControl>
-                          <FormDescription className="text-xs font-sans text-muted-foreground">
+                          <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
                             Select the language for AI-generated reports and chat responses.
                           </FormDescription>
                           <FormMessage />
@@ -1192,36 +1192,36 @@ export default function ProfilePage() {
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.6, delay: 0.5 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
                                shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
+                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
                     >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-3 sm:pb-4">
                         <motion.div
                           whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                          className="p-1.5 sm:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
                         >
-                          <TargetIcon className="h-5 w-5 text-primary" />
+                          <TargetIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                         </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        <h2 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                           Target Settings
                         </h2>
                       </div>
 
                       <FormField control={form.control} name="useAiTargets" render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
-                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
-                          <div className="space-y-1 mr-4">
+                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/30 p-4 
+                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300 space-y-3 sm:space-y-0">
+                          <div className="space-y-1 sm:mr-4">
                             <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
                               <Sparkles className="h-4 w-4 text-yellow-500" />
                               Use AI Personalized Targets
                             </ShadCnFormLabel>
-                            <FormDescription className="text-xs font-sans">
+                            <FormDescription className="text-xs font-sans leading-relaxed">
                               Let Bago automatically calculate your daily goals for nutrition and activity burn.
                             </FormDescription>
                           </div>
                           <FormControl>
-                            <motion.div whileTap={{ scale: 0.95 }}>
+                            <motion.div whileTap={{ scale: 0.95 }} className="flex justify-center sm:justify-end">
                               <Switch 
                                 checked={field.value ?? true} 
                                 onCheckedChange={field.onChange}
@@ -1241,10 +1241,10 @@ export default function ProfilePage() {
                             transition={{ duration: 0.3 }}
                             className="space-y-4 pt-4"
                           >
-                            <p className="text-sm text-muted-foreground italic font-sans p-3 bg-muted/20 rounded-lg border border-border/20">
+                            <p className="text-sm text-muted-foreground italic font-sans p-3 bg-muted/20 rounded-lg border border-border/20 leading-relaxed">
                               Manually set your daily nutritional and activity targets:
                             </p>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                               <FormField control={form.control} name="manualTargetCalories" render={({ field }) => (
                                 <FormItem>
                                   <ShadCnFormLabel className="flex items-center gap-2 text-xs">
@@ -1259,7 +1259,7 @@ export default function ProfilePage() {
                                         placeholder="e.g., 2000" 
                                         {...field} 
                                         value={field.value ?? ''} 
-                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
                                                  focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                  hover:border-primary/30"
                                       />
@@ -1283,7 +1283,7 @@ export default function ProfilePage() {
                                         placeholder="e.g., 150" 
                                         {...field} 
                                         value={field.value ?? ''} 
-                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
                                                  focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                  hover:border-primary/30"
                                       />
@@ -1307,7 +1307,7 @@ export default function ProfilePage() {
                                         placeholder="e.g., 200" 
                                         {...field} 
                                         value={field.value ?? ''} 
-                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
                                                  focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                  hover:border-primary/30"
                                       />
@@ -1331,7 +1331,7 @@ export default function ProfilePage() {
                                         placeholder="e.g., 70" 
                                         {...field} 
                                         value={field.value ?? ''} 
-                                        className="h-10 text-base md:text-sm font-sans transition-all duration-300
+                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
                                                  focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                  hover:border-primary/30"
                                       />
@@ -1356,13 +1356,13 @@ export default function ProfilePage() {
                                       placeholder="e.g., 300" 
                                       {...field} 
                                       value={field.value ?? ''} 
-                                      className="h-11 text-base md:text-sm font-sans transition-all duration-300
+                                      className="h-12 sm:h-11 text-base font-sans transition-all duration-300
                                                focus:ring-2 focus:ring-primary/20 focus:border-primary/50
                                                hover:border-primary/30"
                                     />
                                   </motion.div>
                                 </FormControl>
-                                <FormDescription className="text-xs font-sans text-muted-foreground">
+                                <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
                                   Your desired daily calorie burn from dedicated exercise.
                                 </FormDescription>
                                 <FormMessage />

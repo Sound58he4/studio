@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, getDay, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
@@ -352,7 +352,6 @@ const batchGetDashboardData = async (request: BatchDataRequest): Promise<Dashboa
 
 export function DashboardMainPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { userId, loading: authLoading } = useAuth();
   
@@ -645,13 +644,11 @@ export function DashboardMainPage() {
 
   useEffect(() => {
     if (!authLoading && userId && !hasLoadedInitialData && isClient) {
-      const shouldRecalculateAiTargets = searchParams.get('recalculate_targets') === 'true';
-      if (shouldRecalculateAiTargets && router) { router.replace('/dashboard', { scroll: false }); }
-      loadInitialDashboardData(shouldRecalculateAiTargets);
+      loadInitialDashboardData(false); // Never force recalculate from initial load
     } else if (!authLoading && !userId && isClient) {
       setIsLoadingInitialData(false); setCriticalError("Access Denied. Please log in.");
     }
-  }, [authLoading, userId, hasLoadedInitialData, loadInitialDashboardData, isClient, searchParams, router]);
+  }, [authLoading, userId, hasLoadedInitialData, loadInitialDashboardData, isClient, router]);
 
   useEffect(() => {
     if (!hasLoadedInitialData || isLoadingInitialData || !isClient || !userProfile) return;

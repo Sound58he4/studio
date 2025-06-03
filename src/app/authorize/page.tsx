@@ -1,13 +1,13 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from '@/lib/firebase/exports';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -24,7 +24,11 @@ import {
   TrendingUp, 
   Zap,
   Shield,
-  Users
+  Users,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AnimatedWrapper, { FadeInWrapper, SlideUpWrapper } from "@/components/ui/animated-wrapper";
@@ -33,7 +37,13 @@ export default function AuthorizePage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Remove the problematic isClient state and loading guard
   useEffect(() => {
@@ -65,9 +75,22 @@ export default function AuthorizePage() {
     const code = err.code || 'unknown';
     console.log("[Authorize Page] Formatting Firebase error code:", code);
     switch (code) {
+      // Google OAuth errors
       case 'auth/popup-closed-by-user': return 'Sign-in process cancelled by user.';
       case 'auth/cancelled-popup-request':
       case 'auth/popup-blocked': return 'Sign-in popup blocked/cancelled. Check browser settings.';
+      
+      // Email/Password specific errors
+      case 'auth/user-not-found': return 'No account found with this email address.';
+      case 'auth/wrong-password': return 'Incorrect password. Please try again.';
+      case 'auth/invalid-email': return 'Invalid email address format.';
+      case 'auth/user-disabled': return 'This account has been disabled.';
+      case 'auth/email-already-in-use': return 'An account with this email already exists.';
+      case 'auth/weak-password': return 'Password should be at least 6 characters.';
+      case 'auth/too-many-requests': return 'Too many failed attempts. Please try again later.';
+      case 'auth/invalid-credential': return 'Invalid email or password.';
+      
+      // General errors
       case 'auth/network-request-failed': return 'Network error. Check connection.';
       case 'auth/operation-not-allowed': return 'Sign-in method not enabled.';
       case 'auth/unauthorized-domain': return 'Domain not authorized. Contact support.';
@@ -101,6 +124,102 @@ export default function AuthorizePage() {
       setError(friendlyError);
       toast({ variant: "destructive", title: "Google Sign-In Failed", description: friendlyError });
       setIsLoadingGoogle(false); // Ensure loading state is reset on error
+    }
+  };
+
+  const handleEmailSignIn = async () => {
+    setIsLoadingEmail(true);
+    setError(null);
+    console.log("[Authorize Page] Attempting Email/Password sign in...");
+
+    // Client-side validation
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Please enter your password.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (!auth) {
+      console.error("[Authorize Page] Firebase Auth instance is not available.");
+      setError("Authentication service is not configured correctly.");
+      setIsLoadingEmail(false);
+      toast({ variant: "destructive", title: "Configuration Error", description: "Authentication service failed to load." });
+      return;
+    }
+
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log("[Authorize Page] Email/Password sign in result obtained.");
+      setLoginCookieAndRedirect(result.user);
+    } catch (err: any) {
+      console.error("[Authorize Page] Email/Password sign in error occurred.");
+      const friendlyError = getFirebaseAuthErrorMessage(err);
+      setError(friendlyError);
+      toast({ variant: "destructive", title: "Email Sign-In Failed", description: friendlyError });
+      setIsLoadingEmail(false); // Ensure loading state is reset on error
+    }
+  };
+
+  const handleEmailSignUp = async () => {
+    setIsLoadingEmail(true);
+    setError(null);
+    console.log("[Authorize Page] Attempting Email/Password sign up...");
+
+    // Client-side validation
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (!password.trim()) {
+      setError("Please enter a password.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (!confirmPassword.trim()) {
+      setError("Please confirm your password.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setIsLoadingEmail(false);
+      return;
+    }
+
+    if (!auth) {
+      console.error("[Authorize Page] Firebase Auth instance is not available.");
+      setError("Authentication service is not configured correctly.");
+      setIsLoadingEmail(false);
+      toast({ variant: "destructive", title: "Configuration Error", description: "Authentication service failed to load." });
+      return;
+    }
+
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("[Authorize Page] Email/Password sign up result obtained.");
+      setLoginCookieAndRedirect(result.user);
+    } catch (err: any) {
+      console.error("[Authorize Page] Email/Password sign up error occurred.");
+      const friendlyError = getFirebaseAuthErrorMessage(err);
+      setError(friendlyError);
+      toast({ variant: "destructive", title: "Email Sign-Up Failed", description: friendlyError });
+      setIsLoadingEmail(false); // Ensure loading state is reset on error
     }
   };
 
@@ -255,6 +374,36 @@ export default function AuthorizePage() {
                   <p className="text-muted-foreground">Transform your fitness journey with AI</p>
                 </div>
 
+                {/* Toggle between Sign In and Sign Up */}
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant={isSignUp ? "ghost" : "default"}
+                    className="flex-1 mr-2"
+                    onClick={() => { 
+                      setIsSignUp(false); 
+                      setError(null); 
+                      setEmail(''); 
+                      setPassword(''); 
+                      setConfirmPassword(''); 
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant={isSignUp ? "default" : "ghost"}
+                    className="flex-1 ml-2"
+                    onClick={() => { 
+                      setIsSignUp(true); 
+                      setError(null); 
+                      setEmail(''); 
+                      setPassword(''); 
+                      setConfirmPassword(''); 
+                    }}
+                  >
+                    Sign Up
+                  </Button>
+                </div>
+
                 <AnimatePresence mode="wait">
                   {error && (
                     <motion.div
@@ -268,6 +417,162 @@ export default function AuthorizePage() {
                   )}
                 </AnimatePresence>
 
+                {/* Email/Password Sign In Form */}
+                {!isSignUp && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full h-12 text-base"
+                        disabled={isLoadingEmail}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full h-12 text-base pr-10"
+                          disabled={isLoadingEmail}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full h-12 border-2 border-border/50 hover:border-primary/50 
+                                 bg-background/50 hover:bg-primary/5 backdrop-blur-sm
+                                 text-base font-medium transition-all duration-300
+                                 hover:shadow-lg hover:shadow-primary/10"
+                        onClick={handleEmailSignIn}
+                        disabled={isLoadingEmail}
+                      >
+                        {isLoadingEmail ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : (
+                          "Sign In with Email"
+                        )}
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                )}
+
+                {/* Email/Password Sign Up Form */}
+                {isSignUp && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="space-y-4"
+                  >
+                    <div>
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full h-12 text-base"
+                        disabled={isLoadingEmail}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="w-full h-12 text-base pr-10"
+                          disabled={isLoadingEmail}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 flex items-center pr-3"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full h-12 text-base pr-10"
+                        disabled={isLoadingEmail}
+                        required
+                      />
+                    </div>
+
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button
+                        variant="outline"
+                        className="w-full h-12 border-2 border-border/50 hover:border-primary/50 
+                                 bg-background/50 hover:bg-primary/5 backdrop-blur-sm
+                                 text-base font-medium transition-all duration-300
+                                 hover:shadow-lg hover:shadow-primary/10"
+                        onClick={handleEmailSignUp}
+                        disabled={isLoadingEmail}
+                      >
+                        {isLoadingEmail ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : (
+                          "Sign Up with Email"
+                        )}
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                )}
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border/20" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+
+                {/* Google OAuth Button */}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}

@@ -15,7 +15,8 @@ import {
   getQuickLogItems, addQuickLogItem, deleteQuickLogItem, updateQuickLogItem,
 } from '@/services/firestore/quickLogService';
 import { addFoodLog, getFoodLogs } from '@/services/firestore/logService';
-import { estimateNutritionFromText, EstimateNutritionOutput } from '@/ai/flows/estimate-nutrition-from-text';
+import { optimizedFoodLogging, OptimizedFoodLoggingInput, OptimizedFoodLoggingOutput } from '@/ai/flows/optimized-food-logging';
+import { foodLogCache } from '@/lib/food-log-cache';
 import type { StoredQuickLogItem, FirestoreQuickLogData, StoredFoodLogEntry, FirestoreFoodLogData } from '@/app/dashboard/types';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -161,13 +162,45 @@ export default function QuickLogPage() {
     if (formState.foodName.trim() && !editingItemId && showForm) {
       setIsEstimatingNutrition(true);
       try {
-        const nutritionEstimate: EstimateNutritionOutput = await estimateNutritionFromText({ foodDescription: formState.foodName });
+        // Check cache first
+        const cachedResult = await foodLogCache.getCachedAIEstimate(formState.foodName);
+        if (cachedResult) {
+          setFormState(prev => ({
+            ...prev,
+            calories: Math.round(cachedResult.nutrition.calories),
+            protein: parseFloat(cachedResult.nutrition.protein.toFixed(1)),
+            carbohydrates: parseFloat(cachedResult.nutrition.carbohydrates.toFixed(1)),
+            fat: parseFloat(cachedResult.nutrition.fat.toFixed(1)),
+          }));
+          if (isClient) toast({ title: "Nutrition Estimated (Cached)", description: "Using cached AI suggestions.", variant: "default" });
+          return;
+        }
+
+        // Use optimized AI flow
+        const input: OptimizedFoodLoggingInput = { foodDescription: formState.foodName };
+        const result: OptimizedFoodLoggingOutput = await optimizedFoodLogging(input);
+        
+        // Handle the first food item from the array
+        if (!result.foodItems || result.foodItems.length === 0) {
+          if (isClient) toast({ title: "No Results", description: "Could not estimate nutrition for this food.", variant: "destructive" });
+          return;
+        }
+
+        const firstItem = result.foodItems[0];
+        
+        // Cache the result
+        await foodLogCache.cacheAIEstimate(formState.foodName, {
+          identifiedFoodName: firstItem.identifiedFoodName,
+          nutrition: firstItem.nutrition,
+          confidence: firstItem.confidence
+        });
+        
         setFormState(prev => ({
           ...prev,
-          calories: Math.round(nutritionEstimate.calories),
-          protein: parseFloat(nutritionEstimate.protein.toFixed(1)),
-          carbohydrates: parseFloat(nutritionEstimate.carbohydrates.toFixed(1)),
-          fat: parseFloat(nutritionEstimate.fat.toFixed(1)),
+          calories: Math.round(firstItem.nutrition.calories),
+          protein: parseFloat(firstItem.nutrition.protein.toFixed(1)),
+          carbohydrates: parseFloat(firstItem.nutrition.carbohydrates.toFixed(1)),
+          fat: parseFloat(firstItem.nutrition.fat.toFixed(1)),
         }));
         if (isClient) toast({ title: "Nutrition Estimated", description: "AI suggested values for your item.", variant: "default" });
       } catch (err: any) {
@@ -304,14 +337,18 @@ export default function QuickLogPage() {
     try {
       const detailsToLog = logAsIs ? itemToLogFromHistory : editableHistoryLogDetails;
       const logData: FirestoreFoodLogData = {
-        foodItem: (detailsToLog.foodName || itemToLogFromHistory.foodItem).trim(),
+        foodItem: logAsIs 
+          ? (itemToLogFromHistory.identifiedFoodName || itemToLogFromHistory.foodItem).trim()
+          : (editableHistoryLogDetails.foodName || itemToLogFromHistory.identifiedFoodName || itemToLogFromHistory.foodItem).trim(),
         calories: Math.round(Number(detailsToLog.calories || 0)),
         protein: parseFloat(Number(detailsToLog.protein || 0).toFixed(1)),
         carbohydrates: parseFloat(Number(detailsToLog.carbohydrates || 0).toFixed(1)),
         fat: parseFloat(Number(detailsToLog.fat || 0).toFixed(1)),
         timestamp: new Date().toISOString(),
         logMethod: 'history',
-        originalDescription: detailsToLog.servingSizeDescription || itemToLogFromHistory.originalDescription || `Logged from history: ${detailsToLog.foodName || itemToLogFromHistory.foodItem}`
+        originalDescription: logAsIs 
+          ? (itemToLogFromHistory.originalDescription || `Logged from history: ${itemToLogFromHistory.identifiedFoodName || itemToLogFromHistory.foodItem}`)
+          : (editableHistoryLogDetails.servingSizeDescription || itemToLogFromHistory.originalDescription || `Logged from history: ${editableHistoryLogDetails.foodName || itemToLogFromHistory.identifiedFoodName || itemToLogFromHistory.foodItem}`)
       };
       const newLogId = await addFoodLog(userId, logData);
 
@@ -365,7 +402,7 @@ export default function QuickLogPage() {
 
   return (
     <motion.div 
-      className="max-w-3xl mx-auto my-4 md:my-8 px-4"
+      className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto my-2 sm:my-4 md:my-8 px-3 py-4 sm:px-4 pb-12 sm:pb-8"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -377,26 +414,26 @@ export default function QuickLogPage() {
         transition={{ duration: 1.2 }}
       />
       <Card className="shadow-xl border border-border/20 bg-card/95 backdrop-blur-sm relative">
-        <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-5 md:p-6">
-          <CardTitle className="text-2xl md:text-3xl font-bold text-primary flex items-center gap-2">
-            <ListChecks className="h-7 w-7" /> Quick Log
+        <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-3 sm:p-5 md:p-6">
+          <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary flex items-center gap-2">
+            <ListChecks className="h-6 w-6 sm:h-7 sm:w-7" /> Quick Log
           </CardTitle>
-          <CardDescription className="text-base mt-1 text-muted-foreground">
+          <CardDescription className="text-sm sm:text-base mt-1 text-muted-foreground">
             Manage frequently eaten foods or log from your history.
             {isSyncing && <span className="ml-2 text-xs text-primary animate-pulse">(Syncing...)</span>}
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
-          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-            <Button onClick={() => { setShowForm(!showForm); setShowHistoryLogSection(false); setEditingItemId(null); setFormState(initialFormState); }} variant={showForm ? "outline" : "default"} className="shadow-sm"> <PlusCircle className="mr-2 h-4 w-4"/>{showForm ? "Cancel New" : "Add New Quick Item"} </Button>
-            <Button onClick={() => { setShowHistoryLogSection(!showHistoryLogSection); setShowForm(false); }} variant={showHistoryLogSection ? "outline" : "secondary"} className="shadow-sm"> <History className="mr-2 h-4 w-4"/>{showHistoryLogSection ? "Hide History" : "Log from History"} </Button>
+        <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+          <div className="mb-4 sm:mb-6 grid grid-cols-1 gap-2 sm:gap-3">
+            <Button onClick={() => { setShowForm(!showForm); setShowHistoryLogSection(false); setEditingItemId(null); setFormState(initialFormState); }} variant={showForm ? "outline" : "default"} className="shadow-sm w-full"> <PlusCircle className="mr-2 h-4 w-4"/>{showForm ? "Cancel New" : "Add New Quick Item"} </Button>
+            <Button onClick={() => { setShowHistoryLogSection(!showHistoryLogSection); setShowForm(false); }} variant={showHistoryLogSection ? "outline" : "secondary"} className="shadow-sm w-full"> <History className="mr-2 h-4 w-4"/>{showHistoryLogSection ? "Hide History" : "Log from History"} </Button>
           </div>
 
           {showForm && (
-            <Card className="mb-8 p-4 md:p-6 shadow-lg border border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <h3 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
-                  {editingItemId ? <Edit3 size={18}/> : <BrainCircuit size={18}/>}
+            <Card className="mb-6 sm:mb-8 p-3 sm:p-4 md:p-6 shadow-lg border border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300">
+              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2 sm:mb-3 flex items-center gap-2">
+                  {editingItemId ? <Edit3 size={16} className="sm:w-[18px] sm:h-[18px]"/> : <BrainCircuit size={16} className="sm:w-[18px] sm:h-[18px]"/>}
                   {editingItemId ? "Edit" : "Add New"} Quick Log Item
                 </h3>
                 <div>
@@ -404,19 +441,19 @@ export default function QuickLogPage() {
                   <Input ref={foodNameInputRef} id="foodName" name="foodName" value={formState.foodName} onChange={handleInputChange} onBlur={handleFoodNameBlur} placeholder="e.g., Apple, Chicken Breast" required className="mt-1"/>
                   {isEstimatingNutrition && <p className="text-xs text-primary mt-1 flex items-center gap-1"><Loader2 size={12} className="animate-spin"/> AI estimating nutrition...</p>}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div><Label htmlFor="calories" className="text-xs">Calories *</Label><Input Icon={Flame} id="calories" name="calories" type="number" value={formState.calories} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs"/></div>
-                  <div><Label htmlFor="protein" className="text-xs">Protein (g) *</Label><Input Icon={Dumbbell} id="protein" name="protein" type="number" step="0.1" value={formState.protein} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs"/></div>
-                  <div><Label htmlFor="carbohydrates" className="text-xs">Carbs (g) *</Label><Input Icon={Zap} id="carbohydrates" name="carbohydrates" type="number" step="0.1" value={formState.carbohydrates} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs"/></div>
-                  <div><Label htmlFor="fat" className="text-xs">Fat (g) *</Label><Input Icon={Leaf} id="fat" name="fat" type="number" step="0.1" value={formState.fat} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs"/></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
+                  <div><Label htmlFor="calories" className="text-xs">Calories *</Label><Input Icon={Flame} id="calories" name="calories" type="number" value={formState.calories} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
+                  <div><Label htmlFor="protein" className="text-xs">Protein (g) *</Label><Input Icon={Dumbbell} id="protein" name="protein" type="number" step="0.1" value={formState.protein} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
+                  <div><Label htmlFor="carbohydrates" className="text-xs">Carbs (g) *</Label><Input Icon={Zap} id="carbohydrates" name="carbohydrates" type="number" step="0.1" value={formState.carbohydrates} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
+                  <div><Label htmlFor="fat" className="text-xs">Fat (g) *</Label><Input Icon={Leaf} id="fat" name="fat" type="number" step="0.1" value={formState.fat} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
                 </div>
                 <div>
                   <Label htmlFor="servingSizeDescription">Serving Size (Optional)</Label>
                   <Input id="servingSizeDescription" name="servingSizeDescription" value={formState.servingSizeDescription || ''} onChange={handleInputChange} placeholder="e.g., 1 cup, 100g" className="mt-1"/>
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingItemId(null); setFormState(initialFormState); }} disabled={isSubmitting || isEstimatingNutrition}>Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting || isEstimatingNutrition} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingItemId(null); setFormState(initialFormState); }} disabled={isSubmitting || isEstimatingNutrition} className="w-full sm:w-auto">Cancel</Button>
+                  <Button type="submit" disabled={isSubmitting || isEstimatingNutrition} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
                     {editingItemId ? "Update Item" : "Save Item"}
                   </Button>
@@ -451,8 +488,8 @@ export default function QuickLogPage() {
                                         <p className="text-xs text-muted-foreground/70">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
                                     </div>
                                     <div className="flex gap-1.5 sm:ml-auto mt-2 sm:mt-0 flex-shrink-0">
-                                        <Button variant="outline" size="xs" onClick={() => triggerLogFromHistoryDialog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs">Log Now</Button>
-                                        <Button variant="outline" size="xs" onClick={() => handleAddHistoryItemToQuickLog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs"><BookmarkPlus size={12} className="mr-1"/>Save to Quick</Button>
+                                        <Button variant="outline" size="sm" onClick={() => triggerLogFromHistoryDialog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs">Log Now</Button>
+                                        <Button variant="outline" size="sm" onClick={() => handleAddHistoryItemToQuickLog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs"><BookmarkPlus size={12} className="mr-1"/>Save to Quick</Button>
                                     </div>
                                 </li>
                             ))}
@@ -470,25 +507,25 @@ export default function QuickLogPage() {
              ) : items.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8 mt-6">You haven't added any quick log items yet. Click "Add New Quick Item" to start!</p>
              ) : items.length > 0 ? (
-                <div className="space-y-3 mt-6">
-                    <h3 className="text-md font-semibold text-foreground/80 mb-2">Your Saved Quick Log Items</h3>
+                <div className="space-y-3 mt-4 sm:mt-6">
+                    <h3 className="text-sm sm:text-md font-semibold text-foreground/80 mb-2">Your Saved Quick Log Items</h3>
                     {items.map(item => (
                         <Card key={item.id} className={cn("p-3 sm:p-4 group hover:shadow-md transition-shadow border-border/50", loggedTodayMap[item.id] && "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700")}>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-                                <div className="flex-grow">
-                                    <p className="font-medium text-sm sm:text-base">{item.foodName}</p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                <div className="flex-grow min-w-0">
+                                    <p className="font-medium text-sm sm:text-base truncate">{item.foodName}</p>
                                     <p className="text-xs text-muted-foreground tabular-nums">
                                         {item.calories.toFixed(0)} kcal &bull; P:{item.protein.toFixed(1)}g &bull; C:{item.carbohydrates.toFixed(1)}g &bull; F:{item.fat.toFixed(1)}g
-                                        {item.servingSizeDescription && <span className="italic"> ({item.servingSizeDescription})</span>}
+                                        {item.servingSizeDescription && <span className="italic block sm:inline"> ({item.servingSizeDescription})</span>}
                                     </p>
                                 </div>
-                                <div className="flex gap-2 sm:ml-auto mt-2 sm:mt-0 flex-shrink-0 self-start sm:self-center">
-                                   <Button variant={loggedTodayMap[item.id] ? "secondary" : "default"} size="sm" onClick={() => handleLogForTodayFromPreset(item)} disabled={isSubmitting || loggedTodayMap[item.id]} className="h-8 px-3 text-xs sm:text-sm shadow-sm hover:scale-105 transition-transform">
+                                <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto sm:ml-auto">
+                                   <Button variant={loggedTodayMap[item.id] ? "secondary" : "default"} size="sm" onClick={() => handleLogForTodayFromPreset(item)} disabled={isSubmitting || loggedTodayMap[item.id]} className="h-8 px-3 text-xs sm:text-sm shadow-sm hover:scale-105 transition-transform flex-1 sm:flex-none">
                                        {loggedTodayMap[item.id] ? <CheckCircle size={14} className="mr-1.5 text-green-600"/> : <PlusCircle size={14} className="mr-1.5"/>}
                                        {loggedTodayMap[item.id] ? "Logged Today" : "Log Today"}
                                    </Button>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex gap-1">
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => handleEdit(item)} title="Edit Item"><Edit3 size={14}/></Button>
+                                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 text-muted-foreground hover:text-primary" onClick={() => handleEdit(item)} title="Edit Item"><Edit3 size={14}/></Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete Item"><Trash2 size={14}/></Button>

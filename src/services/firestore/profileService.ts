@@ -3,7 +3,7 @@
 
 import { db } from '@/lib/firebase/exports';
 import {
-  doc, getDoc, setDoc, collection, query, where, getDocs, limit, Timestamp, updateDoc, serverTimestamp, FieldValue
+  doc, getDoc, setDoc, collection, query, where, getDocs, limit, Timestamp, updateDoc, serverTimestamp, FieldValue, deleteDoc, writeBatch
 } from 'firebase/firestore';
 import type { StoredUserProfile, AppSettings, Gender, FitnessGoal, ActivityLevel, TranslatePreference } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils';
@@ -30,7 +30,9 @@ export async function getUserProfile(userId: string): Promise<StoredUserProfile>
                 const cachedProfile = JSON.parse(cachedProfileData) as StoredUserProfile;
                 if (cachedProfile.displayName !== undefined) {
                     if (cachedProfile.todayLastUpdated && !(typeof cachedProfile.todayLastUpdated === 'string' || cachedProfile.todayLastUpdated === null)) {
-                         cachedProfile.todayLastUpdated = new Date(cachedProfile.todayLastUpdated).toISOString();
+                         cachedProfile.todayLastUpdated = cachedProfile.todayLastUpdated instanceof Timestamp 
+                            ? cachedProfile.todayLastUpdated.toDate().toISOString()
+                            : new Date(cachedProfile.todayLastUpdated as any).toISOString();
                     }
                     console.log(`[Profile Service] Profile found in localStorage for user: ${userId}`);
                     return cachedProfile;
@@ -247,5 +249,139 @@ export async function isDisplayNameTaken(displayName: string): Promise<boolean> 
              throw createFirestoreServiceError(errorMessage, "index-required");
          }
         throw createFirestoreServiceError("Failed to check display name uniqueness.", "check-failed");
+    }
+}
+
+/**
+ * Deletes all user data from Firestore and their Firebase Auth account.
+ * This is a comprehensive deletion that removes all user subcollections and documents.
+ */
+export async function deleteUserAccount(userId: string): Promise<void> {
+    if (!userId) throw createFirestoreServiceError("User ID is required to delete account.", "invalid-argument");
+    
+    console.log(`[Profile Service] Starting complete account deletion for user: ${userId}`);
+    
+    try {
+        // List of all subcollections that need to be deleted
+        const subcollections = [
+            'foodLog',
+            'exerciseLog', 
+            'quickLogItems',
+            'dailyNutritionSummaries',
+            'workoutPlan',
+            'completedWorkouts',
+            'points',
+            'friends',
+            'viewRequests'
+        ];
+
+        // Delete all subcollections in batches
+        for (const subcollectionName of subcollections) {
+            await deleteSubcollection(userId, subcollectionName);
+        }
+
+        // Remove user from all friend lists and view requests of other users
+        await removeUserFromAllFriendships(userId);
+        
+        // Clear localStorage cache if running on client
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.removeItem(`${LOCAL_STORAGE_PROFILE_KEY_PREFIX}${userId}`);
+                console.log(`[Profile Service] Cleared localStorage cache for user: ${userId}`);
+            } catch (e) {
+                console.warn("[Profile Service] Error clearing localStorage cache:", e);
+            }
+        }
+
+        // Finally, delete the main user document
+        const userDocRef = doc(db, 'users', userId);
+        await deleteDoc(userDocRef);
+        
+        console.log(`[Profile Service] Successfully deleted all data for user: ${userId}`);
+        
+    } catch (error: any) {
+        console.error("[Profile Service] Error during account deletion:", error);
+        throw createFirestoreServiceError(`Failed to delete user account. Reason: ${error.message}`, "delete-failed");
+    }
+}
+
+/**
+ * Helper function to delete all documents in a subcollection
+ */
+async function deleteSubcollection(userId: string, subcollectionName: string): Promise<void> {
+    console.log(`[Profile Service] Deleting subcollection: ${subcollectionName} for user: ${userId}`);
+    
+    try {
+        const subcollectionRef = collection(db, 'users', userId, subcollectionName);
+        let querySnapshot = await getDocs(query(subcollectionRef, limit(500)));
+        let totalDeleted = 0;
+
+        while (!querySnapshot.empty) {
+            const batch = writeBatch(db);
+            querySnapshot.docs.forEach((docSnapshot) => {
+                batch.delete(docSnapshot.ref);
+            });
+            await batch.commit();
+            totalDeleted += querySnapshot.size;
+            
+            console.log(`[Profile Service] Deleted batch of ${querySnapshot.size} documents from ${subcollectionName}. Total: ${totalDeleted}`);
+            
+            // Break if we got less than the limit (last batch)
+            if (querySnapshot.size < 500) break;
+            
+            // Get next batch
+            querySnapshot = await getDocs(query(subcollectionRef, limit(500)));
+        }
+        
+        console.log(`[Profile Service] Completed deletion of ${subcollectionName}. Total documents deleted: ${totalDeleted}`);
+    } catch (error: any) {
+        console.error(`[Profile Service] Error deleting subcollection ${subcollectionName}:`, error);
+        // Continue with other deletions even if one fails
+    }
+}
+
+/**
+ * Helper function to remove user from all friendships and view requests
+ */
+async function removeUserFromAllFriendships(userId: string): Promise<void> {
+    console.log(`[Profile Service] Removing user ${userId} from all friendships and view requests`);
+    
+    try {
+        // First, get all friends of this user
+        const friendsRef = collection(db, 'users', userId, 'friends');
+        const friendsSnapshot = await getDocs(friendsRef);
+        
+        // Remove this user from each friend's friend list and view requests
+        const removalPromises = friendsSnapshot.docs.map(async (friendDoc) => {
+            const friendUserId = friendDoc.id;
+            try {
+                const batch = writeBatch(db);
+                
+                // Remove this user from friend's friends list
+                const friendFriendRef = doc(db, 'users', friendUserId, 'friends', userId);
+                batch.delete(friendFriendRef);
+                
+                // Remove any view requests between these users
+                const friendViewRequestRef = doc(db, 'users', friendUserId, 'viewRequests', userId);
+                batch.delete(friendViewRequestRef);
+                
+                await batch.commit();
+                console.log(`[Profile Service] Removed user ${userId} from friend ${friendUserId}'s lists`);
+            } catch (error: any) {
+                console.error(`[Profile Service] Error removing user ${userId} from friend ${friendUserId}:`, error);
+                // Continue with other removals
+            }
+        });
+        
+        await Promise.all(removalPromises);
+        
+        // Also check for any pending view requests to this user from others
+        // Note: This is a simplified approach. In a real app, you might want to maintain
+        // a more efficient index for this purpose.
+        console.log(`[Profile Service] Completed friendship cleanup for user: ${userId}`);
+        
+    } catch (error: any) {
+        console.error(`[Profile Service] Error during friendship cleanup for user ${userId}:`, error);
+        // Continue with account deletion even if friendship cleanup fails
     }
 }

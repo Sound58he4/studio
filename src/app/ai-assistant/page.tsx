@@ -206,7 +206,7 @@ export default function AIAssistantPage() {
     
     return (
         <motion.div 
-            className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col bg-card overflow-hidden relative"
+            className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col bg-card relative px-2 sm:px-4 pb-4 sm:pb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
@@ -263,7 +263,7 @@ export default function AIAssistantPage() {
             </motion.div>
             
             <motion.div 
-                className="flex-grow min-h-0 flex flex-col overflow-hidden relative z-10"
+                className="flex-grow min-h-0 flex flex-col relative z-10"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
