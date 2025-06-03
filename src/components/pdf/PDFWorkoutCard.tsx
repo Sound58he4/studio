@@ -26,6 +26,9 @@ import {
 import { cn } from '@/lib/utils';
 import { PDFWorkout, WorkoutCategory } from './PDFWorkoutViewer';
 import { getPowerWorkoutByDay } from '@/data/workouts/power-workout-plan';
+import { getXtremeWorkoutByDay } from '@/data/workouts/xtreme-workout-plan';
+import { getLightWorkoutByDay } from '@/data/workouts/light-workout-plan';
+import { getMaxWorkoutByDay } from '@/data/workouts/max-workout-plan';
 import WorkoutQuoteDisplay from '@/components/workout/WorkoutQuoteDisplay';
 import YouTubeWorkoutExplanation from '@/components/workout/YouTubeWorkoutExplanation';
 
@@ -75,14 +78,25 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
 }) => {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState<'view' | 'download' | null>(null);
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    const config = CATEGORY_CONFIGS[pdfWorkout.category];
+    const [isExpanded, setIsExpanded] = useState(false);    const config = CATEGORY_CONFIGS[pdfWorkout.category];
     
-    // Get POWER workout details if this is a POWER workout
-    const powerWorkoutDetails = pdfWorkout.category === 'POWER' 
-        ? getPowerWorkoutByDay(pdfWorkout.day) 
-        : null;
+    // Get workout details based on category
+    const getWorkoutDetails = () => {
+        switch (pdfWorkout.category) {
+            case 'POWER':
+                return getPowerWorkoutByDay(pdfWorkout.day);
+            case 'XTREME WORKOUT':
+                return getXtremeWorkoutByDay(pdfWorkout.day);
+            case 'LIGHT WORKOUT':
+                return getLightWorkoutByDay(pdfWorkout.day);
+            case 'MAX WORKOUT':
+                return getMaxWorkoutByDay(pdfWorkout.day);
+            default:
+                return null;
+        }
+    };
+
+    const workoutDetails = getWorkoutDetails();
 
     const handleView = async () => {
         setIsLoading('view');
@@ -184,25 +198,22 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                                         {pdfWorkout.description}
                                     </p>
                                 )}
-                                
-                                {/* Show additional details for POWER workouts */}
-                                {powerWorkoutDetails && (
+                                  {/* Show additional details for all workout types with structured data */}
+                                {workoutDetails && (
                                     <div className="mt-1 sm:mt-2">
                                         <p className="text-[10px] sm:text-xs font-medium text-muted-foreground">
-                                            {powerWorkoutDetails.name}
+                                            {workoutDetails.name}
                                         </p>
                                         <p className="text-[10px] sm:text-xs text-muted-foreground">
-                                            {powerWorkoutDetails.exercises.length} exercises
+                                            {workoutDetails.exercises.length} exercises
                                         </p>
                                     </div>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Action Buttons */}
+                        </div>                        {/* Action Buttons */}
                         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-                            {/* Show expand button for POWER workouts */}
-                            {powerWorkoutDetails && (
+                            {/* Show expand button for workouts with structured data */}
+                            {workoutDetails && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -260,18 +271,16 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                                 </Button>
                             )}
                         </div>
-                    </div>
-                      {/* Expanded Section for POWER Workouts */}
-                    {isExpanded && powerWorkoutDetails && (                        <motion.div
+                    </div>                    {/* Expanded Section for All Workout Types */}
+                    {isExpanded && workoutDetails && (<motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                             className="mt-3 sm:mt-4 space-y-3 sm:space-y-4 overflow-hidden"
-                        >
-                            {/* Workout Quote */}
+                        >                            {/* Workout Quote */}
                             <WorkoutQuoteDisplay 
-                                quote={powerWorkoutDetails.quote}
+                                quote={workoutDetails.quote}
                                 variant="minimal"
                                 showIcon={false}
                                 className="text-[10px] sm:text-xs"
@@ -279,18 +288,18 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                             
                             {/* YouTube Explanation */}
                             <YouTubeWorkoutExplanation
-                                youtubeUrl={powerWorkoutDetails.youtubeExplanationUrl}
-                                workoutName={powerWorkoutDetails.name}
+                                youtubeUrl={workoutDetails.youtubeExplanationUrl}
+                                workoutName={workoutDetails.name}
                                 description="Watch how to perform this workout properly"
                             />
                             
                             {/* Exercise Preview */}
                             <div className="bg-white/10 rounded-lg p-2 sm:p-3 border border-white/20">
                                 <h5 className="text-[10px] sm:text-xs font-semibold mb-1 sm:mb-2 text-foreground/80">
-                                    Exercises Preview ({powerWorkoutDetails.exercises.length} total)
+                                    Exercises Preview ({workoutDetails.exercises.length} total)
                                 </h5>
                                 <div className="space-y-1 max-h-24 sm:max-h-32 overflow-y-auto">
-                                    {powerWorkoutDetails.exercises.slice(0, 5).map((exercise, idx) => (
+                                    {workoutDetails.exercises.slice(0, 5).map((exercise, idx) => (
                                         <div key={idx} className="flex justify-between items-center text-[10px] sm:text-xs">
                                             <span className="text-foreground/70 truncate mr-2">{exercise.exercise}</span>
                                             <span className="text-muted-foreground whitespace-nowrap">
@@ -298,9 +307,9 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                                             </span>
                                         </div>
                                     ))}
-                                    {powerWorkoutDetails.exercises.length > 5 && (
+                                    {workoutDetails.exercises.length > 5 && (
                                         <p className="text-[10px] sm:text-xs text-muted-foreground italic">
-                                            +{powerWorkoutDetails.exercises.length - 5} more exercises...
+                                            +{workoutDetails.exercises.length - 5} more exercises...
                                         </p>
                                     )}
                                 </div>
@@ -343,9 +352,7 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                                     <Download className="h-3 w-3 mr-1" />
                                 )}
                                 Download
-                            </Button>
-
-                            {powerWorkoutDetails && (
+                            </Button>                            {workoutDetails && (
                                 <Badge 
                                     variant="secondary" 
                                     className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 text-[10px] sm:text-xs w-full sm:w-auto justify-center sm:justify-start"

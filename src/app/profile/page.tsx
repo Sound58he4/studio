@@ -38,7 +38,7 @@ import {
     Ruler, Weight, Calendar, TrendingUp, ShieldQuestion, MapPin, Loader2, AlertCircle,
     RefreshCw, Info, Salad, Vegan, WheatOff, Shell, CircleHelp, Flame, Droplet,
     Dumbbell, Egg, Fish, Milk, Bean, Sprout, ChefHat, HeartHandshake, Languages, Target,
-    CheckCircle, Star, Zap, Heart
+    CheckCircle, Star, Zap, Heart, Bell, Clock, TestTube
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/context/AuthContext';
@@ -50,6 +50,7 @@ import { dietaryStyleValues, fitnessGoalValues, activityLevelValues, commonAller
 import { createFirestoreServiceError } from '@/services/firestore/utils';
 import { Label } from "@/components/ui/label";
 import AnimatedWrapper, { FadeInWrapper, SlideUpWrapper, StaggerContainer } from "@/components/ui/animated-wrapper";
+import { useWeightReminder } from '@/hooks/use-weight-reminder';
 
 
 const profileFormSchema = z.object({
@@ -161,6 +162,13 @@ export default function ProfilePage() {
   const [initialDisplayName, setInitialDisplayName] = useState<string | undefined>(undefined);
   const [hasFetchedProfile, setHasFetchedProfile] = useState(false);
 
+  // Weight reminder state
+  const weightReminder = useWeightReminder();
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderDay, setReminderDay] = useState('0'); // Sunday default
+  const [reminderHour, setReminderHour] = useState('10');
+  const [reminderMinute, setReminderMinute] = useState('0');
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues,
@@ -240,6 +248,112 @@ export default function ProfilePage() {
       form.setValue("manualTargetActivityCalories", null, { shouldValidate: false });
     }
   }, [useAiTargets, form]);
+
+  // Load weight reminder settings
+  useEffect(() => {
+    if (weightReminder.settings) {
+      setReminderEnabled(weightReminder.settings.enabled);
+      setReminderDay(weightReminder.settings.dayOfWeek.toString());
+      setReminderHour(weightReminder.settings.hour.toString());
+      setReminderMinute(weightReminder.settings.minute.toString());
+    }
+  }, [weightReminder.settings]);
+
+  // Handle weight reminder settings change
+  const handleReminderChange = async (enabled: boolean) => {
+    setReminderEnabled(enabled);
+    
+    if (enabled && weightReminder.permission !== 'granted') {
+      const granted = await weightReminder.requestPermission();
+      if (!granted) {
+        toast({
+          variant: "destructive",
+          title: "Permission Denied",
+          description: "Notifications are required for weight reminders. Please enable them in your browser settings."
+        });
+        setReminderEnabled(false);
+        return;
+      }
+    }
+
+    const settings = {
+      enabled,
+      dayOfWeek: parseInt(reminderDay),
+      hour: parseInt(reminderHour),
+      minute: parseInt(reminderMinute)
+    };
+
+    if (enabled) {
+      const success = await weightReminder.scheduleReminder(settings);
+      if (success) {
+        toast({
+          title: "Reminder Scheduled",
+          description: `You'll be reminded to update your weight every ${getDayName(parseInt(reminderDay))} at ${formatTime(parseInt(reminderHour), parseInt(reminderMinute))}.`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Reminder Failed",
+          description: "Failed to schedule weight reminder. Please try again."
+        });
+        setReminderEnabled(false);
+      }
+    } else {
+      await weightReminder.cancelReminder();
+      toast({
+        title: "Reminder Cancelled",
+        description: "Weight reminders have been disabled."
+      });
+    }
+  };
+
+  const handleReminderTimeChange = async () => {
+    if (reminderEnabled) {
+      const settings = {
+        enabled: true,
+        dayOfWeek: parseInt(reminderDay),
+        hour: parseInt(reminderHour),
+        minute: parseInt(reminderMinute)
+      };
+
+      const success = await weightReminder.scheduleReminder(settings);
+      if (success) {
+        toast({
+          title: "Reminder Updated",
+          description: `Weight reminder updated to ${getDayName(parseInt(reminderDay))} at ${formatTime(parseInt(reminderHour), parseInt(reminderMinute))}.`
+        });
+      }
+    }
+  };
+
+  const handleTestNotification = async () => {
+    const success = await weightReminder.showTestNotification();
+    if (success) {
+      toast({
+        title: "Test Notification Sent",
+        description: "Check if you received the test notification."
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Test Failed",
+        description: "Failed to send test notification."
+      });
+    }
+  };
+
+  // Helper functions
+  const getDayName = (dayOfWeek: number) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[dayOfWeek];
+  };
+
+  const formatTime = (hour: number, minute: number) => {
+    const period = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const displayMinute = minute.toString().padStart(2, '0');
+    return `${displayHour}:${displayMinute} ${period}`;
+  };
 
   async function onSubmit(data: ProfileFormValues) {
     if (!userId) { toast({ variant: "destructive", title: "Error", description: "User not authenticated." }); return; }
@@ -1257,6 +1371,207 @@ export default function ProfilePage() {
                           </motion.div>
                         )}
                       </AnimatePresence>
+                    </motion.section>
+
+                    {/* Weight Reminder Section */}
+                    <motion.section
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
+                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
+                               hover:bg-card/70 group"
+                    >
+                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
+                        <motion.div
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
+                        >
+                          <Bell className="h-5 w-5 text-primary" />
+                        </motion.div>
+                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                          Weight Tracking Reminders
+                        </h2>
+                      </div>
+
+                      <FormDescription className="text-sm italic text-center text-muted-foreground p-3 bg-muted/20 rounded-lg border border-border/20">
+                        Get reminded weekly to update your weight for better tracking and personalized recommendations.
+                      </FormDescription>
+
+                      {!weightReminder.isSupported && (
+                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2 mb-2">
+                            <AlertCircle className="h-4 w-4" />
+                            Notifications may not be fully supported in your current environment.
+                          </p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                            • Make sure you're using HTTPS or localhost
+                            <br />
+                            • Install as PWA for full notification support
+                            <br />
+                            • Check browser notification permissions
+                          </p>
+                          {process.env.NODE_ENV === 'development' && (
+                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 font-mono">
+                              Dev mode: Try installing as PWA or check console for details
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {(weightReminder.isSupported || process.env.NODE_ENV === 'development') && (
+                        <div className="space-y-4">
+                          {/* Development mode notice */}
+                          {!weightReminder.isSupported && process.env.NODE_ENV === 'development' && (
+                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                              <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
+                                <Info className="h-4 w-4" />
+                                Development mode: Notification settings available for testing
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Enable/Disable Toggle */}
+                          <div className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
+                                         bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
+                            <div className="space-y-1 mr-4">
+                              <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                                <Bell className="h-4 w-4 text-primary" />
+                                Weekly Weight Reminders
+                              </ShadCnFormLabel>
+                              <FormDescription className="text-xs font-sans">
+                                {weightReminder.permission === 'granted' 
+                                  ? "Get notified weekly to update your weight"
+                                  : "Permission required for notifications"
+                                }
+                              </FormDescription>
+                            </div>
+                            <motion.div whileTap={{ scale: 0.95 }}>
+                              <Switch 
+                                checked={reminderEnabled} 
+                                onCheckedChange={handleReminderChange}
+                                disabled={weightReminder.isLoading}
+                                className="data-[state=checked]:bg-primary"
+                              />
+                            </motion.div>
+                          </div>
+
+                          {/* Time and Day Settings */}
+                          <AnimatePresence mode="wait">
+                            {reminderEnabled && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-4 pt-4"
+                              >
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {/* Day of Week */}
+                                  <div className="space-y-2">
+                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                                      <Calendar className="h-4 w-4 text-primary" />
+                                      Day of Week
+                                    </ShadCnFormLabel>
+                                    <Select
+                                      value={reminderDay}
+                                      onValueChange={(value) => {
+                                        setReminderDay(value);
+                                        setTimeout(handleReminderTimeChange, 100);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="0">Sunday</SelectItem>
+                                        <SelectItem value="1">Monday</SelectItem>
+                                        <SelectItem value="2">Tuesday</SelectItem>
+                                        <SelectItem value="3">Wednesday</SelectItem>
+                                        <SelectItem value="4">Thursday</SelectItem>
+                                        <SelectItem value="5">Friday</SelectItem>
+                                        <SelectItem value="6">Saturday</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Hour */}
+                                  <div className="space-y-2">
+                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                                      <Clock className="h-4 w-4 text-primary" />
+                                      Hour
+                                    </ShadCnFormLabel>
+                                    <Select
+                                      value={reminderHour}
+                                      onValueChange={(value) => {
+                                        setReminderHour(value);
+                                        setTimeout(handleReminderTimeChange, 100);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: 24 }, (_, i) => (
+                                          <SelectItem key={i} value={i.toString()}>
+                                            {formatTime(i, 0).split(':')[0] + ' ' + formatTime(i, 0).split(' ')[1]}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {/* Minute */}
+                                  <div className="space-y-2">
+                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                                      <Clock className="h-4 w-4 text-primary" />
+                                      Minute
+                                    </ShadCnFormLabel>
+                                    <Select
+                                      value={reminderMinute}
+                                      onValueChange={(value) => {
+                                        setReminderMinute(value);
+                                        setTimeout(handleReminderTimeChange, 100);
+                                      }}
+                                    >
+                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {Array.from({ length: 12 }, (_, i) => i * 5).map((minute) => (
+                                          <SelectItem key={minute} value={minute.toString()}>
+                                            {minute.toString().padStart(2, '0')}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                {/* Test Notification Button */}
+                                <div className="flex justify-center pt-2">
+                                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={handleTestNotification}
+                                      className="gap-2 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5"
+                                    >
+                                      <TestTube className="h-4 w-4" />
+                                      Test Notification
+                                    </Button>
+                                  </motion.div>
+                                </div>
+
+                                <div className="text-center text-xs text-muted-foreground italic p-2 bg-muted/10 rounded-lg">
+                                  Next reminder: {getDayName(parseInt(reminderDay))} at {formatTime(parseInt(reminderHour), parseInt(reminderMinute))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )}
                     </motion.section>
                   </StaggerContainer>
 

@@ -60,20 +60,18 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
     // Don't render anything on mobile screens
     if (isMobile) {
         return null;
-    }
-
-    // Primary navigation items (shown directly in navbar)
+    }    // Primary navigation items (shown directly in navbar)
     const primaryNavItems = [
         { href: "/dashboard", label: "Dashboard", icon: Activity },
         { href: "/overview", label: "Overview", icon: LayoutDashboard },
-        { href: "/log", label: "Log Food", icon: ClipboardList },
         { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
         { href: "/profile", label: "Profile", icon: User },
-    ];
-
-    // Secondary navigation items (shown in dropdown)
+        { href: "/quick-log", label: "Quick Log", icon: ListChecks },
+        { href: "/workout-plans", label: "Workout Plans", icon: ClipboardList },
+        { href: "/points", label: "Your Points", icon: Star },
+    ];    // Secondary navigation items (shown in dropdown)
     const secondaryNavItems = navLinks.filter(
-        link => !primaryNavItems.some(primaryLink => primaryLink.href === link.href) && link.href !== "/settings"
+        link => !primaryNavItems.some(primaryLink => primaryLink.href === link.href) && link.href !== "/settings" && link.href !== "/log"
     );
 
     const settingsItem = navLinks.find(link => link.href === "/settings");
@@ -190,8 +188,7 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                         align="end" 
                         className="w-56 bg-card/95 backdrop-blur-lg border shadow-lg"
                         sideOffset={5}
-                    >
-                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                    >                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
                             Additional Options
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
@@ -203,7 +200,7 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                                     key={link.href}
                                     initial={{ opacity: 0, y: -10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
+                                    transition={{ delay: (index + 1) * 0.05 }}
                                 >
                                     <DropdownMenuItem asChild>
                                         <Link href={link.href} className="w-full">

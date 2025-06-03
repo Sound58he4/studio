@@ -33,12 +33,11 @@ export default function AuthorizePage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Remove the problematic isClient state and loading guard
   useEffect(() => {
-    console.log("[Authorize Page] Component mounted. isClient set to true.");
-    setIsClient(true);
+    console.log("[Authorize Page] Component mounted.");
     // Middleware handles redirecting logged-in users away from /authorize
   }, []);
 
@@ -52,13 +51,13 @@ export default function AuthorizePage() {
 
     toast({
       title: "Login Successful",
-      description: `Welcome! Redirecting...`,
+      description: `Welcome! Redirecting to profile...`,
       variant: 'default',
     });
 
-    console.log("[Authorize Page] Navigating to /dashboard...");
-    router.replace('/dashboard'); // Use replace to avoid auth page in history
-    console.log("[Authorize Page] Navigation to /dashboard initiated.");
+    console.log("[Authorize Page] Navigating to /profile...");
+    router.replace('/profile'); // Use replace to avoid auth page in history
+    console.log("[Authorize Page] Navigation to /profile initiated.");
   };
 
   const getFirebaseAuthErrorMessage = (err: any): string => {
@@ -104,25 +103,6 @@ export default function AuthorizePage() {
       setIsLoadingGoogle(false); // Ensure loading state is reset on error
     }
   };
-
-  if (!isClient) {
-    return (
-      <div className="flex justify-center items-center min-h-screen p-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col items-center space-y-4"
-        >
-          <div className="relative">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <div className="absolute inset-0 h-12 w-12 animate-ping bg-primary/20 rounded-full" />
-          </div>
-          <p className="text-muted-foreground font-medium">Loading your fitness journey...</p>
-        </motion.div>
-      </div>
-    );
-  }
 
   const features = [
     { icon: Activity, title: "Track Progress", description: "Monitor your fitness journey" },
@@ -337,7 +317,7 @@ export default function AuthorizePage() {
                   </div>
                   <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                     <Users className="h-4 w-4 text-blue-500" />
-                    <span>Trusted by 10k+ users</span>
+                    <span>Trusted by you!</span>
                   </div>
                 </div>
               </CardContent>

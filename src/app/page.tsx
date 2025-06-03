@@ -1,168 +1,378 @@
-// src/app/page.tsx
-import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, Target as TargetIcon, Zap, BarChart2 as ReportIconLucide, Users, BrainCircuit, Sparkles, ClipboardList, Eye, Star } from "lucide-react";
-import Link from "next/link";
-import Image from 'next/image';
-import { cn } from "@/lib/utils";
+"use client";
 
-// Component for Feature Cards
-interface FeatureCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  dataAiHint?: string;
-  animationDelay?: string;
+import { FeatureGrid } from "@/components/feature-grid";
+import { HeroSection } from "@/components/hero-section";
+import { CTASection } from "@/components/cta-section";
+import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import { useEffect, useState } from "react";
+import { 
+  Sparkles, 
+  Dumbbell, 
+  Target, 
+  Activity, 
+  Zap, 
+  Brain,
+  TrendingUp,
+  Shield,
+  Heart,
+  Award,
+  Users,
+  Timer
+} from "lucide-react";
+
+// Enhanced Background Effects Component
+function EnhancedBackground() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; speed: number }>>([]);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  
+  const springX = useSpring(mouseX, { stiffness: 100, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 100, damping: 20 });
+  
+  const gradientX = useTransform(springX, [0, window?.innerWidth || 1920], [0, 100]);
+  const gradientY = useTransform(springY, [0, window?.innerHeight || 1080], [0, 100]);
+
+  // Initialize particles
+  useEffect(() => {
+    const particleCount = 50;
+    const newParticles = Array.from({ length: particleCount }, (_, i) => ({
+      id: i,
+      x: Math.random() * (window?.innerWidth || 1920),
+      y: Math.random() * (window?.innerHeight || 1080),
+      size: Math.random() * 4 + 1,
+      speed: Math.random() * 0.5 + 0.1
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  // Mouse tracking
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [mouseX, mouseY]);
+
+  // Floating geometric shapes
+  const geometricShapes = [
+    { shape: 'circle', size: 100, delay: 0 },
+    { shape: 'triangle', size: 80, delay: 2 },
+    { shape: 'square', size: 60, delay: 4 },
+    { shape: 'hexagon', size: 120, delay: 1 },
+    { shape: 'diamond', size: 90, delay: 3 }
+  ];
+
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {/* Animated gradient background that follows mouse */}
+      <motion.div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, 
+                      rgba(139, 92, 246, 0.15), 
+                      rgba(59, 130, 246, 0.1), 
+                      transparent 50%)`
+        }}
+      />
+
+      {/* Floating particles */}
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full bg-primary/20"
+          style={{
+            width: particle.size,
+            height: particle.size,
+            left: particle.x,
+            top: particle.y,
+          }}
+          animate={{
+            y: [particle.y, particle.y - 100],
+            opacity: [0.7, 0, 0.7],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{
+            duration: 10 + particle.speed * 5,
+            repeat: Infinity,
+            ease: "linear",
+            delay: Math.random() * 10
+          }}
+        />
+      ))}
+
+      {/* Large floating geometric shapes */}
+      {geometricShapes.map((shape, index) => (
+        <motion.div
+          key={index}
+          className="absolute opacity-5"
+          style={{
+            left: `${10 + index * 20}%`,
+            top: `${20 + index * 15}%`,
+            width: shape.size,
+            height: shape.size,
+          }}
+          animate={{
+            rotate: [0, 360],
+            scale: [1, 1.1, 1],
+            x: [0, 50, 0],
+            y: [0, -30, 0],
+          }}
+          transition={{
+            duration: 20 + index * 5,
+            repeat: Infinity,
+            ease: "linear",
+            delay: shape.delay
+          }}
+        >
+          {shape.shape === 'circle' && (
+            <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-accent" />
+          )}
+          {shape.shape === 'square' && (
+            <div className="w-full h-full bg-gradient-to-br from-accent to-primary rotate-45" />
+          )}
+          {shape.shape === 'triangle' && (
+            <div className="w-0 h-0 border-l-[40px] border-r-[40px] border-b-[60px] 
+                          border-l-transparent border-r-transparent border-b-primary/50" />
+          )}
+          {shape.shape === 'hexagon' && (
+            <div className="w-full h-full bg-gradient-to-br from-primary to-accent 
+                          transform rotate-30" style={{ clipPath: 'polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%)' }} />
+          )}
+          {shape.shape === 'diamond' && (
+            <div className="w-full h-full bg-gradient-to-br from-accent to-primary rotate-45" />
+          )}
+        </motion.div>
+      ))}
+
+      {/* Animated grid pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="grid grid-cols-12 grid-rows-8 h-full w-full">
+          {Array.from({ length: 96 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="border border-primary/20"
+              animate={{
+                opacity: [0.2, 0.5, 0.2],
+                borderColor: ['rgba(139, 92, 246, 0.1)', 'rgba(59, 130, 246, 0.3)', 'rgba(139, 92, 246, 0.1)']
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                delay: i * 0.1,
+                ease: "easeInOut"
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Pulsing orbs */}
+      <motion.div
+        className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-xl"
+        animate={{
+          scale: [1, 1.5, 1],
+          opacity: [0.3, 0.6, 0.3],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      <motion.div
+        className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-accent/10 rounded-full blur-xl"
+        animate={{
+          scale: [1.2, 0.8, 1.2],
+          opacity: [0.4, 0.7, 0.4],
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2
+        }}
+      />
+      <motion.div
+        className="absolute top-3/4 left-3/4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl"
+        animate={{
+          scale: [0.8, 1.3, 0.8],
+          opacity: [0.2, 0.5, 0.2],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 4
+        }}
+      />
+    </div>
+  );
 }
 
-const FeatureCard = React.memo(function FeatureCard({ icon, title, description, dataAiHint, animationDelay = '0ms' }: FeatureCardProps) {
+// Enhanced Features Showcase Section
+function FeaturesShowcase() {
+  const features = [
+    {
+      icon: Brain,
+      title: "AI-Powered Insights",
+      description: "Get personalized workout recommendations based on your performance and goals",
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: Activity,
+      title: "Real-time Tracking",
+      description: "Monitor your workouts, heart rate, and progress in real-time",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: Target,
+      title: "Goal Setting",
+      description: "Set and achieve your fitness goals with smart milestone tracking",
+      color: "from-green-500 to-emerald-500"
+    },
+    {
+      icon: TrendingUp,
+      title: "Progress Analytics",
+      description: "Detailed insights and analytics to track your fitness journey",
+      color: "from-orange-500 to-red-500"
+    },
+    {
+      icon: Zap,
+      title: "Quick Workouts",
+      description: "Access lightning-fast workout routines for busy schedules",
+      color: "from-yellow-500 to-orange-500"
+    },
+    {
+      icon: Shield,
+      title: "Health Monitoring",
+      description: "Comprehensive health metrics and safety recommendations",
+      color: "from-indigo-500 to-purple-500"
+    },
+    {
+      icon: Heart,
+      title: "Wellness Tracking",
+      description: "Monitor your overall wellness including sleep, stress, and recovery",
+      color: "from-pink-500 to-rose-500"
+    },
+    {
+      icon: Award,
+      title: "Achievement System",
+      description: "Unlock badges and achievements as you reach new milestones",
+      color: "from-amber-500 to-yellow-500"
+    },
+    {
+      icon: Users,
+      title: "Community Features",
+      description: "Connect with like-minded fitness enthusiasts and share progress",
+      color: "from-teal-500 to-green-500"
+    },
+    {
+      icon: Timer,
+      title: "Workout Timer",
+      description: "Built-in timers for intervals, rest periods, and workout duration",
+      color: "from-slate-500 to-gray-500"
+    },
+    {
+      icon: Dumbbell,
+      title: "Exercise Library",
+      description: "Comprehensive library of exercises with proper form demonstrations",
+      color: "from-violet-500 to-purple-500"
+    },
+    {
+      icon: Sparkles,
+      title: "Adaptive Training",
+      description: "Workouts that adapt to your fitness level and preferences",
+      color: "from-cyan-500 to-blue-500"
+    }
+  ];
+
   return (
-      <Card className={cn(
-        "bg-card hover:border-primary/40 border border-border/20",
-        "transition-all duration-300 h-full",
-        "flex flex-col text-center shadow-md hover:shadow-xl",
-        "transform hover:-translate-y-1 hover:scale-[1.03]",
-        "animate-in fade-in zoom-in-95 card-interactive"
-      )}
-      style={{ animationDelay }}
-      data-ai-hint={dataAiHint}
-      >
-        <CardHeader className="items-center pb-4 pt-6">
-           <div className="p-3 bg-gradient-to-br from-primary/10 to-accent/10 rounded-full mb-3 transition-transform duration-300 group-hover:scale-110 ring-1 ring-primary/10">
-              {icon}
-           </div>
-          <CardTitle className="mt-1 text-lg font-semibold">{title}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-grow px-5 pb-6">
-          <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-        </CardContent>
-      </Card>
-  );
-});
-FeatureCard.displayName = 'FeatureCard';
+    <section className="py-24 relative">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+            Powerful Features for Your Fitness Journey
+          </h2>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+            Experience the next generation of fitness technology with AI-driven insights, 
+            comprehensive tracking, and personalized recommendations designed to help you achieve your goals.
+          </p>
+        </motion.div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="group relative"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 rounded-2xl blur-xl 
+                            group-hover:blur-sm transition-all duration-500 opacity-0 group-hover:opacity-100" />
+              
+              <div className="relative p-6 rounded-2xl bg-card/60 backdrop-blur-lg border border-border/20 
+                            hover:border-primary/30 transition-all duration-500 h-full
+                            hover:shadow-2xl hover:shadow-primary/10">
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className={`p-4 rounded-xl bg-gradient-to-r ${feature.color} 
+                                group-hover:scale-110 transition-transform duration-300`}>
+                    <feature.icon className="h-8 w-8 text-white drop-shadow-lg" />
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
+                    {feature.title}
+                  </h3>
+                  
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
 
-export default function Home() {
-  const firebaseLogoUrl = "https://firebasestorage.googleapis.com/v0/b/nutritransform-ai.firebasestorage.app/o/WhatsApp%20Image%202025-05-12%20at%205.56.15%20PM.jpeg?alt=media&token=cbc230df-adcd-48e4-b7dd-4706a96b32f5";
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-var(--header-height,0px)-var(--footer-height,0px)-var(--bottom-nav-height,0px))] md:min-h-[calc(100vh-var(--header-height-md,0px)-var(--footer-height-md,0px))] space-y-10 text-center px-4 animate-in fade-in duration-700 ease-out">
-
-      {/* Hero Section */}
-      <section
-        className={cn(
-            "relative w-full py-20 md:py-28 lg:py-32 rounded-xl shadow-2xl border border-border/10 overflow-hidden group",
-            "bg-glowing-blue-hero" 
-        )}
-        data-ai-hint="fitness workout gym"
-      >
-         <div className="absolute inset-0 bg-black/5 dark:bg-black/20 z-0"></div> {/* Subtle Overlay for text contrast */}
-
-        <div className="container mx-auto px-4 md:px-6 relative z-10">
-          <div className="flex flex-col items-center text-center space-y-6 animate-in fade-in slide-in-from-left-8 duration-700">
-              <div className={cn(
-                  "p-1 bg-card/90 backdrop-blur-sm rounded-full shadow-xl border-2 border-border/20 flex items-center justify-center h-20 w-20 sm:h-24 sm:w-24 overflow-hidden",
-                  "animate-subtle-pulse group-hover:animate-none" // Apply animation, stop on hover
-                )}>
-                  <Image
-                    src={firebaseLogoUrl}
-                    alt="Bago AI Logo"
-                    width={96}
-                    height={96}
-                    className="rounded-full object-cover group-hover:scale-110 transition-transform duration-300 ease-out"
-                    priority
-                    unoptimized={true}
-                  />
+                {/* Hover effect overlay */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl opacity-0 
+                           group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  initial={{ scale: 0.8 }}
+                  whileHover={{ scale: 1 }}
+                />
               </div>
-              <h1
-                className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight drop-shadow-lg animate-slide-in-fade-up animation-delay-200"
-              >
-                <span className="text-cyan-400">Transform Your Fitness with</span>
-                <span className="block mt-2 text-yellow-400"> Bago AI</span>
-              </h1>
-              <p className="text-lg md:text-xl text-foreground/80 dark:text-foreground/70 max-w-xl mx-auto font-medium drop-shadow-sm animate-slide-in-fade-up animation-delay-300">
-                Your intelligent partner for fitness success. Log meals effortlessly, track detailed progress, get personalized plans, and achieve your goals faster with AI insights.
-              </p>
-              <Link href="/authorize" className="animate-slide-in-fade-up animation-delay-400">
-                <Button size="lg" className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl transform hover:scale-105 transition-all duration-300 ease-out focus:ring-2 focus:ring-primary focus:ring-offset-4 focus:ring-offset-background font-semibold text-base py-3.5 px-10 rounded-full group btn">
-                   Start Your Journey
-                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
-                </Button>
-              </Link>
-            </div>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Features Section */}
-      <section className="w-full max-w-6xl pt-20 pb-16 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 ease-out">
-         <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">Why Choose Bago AI?</h2>
-             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto">Unlock your full potential with features designed for your fitness journey.</p>
-         </div>
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-            <FeatureCard
-              icon={<TargetIcon className="h-8 w-8 text-primary" />}
-              title="Personalized Goals"
-              description="Define your unique profile and let Bago AI tailor nutrition and workout targets specifically for you."
-              dataAiHint="goal target success"
-              animationDelay="100ms"
-            />
-            <FeatureCard
-              icon={<Zap className="h-8 w-8 text-primary" />}
-              title="Smart Logging"
-              description="Effortlessly log meals using camera, voice, or text. AI instantly estimates nutrition."
-              dataAiHint="food logging mobile app"
-              animationDelay="200ms"
-            />
-            <FeatureCard
-              icon={<ClipboardList className="h-8 w-8 text-primary" />}
-              title="AI Workout Plans"
-              description="Receive dynamic, gym-focused weekly workout plans generated based on your goals and profile."
-              dataAiHint="workout plan schedule"
-              animationDelay="300ms"
-            />
-            <FeatureCard
-              icon={<ReportIconLucide className="h-8 w-8 text-primary" />}
-              title="Insightful Reports"
-              description="Track progress with detailed daily, weekly, and monthly reports powered by AI feedback."
-              dataAiHint="analytics chart report"
-              animationDelay="400ms"
-            />
-             <FeatureCard
-              icon={<Users className="h-8 w-8 text-primary" />}
-              title="Social Connection"
-              description="Find friends, share progress based on permissions, and stay motivated together."
-              dataAiHint="community friends social"
-              animationDelay="500ms"
-            />
-             <FeatureCard
-               icon={<BrainCircuit className="h-8 w-8 text-primary" />}
-               title="AI Chat Assistant"
-               description="Ask Bago anything! Get personalized fitness advice, food alternatives, and support based on your data."
-               dataAiHint="ai chat bot assistant"
-               animationDelay="600ms"
-             />
-          </div>
-      </section>
-
-      {/* Call to Action Section */}
-      <section className="w-full max-w-4xl py-16 md:py-24 text-center animate-in fade-in duration-1000 delay-500">
-        <Sparkles className="h-12 w-12 text-amber-400 mx-auto mb-6 animate-pulse duration-3000 animation-delay-1000" />
-        <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Elevate Your Fitness?</h2>
-        <p className="text-muted-foreground text-lg md:text-xl mb-10 max-w-xl mx-auto">
-          Join Bago AI today and take the first step towards a healthier, stronger you.
-          Let's achieve your goals together!
-        </p>
-        <Link href="/authorize">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transform hover:scale-105 transition-transform duration-300 py-4 px-12 text-lg rounded-full group btn">
-            Get Started for Free
-            <Star className="ml-2 h-5 w-5 group-hover:animate-ping once" />
-          </Button>
-        </Link>
-      </section>
-
-    </div>
+export default function HomePage() {
+  return (
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="flex flex-col min-h-screen relative overflow-hidden"
+    >
+      <EnhancedBackground />
+      <div className="relative z-10">
+        <HeroSection />
+        <FeatureGrid />
+        {/* <FeaturesShowcase /> */}
+        <CTASection />
+      </div>
+    </motion.main>
   );
 }
 

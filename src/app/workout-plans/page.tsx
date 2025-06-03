@@ -29,6 +29,9 @@ import {
     getWorkoutByTypeAndDay, 
     WorkoutPlanType 
 } from '@/data/workouts/power-workout-plan';
+import { convertLightWorkoutToExercises } from '@/data/workouts/light-workout-plan';
+import { convertMaxWorkoutToExercises } from '@/data/workouts/max-workout-plan';
+import { convertXtremeWorkoutToExercises } from '@/data/workouts/xtreme-workout-plan';
 
 // --- Types ---
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
@@ -69,6 +72,25 @@ const createInitialEditablePlan = (plan: WeeklyWorkoutPlan | null): Record<DayOf
 };
 
 const generateUniqueId = (day: DayOfWeek) => `${day}-new-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+// Helper to normalize PDF category to WorkoutPlanType
+const normalizeCategory = (category: string): WorkoutPlanType | null => {
+    switch (category.trim().toUpperCase()) {
+        case 'POWER':
+            return 'POWER';
+        case 'XTREME':
+        case 'XTREME WORKOUT':
+            return 'XTREME';
+        case 'MAX':
+        case 'MAX WORKOUT':
+            return 'MAX';
+        case 'LIGHT':
+        case 'LIGHT WORKOUT':
+            return 'LIGHT';
+        default:
+            return null;
+    }
+};
 
 // --- Main Component ---
 export default function WorkoutPlansPage() {
@@ -265,48 +287,53 @@ export default function WorkoutPlansPage() {
             id: `${day}-pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             pdfWorkout
         };
-        
         setPdfWorkouts(prev => ({
             ...prev,
             [day]: [...prev[day], newPDFItem]
         }));
-        
-        // For all workout types, we can add the actual exercises to the workout plan
         if (replaceExisting) {
-            const workoutType = pdfWorkout.category as WorkoutPlanType;
+            const workoutType = normalizeCategory(pdfWorkout.category);
+            if (!workoutType) {
+                toast({ title: 'Unknown PDF Workout Type', description: `Could not recognize workout type: ${pdfWorkout.category}`, variant: 'destructive' });
+                return;
+            }
             const workout = getWorkoutByTypeAndDay(workoutType, pdfWorkout.day);
-            
             if (workout) {
-                // Use the appropriate conversion function based on workout type
                 let exercises;
-                if (workoutType === 'POWER') {
-                    exercises = convertPowerWorkoutToExercises(workout);
-                } else {
-                    exercises = convertWorkoutToExercises(workout);
+                switch (workoutType) {
+                    case 'POWER':
+                        exercises = convertPowerWorkoutToExercises(workout);
+                        break;
+                    case 'LIGHT':
+                        exercises = convertLightWorkoutToExercises(workout);
+                        break;
+                    case 'MAX':
+                        exercises = convertMaxWorkoutToExercises(workout);
+                        break;
+                    case 'XTREME':
+                        exercises = convertXtremeWorkoutToExercises(workout);
+                        break;
+                    default:
+                        exercises = convertWorkoutToExercises(workout);
                 }
-                
-                // Convert to editable exercises
                 const newEditableExercises: EditableExercise[] = exercises.map(ex => ({
                     ...ex,
                     id: generateUniqueId(day),
                     isNew: true
                 }));
-                
-                // Replace existing exercises with the ones from the PDF
                 setEditablePlan(prev => ({
                     ...prev,
                     [day]: newEditableExercises
                 }));
-                
-                // Cancel any active editing
                 if (editingExerciseState?.day === day) {
                     setEditingExerciseState(null);
                 }
-                
                 toast({
-                    title: "PDF Exercises Added",
+                    title: 'PDF Exercises Added',
                     description: `Added ${newEditableExercises.length} exercises from ${pdfWorkout.name} to ${day}`,
                 });
+            } else {
+                toast({ title: 'Workout Not Found', description: `No workout found for ${workoutType} Day ${pdfWorkout.day}`, variant: 'destructive' });
             }
         }
     };

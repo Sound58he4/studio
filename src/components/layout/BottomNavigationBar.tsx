@@ -29,13 +29,30 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({ navLinks, han
     const mainBottomNavItems = [
         { href: "/dashboard", label: "Dashboard", icon: Activity },
         { href: "/overview", label: "Overview", icon: LayoutDashboard },
-        { href: "/log", label: "Log Food", icon: ClipboardList },
         { href: "/ai-assistant", label: "AI Chat", icon: Bot },
+        { href: "/quick-log", label: "Quick Log", icon: ListChecks },
     ];
 
     const moreSheetLinks = navLinks.filter(
         link => !mainBottomNavItems.some(mainLink => mainLink.href === link.href)
     );
+
+    // Ensure Log Food and Workout Plans appear in the More menu
+    const logFoodLink = navLinks.find(link => link.href === "/log");
+    const workoutPlansLink = navLinks.find(link => link.href === "/workout-plans");
+    
+    // Create prioritized list with Log Food and Workout Plans at the top
+    const priorityLinks = [
+        logFoodLink,
+        workoutPlansLink
+    ].filter(Boolean); // Remove undefined values
+    
+    const finalMoreLinks = [
+        ...priorityLinks,
+        ...moreSheetLinks.filter(link => 
+            link.href !== "/log" && link.href !== "/workout-plans"
+        )
+    ];
 
     const handleMoreLinkClick = () => {
         setIsSheetOpen(false);
@@ -202,7 +219,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({ navLinks, han
                                     delayChildren: 0.1
                                 }}
                             >
-                                {moreSheetLinks.map((link, index) => {
+                                {finalMoreLinks.map((link, index) => {
                                     const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== '/dashboard');
                                     return (
                                         <motion.div

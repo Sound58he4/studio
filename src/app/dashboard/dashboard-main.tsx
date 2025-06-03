@@ -659,11 +659,26 @@ export function DashboardMainPage() {
     console.log(`[Dashboard] Active tab or date changed to: ${activePeriodTab}. User profile available.`);
     if (activePeriodTab === 'daily') {
         const todayDateKey = format(new Date(), 'yyyy-MM-dd');
-        const todaysSummary = userProfile ? {
+        
+        // Check if today's data is actually from today and has entries
+        const isTodayDataValid = userProfile && 
+            userProfile.todayLastUpdated && 
+            userProfile.todayEntryCount && 
+            userProfile.todayEntryCount > 0 &&
+            (() => {
+                // Handle both string and Timestamp types
+                const lastUpdatedDate = userProfile.todayLastUpdated instanceof Timestamp 
+                    ? userProfile.todayLastUpdated.toDate() 
+                    : new Date(userProfile.todayLastUpdated);
+                return format(lastUpdatedDate, 'yyyy-MM-dd') === todayDateKey;
+            })();
+        
+        const todaysSummary = isTodayDataValid ? {
             id: todayDateKey, totalCalories: userProfile.todayCalories ?? 0, totalProtein: userProfile.todayProtein ?? 0,
             totalCarbohydrates: userProfile.todayCarbohydrates ?? 0, totalFat: userProfile.todayFat ?? 0,
             entryCount: userProfile.todayEntryCount ?? 0, lastUpdated: userProfile.todayLastUpdated ?? new Date().toISOString()
         } : null;
+        
         if(todaysSummary) {
             processLogsAndUpdateState('daily', [todaysSummary], dailyExerciseLogsState);
         } else {

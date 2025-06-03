@@ -18,7 +18,11 @@ import {
   Zap, 
   Award,
   AlertCircle,
-  Minus
+  Minus,
+  CheckCircle,
+  Star,
+  TrendingDown,
+  ThumbsUp
 } from 'lucide-react';
 import { getUserProfile, getFoodLogs } from '@/services/firestore';
 import { StoredUserProfile, StoredFoodLogEntry } from '@/app/dashboard/types';
@@ -425,11 +429,7 @@ export default function PointsPage() {
         color: 'text-purple-500',
         bgColor: 'bg-purple-500'
       },
-    ];
-
-    // Add penalty section if there are unhealthy foods
-    if (unhealthyFoodCount > 0) {
-      breakdown.push({
+      ...(penalty > 0 ? [{
         label: 'Unhealthy Foods',
         achieved: false,
         points: -penalty,
@@ -441,8 +441,8 @@ export default function PointsPage() {
         icon: Minus,
         color: 'text-red-500',
         bgColor: 'bg-red-500'
-      });
-    }
+      }] : []),
+    ];
 
     return breakdown;
   };
@@ -516,8 +516,9 @@ export default function PointsPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
+      {/* Enhanced background effect */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 via-orange-500/5 to-red-500/5 pointer-events-none -z-10"
+        className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-red-500/10 pointer-events-none -z-10"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2 }}
@@ -528,10 +529,24 @@ export default function PointsPage() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <h1 className="text-3xl font-bold text-primary tracking-tight flex items-center gap-2">
-          <Trophy className="h-8 w-8 text-yellow-500" />
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2 bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+          <motion.div
+            animate={{ 
+              rotate: [0, 10, -5, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ 
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+              repeatType: "reverse"
+            }}
+          >
+            <Trophy className="h-8 w-8 text-yellow-500 drop-shadow-md" />
+          </motion.div>
           Your Points
-        </h1>        <p className="text-muted-foreground">
+        </h1>
+        <p className="text-muted-foreground">
           Earn up to 100 points daily by achieving your nutrition goals!
         </p>
       </motion.div>      {/* Points Overview Cards */}
@@ -547,9 +562,19 @@ export default function PointsPage() {
           transition={{ duration: 0.6, delay: 0.3 }}
           whileHover={{ scale: 1.02, y: -2 }}
         >
-          <Card className="shadow-lg border border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2">
+          <Card className="shadow-lg border border-yellow-500/20 bg-gradient-to-br from-yellow-500/5 to-card overflow-hidden">
+            <CardHeader className="pb-3 pt-4 relative">
+              {/* Subtle animated background pattern */}
+              <motion.div 
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23eab308' fill-opacity='0.1'%3E%3Cpath d='M0 0h4v4H0V0zm4 4h4v4H4V4z'/%3E%3C/g%3E%3C/svg%3E\")",
+                  backgroundSize: "10px 10px"
+                }}
+                animate={{ x: [-10, 0, -10], y: [-5, 5, -5] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              />
+              <CardTitle className="text-lg font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2 relative z-10">
                 <motion.div
                   animate={{ 
                     rotate: [0, 360],
@@ -567,9 +592,9 @@ export default function PointsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between relative z-10">
                 <motion.span 
-                  className="text-3xl font-bold text-yellow-600"
+                  className="text-3xl font-bold text-yellow-600 dark:text-yellow-500"
                   animate={{ 
                     scale: [1, 1.05, 1]
                   }}
@@ -581,22 +606,53 @@ export default function PointsPage() {
                 >
                   {pointsData?.todayPoints || 0}
                 </motion.span>
-                <Badge variant={pointsData?.todayPoints === totalPossibleToday ? "default" : "secondary"}>
+                <Badge variant={pointsData?.todayPoints === totalPossibleToday ? "default" : "secondary"} 
+                  className={cn(
+                    "text-sm px-2.5 py-1", 
+                    pointsData?.todayPoints === totalPossibleToday && "bg-green-600"
+                  )}>
                   {pointsData?.todayPoints || 0}/{totalPossibleToday}
                 </Badge>
               </div>
               <motion.div 
-                className="mt-2 w-full bg-gray-200 rounded-full h-2"
+                className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden"
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 1, delay: 0.5 }}
               >
                 <motion.div 
-                  className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-yellow-500 h-2.5 rounded-full transition-all duration-300 relative"
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(((pointsData?.todayPoints || 0) / totalPossibleToday) * 100, 100)}%` }}
                   transition={{ duration: 1.5, delay: 0.7, ease: "easeOut" }}
-                />
+                >
+                  {/* Add animated shine effect to progress bar */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                    animate={{ x: ['-100%', '100%'] }}
+                    transition={{ 
+                      duration: 1.8, 
+                      repeat: Infinity, 
+                      ease: "easeInOut",
+                      repeatDelay: 0.5
+                    }}
+                  />
+                  
+                  {/* Add mini star when 100% is reached */}
+                  {(pointsData?.todayPoints || 0) === totalPossibleToday && (
+                    <motion.div
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1, rotate: [0, 15, -15, 0] }}
+                      transition={{ 
+                        scale: { duration: 0.5, delay: 1.8 },
+                        rotate: { duration: 2, repeat: Infinity, ease: "linear", delay: 2 }
+                      }}
+                    >
+                      <Star className="h-3 w-3 text-white" />
+                    </motion.div>
+                  )}
+                </motion.div>
               </motion.div>
             </CardContent>
           </Card>
@@ -608,9 +664,18 @@ export default function PointsPage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           whileHover={{ scale: 1.02, y: -2 }}
         >
-          <Card className="shadow-lg border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+          <Card className="shadow-lg border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card overflow-hidden">
+            <CardHeader className="pb-3 pt-4 relative">
+              {/* Subtle animated background pattern */}
+              <motion.div 
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%232563eb' fill-opacity='0.1'%3E%3Cpath d='M10 0l10 10-10 10L0 10 10 0zm5 10l-5 5-5-5 5-5 5 5z'/%3E%3C/g%3E%3C/svg%3E\")",
+                }}
+                animate={{ x: [10, 0, 10], y: [5, -5, 5] }}
+                transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+              />
+              <CardTitle className="text-lg font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2 relative z-10">
                 <motion.div
                   animate={{ 
                     y: [0, -3, 0],
@@ -628,9 +693,9 @@ export default function PointsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between relative z-10">
                 <motion.span 
-                  className="text-3xl font-bold text-blue-600"
+                  className="text-3xl font-bold text-blue-600 dark:text-blue-500"
                   animate={{ 
                     scale: [1, 1.03, 1]
                   }}
@@ -643,13 +708,51 @@ export default function PointsPage() {
                 >
                   {pointsData?.totalPoints || 0}
                 </motion.span>
-                <Badge variant="outline" className="border-blue-500/50 text-blue-600">
+                <Badge variant="outline" className="border-blue-500/50 text-blue-600 dark:text-blue-400 text-sm px-2.5 py-1 shadow-sm">
                   All Time
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                Keep building your streak!
-              </p>
+              
+              {/* Add sparkle animation for total points */}
+              <div className="relative h-12 mt-2">
+                <AnimatePresence>
+                  {(pointsData?.totalPoints || 0) > 0 && (
+                    <>
+                      {[...Array(3)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute"
+                          style={{
+                            left: `${25 + i * 20}%`,
+                            top: `${30 + (i % 2) * 20}%`,
+                          }}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ 
+                            opacity: [0, 1, 0],
+                            scale: [0, 1, 0],
+                            y: [-5, -15, -5]
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            delay: i * 0.7,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <Star className={cn(
+                            "h-3 w-3",
+                            i % 3 === 0 ? "text-blue-400" : 
+                            i % 3 === 1 ? "text-purple-400" : "text-indigo-400"
+                          )} />
+                        </motion.div>
+                      ))}
+                    </>
+                  )}
+                </AnimatePresence>
+                <p className="text-sm text-muted-foreground">
+                  Keep building your streak!
+                </p>
+              </div>
             </CardContent>
           </Card>
         </motion.div>
@@ -660,7 +763,32 @@ export default function PointsPage() {
         transition={{ duration: 0.6, delay: 0.5 }}
       >
         <Card className="shadow-xl border-0 bg-gradient-to-br from-white via-gray-50/50 to-white dark:from-gray-900 dark:via-gray-800/50 dark:to-gray-900 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 border-b border-gray-200/50 dark:border-gray-700/50">
+          {/* Add subtle floating particles in the background */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full bg-primary/5 dark:bg-primary/10"
+                style={{
+                  width: `${6 + (i % 3) * 4}px`,
+                  height: `${6 + (i % 3) * 4}px`,
+                  left: `${10 + i * 15}%`,
+                  top: `${15 + (i % 4) * 20}%`,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  x: [0, i % 2 === 0 ? 20 : -20, 0],
+                  opacity: [0, 0.7, 0],
+                }}
+                transition={{
+                  duration: 8 + i,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+            ))}
+          </div>
+          <CardHeader className="bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 border-b border-gray-200/50 dark:border-gray-700/50 pb-4 pt-5">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -677,15 +805,15 @@ export default function PointsPage() {
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
-                  className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30"
+                  className="p-2.5 rounded-lg bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 shadow-sm"
                 >
-                  <Target className="h-6 w-6 text-blue-600" />
+                  <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </motion.div>
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
                   Today's Progress
                 </span>
               </CardTitle>
-              <p className="text-muted-foreground text-base mt-1">
+              <p className="text-muted-foreground text-base mt-1.5">
                 Track your nutrition goals and earn points for healthy choices
               </p>
             </motion.div>
@@ -693,8 +821,7 @@ export default function PointsPage() {
           
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {breakdown.map((item, index) => (
-                <motion.div
+              {breakdown.map((item, index) => (                <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 30, scale: 0.9 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -710,28 +837,43 @@ export default function PointsPage() {
                     y: -5,
                     transition: { type: "spring", stiffness: 400, damping: 25 }
                   }}
+                  whileTap={{ scale: 0.98 }}
                   className="group relative"
-                >
-                  <div className="relative p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md group-hover:shadow-xl transition-all duration-300 overflow-hidden">
+                >                  <div className="relative p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md group-hover:shadow-xl group-hover:border-primary/30 transition-all duration-300 overflow-hidden">
                     
-                    {/* Background gradient overlay */}
+                    {/* Enhanced background gradient overlay */}
                     <div className={cn(
-                      "absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300",
-                      item.achieved ? "bg-gradient-to-br from-green-400 to-green-600" : `bg-gradient-to-br ${item.bgColor.replace('bg-', 'from-')}-400 to-${item.bgColor.replace('bg-', '')}-600`
+                      "absolute inset-0 opacity-5 group-hover:opacity-20 transition-opacity duration-500",
+                      item.achieved 
+                        ? "bg-gradient-to-br from-green-400 to-green-600" 
+                        : `bg-gradient-to-br ${item.bgColor.replace('bg-', 'from-')}-400 to-${item.bgColor.replace('bg-', '')}-600`
                     )} />
+                    
+                    {/* Subtle animated pattern for achieved items */}
+                    {item.achieved && (
+                      <motion.div 
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100"
+                        style={{
+                          backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2322c55e' fill-opacity='0.2'%3E%3Cpath d='M0 0h10v10H0V0zm10 10h10v10H10V10z'/%3E%3C/g%3E%3C/svg%3E\")",
+                          backgroundSize: "12px 12px"
+                        }}
+                        animate={{ opacity: [0, 0.5, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                    )}
                     
                     {/* Header */}
                     <div className="flex items-center justify-between mb-4 relative z-10">
                       <div className="flex items-center gap-3">
                         <motion.div
-                          whileHover={{ 
-                            rotate: 15,
-                            scale: 1.2
-                          }}
-                          transition={{ type: "spring", stiffness: 300 }}
+                          whileHover={{ rotate: 15, scale: 1.2 }}
+                          whileTap={{ scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400 }}
                           className={cn(
-                            "p-2 rounded-lg",
-                            item.achieved ? "bg-green-100 dark:bg-green-900/30" : "bg-gray-100 dark:bg-gray-700"
+                            "p-2.5 rounded-lg shadow-sm",
+                            item.achieved 
+                              ? "bg-green-100 dark:bg-green-900/30 ring-2 ring-green-200 dark:ring-green-800/50" 
+                              : `bg-${item.bgColor.replace('bg-', '')}-100 dark:bg-${item.bgColor.replace('bg-', '')}-900/30`
                           )}
                         >
                           <item.icon className={cn(
@@ -754,7 +896,7 @@ export default function PointsPage() {
                           scale: [1, 1.05, 1]
                         }}
                         transition={{ 
-                          duration: 2,
+                          duration: item.achieved ? 1.5 : 2,
                           repeat: Infinity,
                           ease: "easeInOut",
                           delay: index * 0.3
@@ -762,13 +904,16 @@ export default function PointsPage() {
                       >
                         <Badge 
                           variant={item.achieved ? "default" : item.points < 0 ? "destructive" : "secondary"} 
-                          className="text-base px-3 py-1 font-bold"
+                          className={cn(
+                            "text-base px-3 py-1.5 font-bold shadow-sm",
+                            item.achieved && "animate-pulse-slow"
+                          )}
                         >
                           {item.points > 0 ? '+' : ''}{item.points} pts
                         </Badge>
                       </motion.div>
                     </div>
-                      {/* Progress Section - Only show for non-penalty items */}
+                    {/* Progress Section - Only show for non-penalty items */}
                     {item.points >= 0 && (
                       <div className="space-y-3 relative z-10">
                         {/* Progress Bar */}
@@ -779,38 +924,50 @@ export default function PointsPage() {
                             animate={{ scaleX: 1 }}
                             transition={{ duration: 0.8, delay: 0.8 + index * 0.1 }}
                           >                            <motion.div 
-                              className={cn(
-                                "h-full rounded-full relative overflow-hidden transition-all duration-1000 shadow-inner",
-                                item.achieved ? "bg-green-500" : item.bgColor,
-                                // Apply opacity based on progress level
-                                !item.achieved && item.progress >= 75 ? "opacity-100" :
-                                !item.achieved && item.progress >= 50 ? "opacity-90" :
-                                !item.achieved && item.progress >= 25 ? "opacity-80" :
-                                !item.achieved && item.progress > 0 ? "opacity-60" : "opacity-40"
-                              )}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.max(Math.min(item.progress, 100), 3)}%` }}
-                              transition={{ 
-                                duration: 1.5, 
-                                delay: 1 + index * 0.1,
-                                ease: "easeOut"
+                            className={cn(
+                              "h-full rounded-full relative overflow-hidden transition-all duration-1000 shadow-inner",
+                              item.achieved ? "bg-green-500" : item.bgColor,
+                              // Apply opacity based on progress level
+                              !item.achieved && item.progress >= 75 ? "opacity-100" :
+                              !item.achieved && item.progress >= 50 ? "opacity-90" :
+                              !item.achieved && item.progress >= 25 ? "opacity-80" :
+                              !item.achieved && item.progress > 0 ? "opacity-60" : "opacity-40"
+                            )}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.max(Math.min(item.progress, 100), 3)}%` }}
+                            transition={{ 
+                              duration: 1.5, 
+                              delay: 1 + index * 0.1,
+                              ease: "easeOut"
+                            }}
+                          >
+                            {/* Enhanced shine effect */}
+                            <motion.div
+                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                              animate={{ 
+                                x: ['-100%', '100%']
                               }}
-                            >
-                              {/* Animated shine effect */}
-                              <motion.div
-                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-                                animate={{ 
-                                  x: ['-100%', '100%']
-                                }}
-                                transition={{ 
-                                  duration: 2.5,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                  delay: 2 + index * 0.2
-                                }}
-                              />
-                            </motion.div>
+                              transition={{ 
+                                duration: 2.5,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                                delay: 2 + index * 0.2
+                              }}
+                            />
+                            
+                            {/* Add mini checkmark for 100% progress */}
+                            {item.progress >= 100 && (
+                              <motion.div 
+                                className="absolute right-1.5 top-1/2 transform -translate-y-1/2"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: 2 + index * 0.1, type: "spring" }}
+                              >
+                                <CheckCircle className="h-3 w-3 text-white drop-shadow-sm" />
+                              </motion.div>
+                            )}
                           </motion.div>
+                        </motion.div>
                           
                           {/* Progress percentage - Made more prominent */}
                           <motion.div 
@@ -842,13 +999,15 @@ export default function PointsPage() {
                           >
                             {item.achieved ? (
                               <>
-                                <span className="text-green-500">✅</span>
-                                Goal Achieved!
+                                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                                <span>Goal Achieved!</span>
                               </>
                             ) : (
                               <>
-                                <span className={item.color}>📊</span>
-                                {Math.round(100 - item.progress)}% to go
+                                <span className={item.color}>
+                                  {item.progress >= 50 ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                                </span>
+                                <span>{Math.round(100 - item.progress)}% to go</span>
                               </>
                             )}
                           </motion.span>
@@ -863,19 +1022,49 @@ export default function PointsPage() {
                           </motion.span>
                         </div>
                         
-                        {/* Current/Target Display */}
+                        {/* Current/Target Display - Enhanced for mobile */}
                         <motion.div 
-                          className="flex items-center justify-between text-xs pt-2 border-t border-gray-200 dark:border-gray-700"
+                          className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700 mt-2"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 2.2 + index * 0.1 }}
                         >
-                          <span className="font-medium text-foreground">
-                            Current: <span className={item.color}>{item.current} {item.unit}</span>
-                          </span>
-                          <span className="font-medium text-muted-foreground">
-                            Target: {item.target} {item.unit}
-                          </span>                        </motion.div>
+                          <motion.div 
+                            className="flex flex-col"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <span className="text-xs text-muted-foreground">Current</span>
+                            <span className={cn(
+                              "font-semibold text-base", 
+                              item.color
+                            )}>
+                              {item.current} {item.unit}
+                            </span>
+                          </motion.div>
+                          
+                          <motion.div
+                            className="flex flex-col items-end"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <span className="text-xs text-muted-foreground">Target</span>
+                            <span className="font-medium text-base text-foreground flex items-center gap-1">
+                              {item.target} {item.unit}
+                              {item.current >= item.target && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ 
+                                    type: "spring", 
+                                    stiffness: 500, 
+                                    delay: 2.5 + index * 0.1 
+                                  }}
+                                >
+                                  <ThumbsUp className="h-3.5 w-3.5 text-green-500" />
+                                </motion.div>
+                              )}
+                            </span>
+                          </motion.div>
+                        </motion.div>
                       </div>
                     )}
                     
@@ -917,7 +1106,7 @@ export default function PointsPage() {
                   : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200 dark:from-gray-800 dark:to-gray-700 dark:border-gray-600"
               )}>
                 
-                {/* Celebration effects for completed bonus */}
+                {/* Enhanced celebration effects for completed bonus */}
                 {achievedAllGoals && (
                   <>
                     <motion.div
@@ -931,28 +1120,36 @@ export default function PointsPage() {
                         ease: "easeInOut"
                       }}
                     />
-                    {/* Floating sparkles - fewer on mobile */}
-                    {[...Array(4)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className="absolute w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-400 rounded-full"
-                        style={{
-                          left: `${25 + i * 15}%`,
-                          top: `${30 + (i % 2) * 40}%`,
-                        }}
-                        animate={{
-                          y: [-8, -20, -8],
-                          opacity: [0, 1, 0],
-                          scale: [0.5, 1, 0.5],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          delay: i * 0.4,
-                          ease: "easeInOut"
-                        }}
-                      />
-                    ))}
+                    
+                    {/* Animated confetti effect */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                      {[...Array(8)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className={cn(
+                            "absolute w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                            i % 3 === 0 ? "bg-yellow-400" : 
+                            i % 3 === 1 ? "bg-green-400" : "bg-blue-400"
+                          )}
+                          style={{
+                            left: `${15 + i * 10}%`,
+                            top: `${10 + (i % 5) * 20}%`,
+                          }}
+                          animate={{
+                            y: [0, -30, 0],
+                            x: [0, i % 2 === 0 ? 10 : -10, 0],
+                            opacity: [0, 1, 0],
+                            scale: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 2 + i * 0.2,
+                            repeat: Infinity,
+                            delay: i * 0.3,
+                            ease: "easeInOut"
+                          }}
+                        />
+                      ))}
+                    </div>
                   </>
                 )}
                 
@@ -972,22 +1169,25 @@ export default function PointsPage() {
                         ease: "easeInOut"
                       }}
                       className={cn(
-                        "p-2 sm:p-3 rounded-full flex-shrink-0",
+                        "p-2.5 sm:p-3.5 rounded-full flex-shrink-0 shadow-lg",
                         achievedAllGoals 
-                          ? "bg-yellow-100 dark:bg-yellow-900/30" 
+                          ? "bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-300 dark:ring-yellow-700/50" 
                           : "bg-gray-100 dark:bg-gray-700"
                       )}
                     >
-                      <Trophy className={cn(
-                        "h-5 w-5 sm:h-7 sm:w-7", 
-                        achievedAllGoals ? "text-yellow-600" : "text-gray-400"
-                      )} />
+                      {achievedAllGoals ? (
+                        <Star className="h-5 w-5 sm:h-7 sm:w-7 text-yellow-600" />
+                      ) : (
+                        <Trophy className="h-5 w-5 sm:h-7 sm:w-7 text-gray-400" />
+                      )}
                     </motion.div>
                     
                     <div className="min-w-0 flex-1">
                       <h3 className={cn(
                         "font-bold text-lg sm:text-xl leading-tight",
-                        achievedAllGoals ? "text-green-700 dark:text-green-400" : "text-gray-700 dark:text-gray-300"
+                        achievedAllGoals 
+                          ? "bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent" 
+                          : "text-gray-700 dark:text-gray-300"
                       )}>
                         Perfect Day Bonus
                       </h3>
@@ -996,8 +1196,8 @@ export default function PointsPage() {
                         achievedAllGoals ? "text-green-600 dark:text-green-500" : "text-muted-foreground"
                       )}>
                         {achievedAllGoals 
-                          ? "🎉 All nutrition goals completed!" 
-                          : "Complete all nutrition goals for bonus"
+                          ? "🎉 All nutrition goals completed! Bonus points awarded!" 
+                          : "Complete all nutrition goals to earn bonus points"
                         }
                       </p>
                     </div>
@@ -1020,10 +1220,24 @@ export default function PointsPage() {
                       variant={achievedAllGoals ? "default" : "secondary"}
                       className={cn(
                         "text-lg sm:text-xl px-4 py-2 sm:px-6 sm:py-3 font-bold shadow-lg",
-                        "min-w-[80px] sm:min-w-[100px] text-center",
+                        "min-w-[80px] sm:min-w-[100px] text-center relative overflow-hidden",
                         achievedAllGoals && "bg-green-600 hover:bg-green-700 shadow-green-200 dark:shadow-green-900/20"
                       )}
-                    >                      +{achievedAllGoals ? 10 : 0} pts
+                    >
+                      {/* Animated shine effect for completed bonus */}
+                      {achievedAllGoals && (
+                        <motion.div 
+                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent" 
+                          animate={{ x: ['-100%', '100%'] }}
+                          transition={{ 
+                            duration: 1.5, 
+                            repeat: Infinity, 
+                            ease: "easeInOut",
+                            repeatDelay: 1
+                          }}
+                        />
+                      )}
+                      <span className="relative z-10">+{achievedAllGoals ? 10 : 0} pts</span>
                     </Badge>
                   </motion.div>
                 </div>

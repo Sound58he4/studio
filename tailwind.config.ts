@@ -87,9 +87,29 @@ export default {
               '0%, 100%': { opacity: '1' },
               '50%': { opacity: '0.65' }, // More noticeable dip
             },
+            'pulse-slow': {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.85' },
+            },
+            'gradient-x': {
+              '0%, 100%': { backgroundPosition: '0% 50%' },
+              '50%': { backgroundPosition: '100% 50%' },
+            },
             'shimmer': {
                  '0%': { backgroundPosition: '-1000px 0' },
                  '100%': { backgroundPosition: '1000px 0' },
+            },
+            'float': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-10px)' },
+            },
+            'pulse-ring': {
+              '0%': { transform: 'scale(0.95)', opacity: '0.8' },
+              '100%': { transform: 'scale(1.05)', opacity: '0' },
+            },
+            'star-twinkle': {
+              '0%, 100%': { opacity: '0.3', transform: 'scale(0.8)' },
+              '50%': { opacity: '1', transform: 'scale(1.2)' },
             },
             'fade-in-scale': {
                 '0%': { opacity: '0', transform: 'scale(0.95)' },
@@ -135,6 +155,8 @@ export default {
             'gradient-flow': 'gradient-flow 15s ease infinite',
             'subtle-pulse': 'subtle-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             'pulse-opacity': 'pulse-opacity 1.8s ease-in-out infinite', // Slightly faster and more distinct
+            'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
+            'gradient-x': 'gradient-x 10s ease infinite',
             'shimmer': 'shimmer 2s linear infinite',
             'fade-in-scale': 'fade-in-scale 0.4s ease-out forwards',
             'slide-in-fade-up': 'slide-in-fade-up 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
@@ -145,6 +167,9 @@ export default {
             'border-glow-pulse': 'border-glow-pulse 2s infinite alternate ease-in-out',
             'glowing-blue-flow': 'glowing-blue-flow 15s ease infinite alternate',
             'hero-opacity-pulse': 'hero-opacity-pulse 3s ease-in-out infinite alternate', // Adjusted duration and iteration
+            'float': 'float 3s ease-in-out infinite',
+            'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite',
+            'star-twinkle': 'star-twinkle 2s ease-in-out infinite',
   		},
           backgroundSize: {
              '200%': '200% 200%',

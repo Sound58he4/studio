@@ -216,8 +216,20 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
                  <p className="text-xs text-muted-foreground italic py-2">Daily activity suggestions available in 'Today's Goals' view.</p>
              )}
             <Link href="/log" className="block pt-1">
-                 <Button variant="outline" size="sm" className="shadow-sm bg-card hover:bg-accent/10 hover:border-primary group hover:scale-105 transition-transform duration-200 text-xs sm:text-sm w-full max-w-xs mx-auto">
-                     <Activity className="mr-1.5 h-4 w-4 text-primary"/> Log Food / Activity
+                 <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="shadow-sm bg-yellow-100 hover:bg-yellow-200 border-yellow-300 hover:border-yellow-500 group 
+                     hover:scale-105 transition-all duration-300 text-xs sm:text-sm w-full max-w-xs mx-auto
+                     relative overflow-hidden animate-pulse-slow"
+                 >
+                     <span className="absolute inset-0 bg-gradient-to-r from-yellow-200/50 via-yellow-100/30 to-yellow-200/50 
+                     opacity-0 group-hover:opacity-100 transition-opacity duration-500 
+                     animate-gradient-x"></span>
+                     <Activity className="mr-1.5 h-4 w-4 text-yellow-600 group-hover:scale-110 group-hover:rotate-3 
+                     transition-transform duration-300"/> 
+                     <span className="relative z-10 text-yellow-700 font-medium group-hover:font-semibold 
+                     transition-all duration-300">Log Food / Activity</span>
                  </Button>
             </Link>
          </CardFooter>

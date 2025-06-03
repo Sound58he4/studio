@@ -92,10 +92,9 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                         <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
                             <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
                             Choose PDF Workout for {day}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs sm:text-sm">
+                        </DialogTitle>                        <DialogDescription className="text-xs sm:text-sm">
                             Select a pre-designed workout PDF to add to your {day} routine. 
-                            POWER workouts can replace your current exercises with the PDF content.
+                            All workout types can replace your current exercises with the PDF content.
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -168,17 +167,10 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                                         <Label htmlFor="replace-existing" className="text-xs sm:text-sm">
                                                             Replace existing exercises
                                                         </Label>
-                                                    </div>
-                                                    {selectedPDF?.category === 'POWER' ? (
-                                                        <Badge className="bg-green-100 text-green-700 border-green-200 text-xs self-start">
+                                                    </div>                                                    <Badge className="bg-green-100 text-green-700 border-green-200 text-xs self-start">
                                                             <CheckCircle className="h-3 w-3 mr-1" />
                                                             Available
                                                         </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline" className="text-xs self-start">
-                                                            POWER PDFs only
-                                                        </Badge>
-                                                    )}
                                                 </div>
                                                 
                                                 <Button

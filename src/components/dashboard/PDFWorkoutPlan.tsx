@@ -9,13 +9,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { CalendarCheck2, CheckSquare, Square, Loader2, Flame, Youtube, Info, ChevronDown, ChevronUp, Edit, FileText, Zap } from 'lucide-react'; 
+import { CalendarCheck2, CheckSquare, Square, Loader2, Flame, Youtube, Info, ChevronDown, ChevronUp, Edit, FileText, Zap, Target, Clock, Dumbbell } from 'lucide-react'; 
 import { getDay } from 'date-fns';
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CompletedWorkouts, ExerciseDetail } from '@/app/dashboard/types';
 import { PDFWorkoutItem } from '@/app/workout-plans/page';
 import { getPowerWorkoutByDay, convertPowerWorkoutToExercises } from '@/data/workouts/power-workout-plan';
+import { getXtremeWorkoutByDay, convertXtremeWorkoutToExercises } from '@/data/workouts/xtreme-workout-plan';
+import { getLightWorkoutByDay, convertLightWorkoutToExercises } from '@/data/workouts/light-workout-plan';
+import { getMaxWorkoutByDay, convertMaxWorkoutToExercises } from '@/data/workouts/max-workout-plan';
 import WorkoutQuoteDisplay from '@/components/workout/WorkoutQuoteDisplay';
 import YouTubeWorkoutExplanation from '@/components/workout/YouTubeWorkoutExplanation';
 
@@ -56,13 +59,34 @@ const PDFWorkoutPlan: React.FC<PDFWorkoutPlanProps> = ({
     const todaysPDFWorkouts = useMemo(() => {
         const todayPDFs = pdfWorkouts[today] || [];
         const exercises: ExerciseDetail[] = [];
-        
-        todayPDFs.forEach(pdfItem => {
-            if (pdfItem.pdfWorkout.category === 'POWER') {
-                const powerWorkout = getPowerWorkoutByDay(pdfItem.pdfWorkout.day);
-                if (powerWorkout) {
-                    exercises.push(...convertPowerWorkoutToExercises(powerWorkout));
-                }
+          todayPDFs.forEach(pdfItem => {
+            const { category, day } = pdfItem.pdfWorkout;
+            
+            switch (category) {
+                case 'POWER':
+                    const powerWorkout = getPowerWorkoutByDay(day);
+                    if (powerWorkout) {
+                        exercises.push(...convertPowerWorkoutToExercises(powerWorkout));
+                    }
+                    break;
+                case 'XTREME WORKOUT':
+                    const xtremeWorkout = getXtremeWorkoutByDay(day);
+                    if (xtremeWorkout) {
+                        exercises.push(...convertXtremeWorkoutToExercises(xtremeWorkout));
+                    }
+                    break;
+                case 'LIGHT WORKOUT':
+                    const lightWorkout = getLightWorkoutByDay(day);
+                    if (lightWorkout) {
+                        exercises.push(...convertLightWorkoutToExercises(lightWorkout));
+                    }
+                    break;
+                case 'MAX WORKOUT':
+                    const maxWorkout = getMaxWorkoutByDay(day);
+                    if (maxWorkout) {
+                        exercises.push(...convertMaxWorkoutToExercises(maxWorkout));
+                    }
+                    break;
             }
         });
         
@@ -119,34 +143,58 @@ const PDFWorkoutPlan: React.FC<PDFWorkoutPlanProps> = ({
         
         return (
             <CardContent className="p-0 sm:p-1 md:p-2"> 
-                <div className="space-y-4 p-2 sm:p-3">
-                    {/* Show workout quotes and YouTube explanations for POWER workouts */}
+                <div className="space-y-4 p-2 sm:p-3">                    {/* Show workout quotes and YouTube explanations for all workout types */}
                     {pdfItems.map(pdfItem => {
-                        if (pdfItem.pdfWorkout.category === 'POWER') {
-                            const powerWorkout = getPowerWorkoutByDay(pdfItem.pdfWorkout.day);
-                            if (powerWorkout) {
-                                return (
-                                    <div key={pdfItem.id} className="space-y-3">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <Zap className="h-5 w-5 text-red-600" />
-                                            <h3 className="font-semibold text-red-700 dark:text-red-300">
-                                                {powerWorkout.name}
-                                            </h3>
-                                        </div>
-                                        
-                                        <WorkoutQuoteDisplay 
-                                            quote={powerWorkout.quote}
-                                            variant="featured"
-                                        />
-                                        
-                                        <YouTubeWorkoutExplanation
-                                            youtubeUrl={powerWorkout.youtubeExplanationUrl}
-                                            workoutName={powerWorkout.name}
-                                            description={powerWorkout.description}
-                                        />
+                        const { category, day } = pdfItem.pdfWorkout;
+                        let workoutDetails = null;
+                        let iconComponent = null;
+                        let colorClass = '';
+
+                        switch (category) {
+                            case 'POWER':
+                                workoutDetails = getPowerWorkoutByDay(day);
+                                iconComponent = <Zap className="h-5 w-5 text-red-600" />;
+                                colorClass = 'text-red-700 dark:text-red-300';
+                                break;
+                            case 'XTREME WORKOUT':
+                                workoutDetails = getXtremeWorkoutByDay(day);
+                                iconComponent = <Target className="h-5 w-5 text-purple-600" />;
+                                colorClass = 'text-purple-700 dark:text-purple-300';
+                                break;
+                            case 'LIGHT WORKOUT':
+                                workoutDetails = getLightWorkoutByDay(day);
+                                iconComponent = <Clock className="h-5 w-5 text-green-600" />;
+                                colorClass = 'text-green-700 dark:text-green-300';
+                                break;
+                            case 'MAX WORKOUT':
+                                workoutDetails = getMaxWorkoutByDay(day);
+                                iconComponent = <Dumbbell className="h-5 w-5 text-orange-600" />;
+                                colorClass = 'text-orange-700 dark:text-orange-300';
+                                break;
+                        }
+
+                        if (workoutDetails) {
+                            return (
+                                <div key={pdfItem.id} className="space-y-3">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        {iconComponent}
+                                        <h3 className={`font-semibold ${colorClass}`}>
+                                            {workoutDetails.name}
+                                        </h3>
                                     </div>
-                                );
-                            }
+                                    
+                                    <WorkoutQuoteDisplay 
+                                        quote={workoutDetails.quote}
+                                        variant="featured"
+                                    />
+                                    
+                                    <YouTubeWorkoutExplanation
+                                        youtubeUrl={workoutDetails.youtubeExplanationUrl}
+                                        workoutName={workoutDetails.name}
+                                        description={workoutDetails.description}
+                                    />
+                                </div>
+                            );
                         }
                         return null;
                     })}

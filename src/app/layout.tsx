@@ -35,10 +35,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, userId } = useAuth();
   const [themeApplied, setThemeApplied] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const firebaseLogoUrl = "https://firebasestorage.googleapis.com/v0/b/nutritransform-ai.firebasestorage.app/o/WhatsApp%20Image%202025-05-12%20at%205.56.15%20PM.jpeg?alt=media&token=cbc230df-adcd-48e4-b7dd-4706a96b32f5";
+  const [isClient, setIsClient] = useState(false);  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -134,17 +131,16 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       toast({ title: "Logout Error", description: "Could not log out.", variant: "destructive" });
     }
   };
-
   const navLinks = [
     { href: "/dashboard", label: "Dashboard", icon: Activity },
-    { href: "/overview", label: "Overview", icon: LayoutDashboard }, // Added Overview
-    { href: "/profile", label: "Profile", icon: User },
+    { href: "/overview", label: "Overview", icon: LayoutDashboard },
     { href: "/log", label: "Log Food", icon: ClipboardList },
+    { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
+    { href: "/profile", label: "Profile", icon: User },
     { href: "/quick-log", label: "Quick Log", icon: ListChecks },
     { href: "/workout-plans", label: "Workout Plans", icon: ClipboardList },
-    { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
-    { href: "/friends", label: "Friends", icon: Users },
     { href: "/points", label: "Your Points", icon: Star },
+    { href: "/friends", label: "Friends", icon: Users },
     { href: "/report", label: "Report", icon: BarChart2 },
     { href: "/history", label: "History", icon: HistoryIcon },
     { href: "/settings", label: "Settings", icon: Settings },
@@ -210,15 +206,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                       rotate: -5,
                       transition: { type: "spring", stiffness: 300 }
                     }}
-                  >
-                    <Image
-                      src={firebaseLogoUrl}
+                  >                    <Image
+                      src="/logo.jpeg"
                       alt="Bago AI Logo"
                       width={32}
                       height={32}
                       className="rounded-sm"
                       priority
-                      unoptimized={true}
                     />
                   </motion.div>
                   <motion.span
