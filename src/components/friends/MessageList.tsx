@@ -18,16 +18,23 @@ interface MessageListProps {
     error: string | null;
     friend: UserFriend | null;
     isAISelected: boolean;
-    scrollAreaRef: React.RefObject<HTMLDivElement>;
+    scrollAreaRef: React.RefObject<HTMLDivElement>; // This ref is for the viewport
+    className?: string;
 }
 
 const MessageList: React.FC<MessageListProps> = React.memo(({
-    messages, currentUserId, isLoading, error, friend, isAISelected, scrollAreaRef
+    messages, currentUserId, isLoading, error, friend, isAISelected, scrollAreaRef, className
 }) => {
 
     return (
-        <ScrollArea className="flex-grow bg-gradient-to-b from-background to-muted/10" viewportRef={scrollAreaRef}>
-           <div className="p-3 sm:p-4 space-y-4">
+        // The main ScrollArea component itself can take a ref if needed for the root element
+        // However, the viewportRef was intended for the scrollable content area.
+        // The `ScrollArea` component from shadcn/ui typically manages its own internal refs for viewport.
+        // If direct manipulation of the viewport is needed, it's usually done via the `ref` on `ScrollArea` itself
+        // and then finding the viewport element, or by passing the ref to a child that becomes the viewport.
+        // For now, let's assume scrollAreaRef is for the viewport. Shadcn's ScrollArea forwards ref to its viewport.
+        <ScrollArea ref={scrollAreaRef} className={cn("flex-1 bg-gradient-to-b from-background to-muted/10 min-h-0", className)}>
+           <div className="p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4">
                {isLoading && ( 
                    <motion.div 
                        className="flex justify-center items-center h-32"
@@ -120,17 +127,17 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                 layout
                                 className={cn("flex group", isUserMessage ? "justify-end" : "justify-start")}
                             >
-                                <div className={cn("flex max-w-[80%] sm:max-w-[70%]", isUserMessage ? "flex-row-reverse items-end" : "flex-row items-end")}>
+                                <div className={cn("flex max-w-[85%] md:max-w-[80%] lg:max-w-[70%]", isUserMessage ? "flex-row-reverse items-end" : "flex-row items-end")}>
                                     {!isUserMessage && (
                                         <motion.div
                                             initial={{ scale: 0 }}
                                             animate={{ scale: 1 }}
                                             transition={{ delay: Math.min(index * 0.1, 0.5) + 0.2, duration: 0.2 }}
                                         >
-                                            <Avatar className="h-6 w-6 border shadow-sm flex-shrink-0 mr-2 mb-1 self-end">
+                                            <Avatar className="h-5 w-5 sm:h-6 sm:w-6 border shadow-sm flex-shrink-0 mr-1.5 sm:mr-2 mb-1 self-end">
                                                 {msg.isAI ? (
                                                     <div className="flex items-center justify-center h-full w-full bg-gradient-to-br from-primary to-accent rounded-full">
-                                                        <Bot size={12} className="text-primary-foreground" />
+                                                        <Bot size={10} className="sm:size-3 text-primary-foreground" />
                                                     </div>
                                                 ) : (
                                                     <>

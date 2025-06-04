@@ -45,7 +45,9 @@ interface TopNavigationBarProps {
 
 const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLogout, pathname }) => {
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);    // Check if device is mobile
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Check if device is mobile
     useEffect(() => {
         const checkMobile = () => {
             setIsMobile(window.innerWidth < 768);

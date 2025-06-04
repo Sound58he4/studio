@@ -131,11 +131,10 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
                  {userProfile?.useAiTargets ? 'AI-driven' : 'Manually set'} nutrition progress.
                  {isLoadingTargets && <span className="ml-1 sm:ml-2 text-xs text-primary animate-pulse"> (Updating...)</span>}
                </span>
-              {userProfile?.useAiTargets && (
-                <Button variant="link" size="sm" onClick={onRecalculateAiTargets} className="p-0 h-auto text-xs text-primary hover:text-primary/80" disabled={isLoadingTargets}>
-                  <RefreshCw className="mr-1 h-3 w-3" /> Recalculate AI Targets
-                </Button>
-              )}
+              <Button variant="link" size="sm" onClick={onRecalculateAiTargets} className="p-0 h-auto text-xs text-primary hover:text-primary/80" disabled={isLoadingTargets}>
+                <RefreshCw className="mr-1 h-3 w-3" /> 
+                {userProfile?.useAiTargets ? 'Recalculate AI Targets' : 'Try AI Targets'}
+              </Button>
             </CardDescription>
               {userProfile && !userProfile.useAiTargets && (!dailyTargets || (dailyTargets.targetCalories ?? 0) <= 0) && (
                  <p className="text-destructive text-xs sm:text-sm mt-2 flex items-center gap-1"><Info size={14}/>Manual targets missing or invalid. <Link href="/profile" className="underline font-medium">Update profile?</Link></p>

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "D:\\bago\\logs\\.f70684decf73977b3f0688439850d8b9a9eebe1a-audit.json",
+    "files": [
+        {
+            "date": 1749009089671,
+            "name": "D:\\bago\\logs\\mcp-puppeteer-2025-06-04.log",
+            "hash": "486f8e088f9d33c37ed26da083e2e49f047edcb19e8d865856bad021280c7a95"
+        }
+    ],
+    "hashType": "sha256"
+}

@@ -60,27 +60,27 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
     return (
         <div className={cn(
-            "group space-y-1.5 relative p-3.5 rounded-xl border shadow-lg transition-all duration-300 ease-out hover:shadow-2xl hover:border-primary/60 hover:scale-[1.04] transform-gpu",
+            "group space-y-1.5 relative p-2.5 sm:p-3.5 rounded-xl border shadow-lg transition-all duration-300 ease-out hover:shadow-2xl hover:border-primary/60 hover:scale-[1.02] sm:hover:scale-[1.04] transform-gpu",
             "animate-in fade-in slide-in-from-bottom-4 duration-700", 
             currentColors.cardBg,
             currentColors.shadow 
         )}>
-             <div className="flex justify-between items-center text-sm mb-1.5">
-                <span className="font-bold text-sm text-foreground/90 group-hover:text-foreground transition-colors duration-200 flex items-center gap-2 tracking-tight">
+             <div className="flex justify-between items-start sm:items-center text-sm mb-1.5">
+                <span className="font-bold text-xs sm:text-sm text-foreground/90 group-hover:text-foreground transition-colors duration-200 flex items-center gap-1.5 sm:gap-2 tracking-tight leading-tight">
                     {icon && (
                        <span className={cn(
-                           "p-1.5 rounded-full transition-all duration-300 group-hover:scale-125 group-hover:rotate-[-8deg] shadow-sm", 
+                           "p-1 sm:p-1.5 rounded-full transition-all duration-300 group-hover:scale-125 group-hover:rotate-[-8deg] shadow-sm flex-shrink-0", 
                            currentColors.iconBg, 
                            "animate-subtle-pulse" // Animation for icon background
                         )}>
-                          {React.cloneElement(icon as React.ReactElement, { className: cn("h-4 w-4", currentColors.text) })}
+                          {React.cloneElement(icon as React.ReactElement, { className: cn("h-3 w-3 sm:h-4 sm:w-4", currentColors.text) })}
                        </span>
                     )}
-                    {label}
+                    <span className="break-words">{label}</span>
                 </span>
-                 <div className="flex items-center gap-2 text-xs font-mono">
+                 <div className="flex items-center gap-1 sm:gap-2 text-xs font-mono flex-shrink-0">
                      <span className={cn(
-                       "font-medium transition-colors duration-300 group-hover:text-primary",
+                       "font-medium transition-colors duration-300 group-hover:text-primary text-right",
                        isOverTarget ? 'text-yellow-600 dark:text-yellow-400 font-bold' : 'text-muted-foreground'
                     )}>
                        {displayValueText}{displayTarget}
@@ -100,7 +100,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                     progressIndicatorClasses(), 
                     "transition-all duration-1000 ease-out-quad shadow-md" // Ensure animation class matches definition
                 )}
-                className="h-3 rounded-full" // Make progress bar slightly thicker
+                className="h-2 sm:h-3 rounded-full" // Make progress bar responsive
              />
         </div>
     );

@@ -53,17 +53,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ friend, chatId, onClose, curren
     if (!friend) return null;
 
     return (
-        <div className="p-3 border-b flex items-center justify-between gap-3 bg-card/95 backdrop-blur-sm sticky top-0 z-20 h-14">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="p-2 sm:p-3 border-b flex items-center justify-between gap-2 sm:gap-3 bg-card/95 backdrop-blur-sm sticky top-0 z-20 h-12 sm:h-14">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
                 {onClose && (
-                     <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden h-8 w-8 text-muted-foreground hover:text-primary">
-                         <ArrowLeft size={18}/>
+                     <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden h-8 w-8 text-muted-foreground hover:text-primary flex-shrink-0">
+                         <ArrowLeft size={16}/>
                      </Button>
                 )}
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-border shadow-sm flex-shrink-0">
+                <Avatar className="h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 border-2 border-border shadow-sm flex-shrink-0">
                     {isAI ? (
                         <div className="flex items-center justify-center h-full w-full bg-gradient-to-br from-primary to-accent rounded-full">
-                            <Bot size={16} className="text-primary-foreground" />
+                            <Bot size={14} className="sm:size-4 text-primary-foreground" />
                         </div>
                     ) : (
                         <>
@@ -74,15 +74,17 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ friend, chatId, onClose, curren
                 </Avatar>
                 <p className="font-semibold text-sm sm:text-base text-foreground truncate">{friend.displayName}</p>
             </div>
-            <div className="flex items-center gap-1 sm:gap-1.5">
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                 {onSwitchView && !isAI && (
                     currentAction === 'chat' ? (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 sm:h-8 sm:px-3 text-muted-foreground hover:text-primary text-xs" onClick={() => onSwitchView('progress')} title="View Progress">
-                            <Eye size={14} className="mr-1"/> Progress
+                        <Button variant="ghost" size="sm" className="h-6 px-1.5 sm:h-7 sm:px-2 md:h-8 md:px-3 text-muted-foreground hover:text-primary text-xs" onClick={() => onSwitchView('progress')} title="View Progress">
+                            <Eye size={12} className="sm:size-3 md:size-4 mr-0.5 sm:mr-1"/> 
+                            <span className="hidden sm:inline">Progress</span>
                         </Button>
                     ) : currentAction === 'progress' && (
-                        <Button variant="ghost" size="sm" className="h-7 px-2 sm:h-8 sm:px-3 text-muted-foreground hover:text-primary text-xs" onClick={() => onSwitchView('chat')} title="Chat">
-                            <MessageSquare size={14} className="mr-1"/> Chat
+                        <Button variant="ghost" size="sm" className="h-6 px-1.5 sm:h-7 sm:px-2 md:h-8 md:px-3 text-muted-foreground hover:text-primary text-xs" onClick={() => onSwitchView('chat')} title="Chat">
+                            <MessageSquare size={12} className="sm:size-3 md:size-4 mr-0.5 sm:mr-1"/> 
+                            <span className="hidden sm:inline">Chat</span>
                         </Button>
                     )
                 )}
@@ -90,8 +92,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({ friend, chatId, onClose, curren
                 {/* Clear Chat button: AlertDialog for friend, direct call for AI */}
                 {currentAction === 'chat' && (
                     isAI && onClearLocalAIChat ? (
-                        <Button variant="ghost" size="icon" onClick={handleClearChatAction} className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0" title="Clear AI Chat">
-                            <Eraser size={14}/>
+                        <Button variant="ghost" size="icon" onClick={handleClearChatAction} className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex-shrink-0" title="Clear AI Chat">
+                            <Eraser size={12} className="sm:size-3 md:size-4"/>
                         </Button>
                     ) : !isAI && chatId && (
                         <AlertDialog>

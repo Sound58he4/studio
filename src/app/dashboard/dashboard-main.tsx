@@ -519,7 +519,7 @@ export function DashboardMainPage() {
                 currentDailyTargets = (fetchedProfile.targetCalories && fetchedProfile.targetProtein && fetchedProfile.targetCarbs && fetchedProfile.targetFat && fetchedProfile.targetActivityCalories !== undefined)
                     ? {targetCalories: fetchedProfile.targetCalories, targetProtein: fetchedProfile.targetProtein, targetCarbs: fetchedProfile.targetCarbs, targetFat: fetchedProfile.targetFat, targetActivityCalories: fetchedProfile.targetActivityCalories || 0 } 
                     : { targetCalories: 2000, targetProtein: 100, targetCarbs: 250, targetFat: 70, targetActivityCalories: 300 };
-            } finally { setIsCalculatingAiTargets(false); if(isFirstTimeSetup) setIsFirstTimeAITargetCalculation(false); }
+            } finally { setIsCalculatingAiTargets(false); setIsFirstTimeAITargetCalculation(false); }
          } else {
             setUiError("Profile incomplete. Cannot calculate AI targets. Please complete your profile.");
             currentDailyTargets = null; if(isFirstTimeSetup) setIsFirstTimeAITargetCalculation(false);

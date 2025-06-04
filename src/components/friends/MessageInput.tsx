@@ -15,10 +15,11 @@ interface MessageInputProps {
     onSendMessage: (text: string, voiceUri?: string, imageUri?: string) => void; // Updated signature
     isSending: boolean;
     isAISelected: boolean;
+    className?: string; // Added className
 }
 
 const MessageInput: React.FC<MessageInputProps> = React.memo(({
-    newMessage, onInputChange, onSendMessage, isSending, isAISelected
+    newMessage, onInputChange, onSendMessage, isSending, isAISelected, className // Added className
 }) => {
     const { toast } = useToast();
     const [isRecording, setIsRecording] = useState(false);
@@ -148,7 +149,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
 
     return (
         <motion.div 
-            className="p-2 border-t bg-muted/50 sticky bottom-0 z-10 backdrop-blur-sm"
+            className={cn("p-2 sm:p-3 border-t bg-muted/50 sticky bottom-0 z-10 backdrop-blur-sm", className)}
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -169,12 +170,12 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                                  animate={{ opacity: 1, x: 0 }}
                                  transition={{ delay: 0.1, duration: 0.2 }}
                              >
-                                <audio controls src={audioPreviewUrl} className="w-full h-8"></audio>
+                                <audio controls src={audioPreviewUrl} className="w-full h-8 sm:h-10"></audio>
                                 <motion.div
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                 >
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={resetVoiceInput} title="Clear Audio"> 
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-6 sm:w-6 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={resetVoiceInput} title="Clear Audio"> 
                                         <X size={14}/> 
                                     </Button>
                                 </motion.div>
@@ -190,7 +191,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                                 <motion.img 
                                     src={imagePreview} 
                                     alt="Preview" 
-                                    className="h-12 w-12 object-cover rounded" 
+                                    className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded" 
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: 0.2, duration: 0.2, type: "spring" }}
@@ -200,7 +201,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                                     whileHover={{ scale: 1.1 }}
                                     whileTap={{ scale: 0.9 }}
                                 >
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={resetImageInput} title="Clear Image"> 
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-6 sm:w-6 text-muted-foreground hover:text-destructive flex-shrink-0" onClick={resetImageInput} title="Clear Image"> 
                                         <X size={14}/> 
                                     </Button>
                                 </motion.div>
@@ -224,7 +225,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                                 transition={{ duration: 1, repeat: Infinity }}
                             />
                             <motion.span 
-                                className="text-xs font-medium text-red-600 dark:text-red-400"
+                                className="text-xs sm:text-sm font-medium text-red-600 dark:text-red-400"
                                 animate={{ opacity: [0.7, 1, 0.7] }}
                                 transition={{ duration: 1.5, repeat: Infinity }}
                             >
@@ -236,7 +237,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                              whileHover={{ scale: 1.1 }}
                              whileTap={{ scale: 0.9 }}
                          >
-                             <Button variant="destructive" size="icon" className="h-6 w-6 rounded-full" onClick={stopRecording} title="Stop Recording"> 
+                             <Button variant="destructive" size="icon" className="h-8 w-8 sm:h-6 sm:w-6 rounded-full" onClick={stopRecording} title="Stop Recording"> 
                                  <Pause size={14}/> 
                              </Button>
                          </motion.div>
@@ -244,7 +245,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                 )}
             </AnimatePresence>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
+            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-1.5 sm:gap-2 items-center">
                  {isAISelected && (
                      <>
                         <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageChange} className="hidden" />
@@ -252,7 +253,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <Button type="button" variant="ghost" size="icon" onClick={triggerImageUpload} disabled={isSending || isRecording} className="h-10 w-10 text-muted-foreground hover:text-primary flex-shrink-0" title="Attach Image">
+                            <Button type="button" variant="ghost" size="icon" onClick={triggerImageUpload} disabled={isSending || isRecording} className="h-10 w-10 sm:h-11 sm:w-11 text-muted-foreground hover:text-primary flex-shrink-0" title="Attach Image">
                                 <Camera size={18}/>
                             </Button>
                         </motion.div>
@@ -262,14 +263,14 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                              animate={isRecording ? { scale: [1, 1.1, 1] } : {}}
                              transition={isRecording ? { duration: 1, repeat: Infinity } : {}}
                          >
-                             <Button type="button" variant="ghost" size="icon" onClick={isRecording ? stopRecording : startRecording} disabled={isSending || !!imagePreview} className={cn("h-10 w-10 text-muted-foreground flex-shrink-0", isRecording ? "text-red-500 hover:text-red-600 hover:bg-red-100/50" : "hover:text-primary")} title={isRecording ? "Stop Recording" : "Record Voice"}>
+                             <Button type="button" variant="ghost" size="icon" onClick={isRecording ? stopRecording : startRecording} disabled={isSending || !!imagePreview} className={cn("h-10 w-10 sm:h-11 sm:w-11 text-muted-foreground flex-shrink-0", isRecording ? "text-red-500 hover:text-red-600 hover:bg-red-100/50" : "hover:text-primary")} title={isRecording ? "Stop Recording" : "Record Voice"}>
                                 {isRecording ? <Pause size={18}/> : <Mic size={18}/>}
                             </Button>
                          </motion.div>
                      </>
                  )}
                 <motion.div
-                    className="flex-grow"
+                    className="flex-1"
                     whileFocus={{ scale: 1.01 }}
                     transition={{ duration: 0.2 }}
                 >
@@ -278,7 +279,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                         value={newMessage}
                         onChange={onInputChange}
                         onKeyDown={handleKeyDown}
-                        className="flex-grow h-10 text-sm bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 shadow-inner"
+                        className="flex-1 h-10 sm:h-11 text-sm bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 shadow-inner"
                         autoComplete="off"
                         aria-label="Chat message input"
                         disabled={isSending || isRecording}
@@ -290,7 +291,7 @@ const MessageInput: React.FC<MessageInputProps> = React.memo(({
                     animate={isSending ? { rotate: [0, 360] } : {}}
                     transition={isSending ? { duration: 1, repeat: Infinity, ease: "linear" } : { duration: 0.2 }}
                 >
-                    <Button type="submit" size="icon" className="h-10 w-10 flex-shrink-0 rounded-lg bg-primary hover:bg-primary/90 transition-colors duration-200 shadow-md" disabled={(!newMessage.trim() && !audioBlob && !imagePreview) || isSending || isRecording}>
+                    <Button type="submit" size="icon" className="h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 rounded-lg bg-primary hover:bg-primary/90 transition-colors duration-200 shadow-md" disabled={(!newMessage.trim() && !audioBlob && !imagePreview) || isSending || isRecording}>
                         {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </Button>
                 </motion.div>

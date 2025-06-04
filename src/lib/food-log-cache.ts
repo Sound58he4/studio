@@ -44,7 +44,31 @@ class FoodLogCacheManager {
 
   // Get cache key for different data types
   private getCacheKey(type: string, userId: string, date?: Date | string): string {
-    const dateStr = date ? format(new Date(date), 'yyyy-MM-dd') : '';
+    let dateStr = '';
+    
+    // Only format as date if it's actually a Date object or valid date string
+    if (date) {
+      try {
+        if (date instanceof Date) {
+          dateStr = format(date, 'yyyy-MM-dd');
+        } else if (typeof date === 'string') {
+          // Check if it's a date string or just a regular string (like food description)
+          const parsedDate = new Date(date);
+          if (!isNaN(parsedDate.getTime()) && date.includes('-') && date.length >= 8) {
+            // Looks like a date string
+            dateStr = format(parsedDate, 'yyyy-MM-dd');
+          } else {
+            // It's a regular string (like food description), use it directly
+            dateStr = date.toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
+          }
+        }
+      } catch (error) {
+        console.warn('[Food Cache] Invalid date provided for cache key:', date);
+        // Fallback: treat as string
+        dateStr = String(date).toLowerCase().trim().replace(/[^a-z0-9]/g, '-');
+      }
+    }
+    
     return `${CACHE_CONFIG.PREFIX}${type}-${userId}${dateStr ? `-${dateStr}` : ''}`;
   }
 
@@ -80,7 +104,7 @@ class FoodLogCacheManager {
           this.cache[key] = entry;
         }
       } catch (error) {
-        console.warn('[Food Cache] Failed to parse cached data:', error);
+        console.warn('[Food Cache] Failed to parse cached data for key:', key, error);
         this.clearCacheKey(key);
         return null;
       }
@@ -89,7 +113,13 @@ class FoodLogCacheManager {
     if (!entry) return null;
 
     // Check if expired
-    if (Date.now() > entry.expiresAt) {
+    try {
+      if (Date.now() > entry.expiresAt) {
+        this.clearCacheKey(key);
+        return null;
+      }
+    } catch (error) {
+      console.warn('[Food Cache] Error checking expiration for key:', key, error);
       this.clearCacheKey(key);
       return null;
     }
@@ -154,14 +184,16 @@ class FoodLogCacheManager {
     return this.getCache<StoredFoodLogEntry[]>(key);
   }
 
-  // AI nutrition estimates cache
+  // AI nutrition estimates cache - use a different method to avoid date confusion
   cacheAIEstimate(foodDescription: string, nutrition: any): void {
-    const key = this.getCacheKey('ai-estimate', 'global', foodDescription.toLowerCase().trim());
+    const sanitizedDescription = foodDescription.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
+    const key = `${CACHE_CONFIG.PREFIX}ai-estimate-global-${sanitizedDescription}`;
     this.setCache(key, nutrition, CACHE_CONFIG.AI_ESTIMATES);
   }
 
   getCachedAIEstimate(foodDescription: string): any | null {
-    const key = this.getCacheKey('ai-estimate', 'global', foodDescription.toLowerCase().trim());
+    const sanitizedDescription = foodDescription.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
+    const key = `${CACHE_CONFIG.PREFIX}ai-estimate-global-${sanitizedDescription}`;
     return this.getCache(key);
   }
 
@@ -190,11 +222,17 @@ class FoodLogCacheManager {
   }
 
   invalidateDateCache(userId: string, date: Date): void {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    const keysToRemove = Object.keys(this.cache).filter(key => 
-      key.includes(userId) && key.includes(dateStr)
-    );
-    keysToRemove.forEach(key => this.clearCacheKey(key));
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const keysToRemove = Object.keys(this.cache).filter(key => 
+        key.includes(userId) && key.includes(dateStr)
+      );
+      keysToRemove.forEach(key => this.clearCacheKey(key));
+    } catch (error) {
+      console.warn('[Food Cache] Error invalidating date cache:', error);
+      // Fallback: invalidate all user cache
+      this.invalidateUserCache(userId);
+    }
   }
 
   // Maintenance operations
