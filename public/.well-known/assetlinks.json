@@ -1,9 +1,11 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "com.bagoai.bagoai",
-        "sha256_cert_fingerprints": ["57:7F:68:F1:2E:D4:39:B3:15:04:7F:69:CA:A7:02:8C:6E:52:A8:5E:6C:CA:BD:71:F3:10:DC:4D:4F:B8:CA:C5"]
-      }
-    }]
-    
+[
+    {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.bagoai.bagoai",
+      "sha256_cert_fingerprints":
+        ["B4:E3:00:DB:EC:AD:25:E0:7A:5C:43:47:E1:E2:65:3B:D3:D3:7E:34:0A:57:D9:1D:63:BD:AD:24:D4:6D:54:B9"]
+    }
+  }
+]
