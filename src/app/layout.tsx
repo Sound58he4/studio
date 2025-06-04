@@ -36,6 +36,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const { user, userId } = useAuth();
   const [themeApplied, setThemeApplied] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isMobile, setIsMobile] = useState(true); // Start with true to prevent flash
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChatMinimized, setIsChatMinimized] = useState(false);
   const [shouldHideBottomNav, setShouldHideBottomNav] = useState(false);
@@ -47,6 +48,20 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Check mobile status immediately when client is ready
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
   }, []);
 
   useEffect(() => {
@@ -155,8 +170,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
-  // Determine if we should show top navbar - hide it when bottom nav is visible
-  const shouldShowTopNav = showHeaderFooter && (shouldHideBottomNav || !isClient || window?.innerWidth >= 768);
+  // Determine if we should show top navbar - ONLY on desktop, NEVER on mobile
+  const shouldShowTopNav = showHeaderFooter && isClient && !isMobile;
+
+  // Determine if we should show bottom navbar - ONLY on mobile, NEVER on desktop
+  const shouldShowBottomNav = showHeaderFooter && isClient && isMobile;
 
   useEffect(() => {
     if (isClient) {
@@ -173,7 +191,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       document.documentElement.style.setProperty('--footer-height', '0px');
 
       const updateBottomNavHeight = () => {
-        const isMobile = window.innerWidth < 768;
         const chatMinimizedQuery = document.querySelector('[data-chat-minimized="true"]');
         const hideNav = isMobile && showHeaderFooter && isChatPage && chatMinimizedQuery;
         
@@ -182,13 +199,8 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         if (isMobile && showHeaderFooter && !hideNav) {
           const bottomNavHeight = bottomNavElement ? `${(bottomNavElement as HTMLElement).offsetHeight}px` : '4rem';
           document.documentElement.style.setProperty('--bottom-nav-height', bottomNavHeight);
-          // Hide top navbar when bottom nav is visible on mobile
-          document.documentElement.style.setProperty('--header-height', '0px');
         } else {
           document.documentElement.style.setProperty('--bottom-nav-height', '0px');
-          // Show top navbar when bottom nav is hidden
-          const headerHeight = headerElement ? `${headerElement.offsetHeight}px` : '60px';
-          document.documentElement.style.setProperty('--header-height', headerHeight);
         }
       };
 
@@ -221,7 +233,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         clearInterval(pollInterval);
       };
     }
-  }, [isClient, showHeaderFooter, pathname, isChatPage, shouldShowTopNav]);
+  }, [isClient, showHeaderFooter, pathname, isChatPage, shouldShowTopNav, isMobile]);
 
   const toggleBottomNav = useCallback(() => {
     setIsBottomNavMinimized(!isBottomNavMinimized);
@@ -267,13 +279,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       animate={{ opacity: themeApplied ? 1 : 0 }}
       transition={{ duration: 0.3 }}
     >
+      {/* Top Navigation - Desktop Only */}
       <AnimatePresence mode="wait">
-        {showHeaderFooter && (shouldHideBottomNav || forceShowBottomNav || (isClient && window.innerWidth >= 768)) && (
+        {shouldShowTopNav && (
           <motion.header 
-            className={cn(
-              "bg-card/90 text-card-foreground shadow-md sticky top-0 z-50 border-b backdrop-blur-lg transition-all duration-300",
-              isNavbarMinimized ? "py-1 px-2" : "py-3 px-4 md:px-6"
-            )}
+            className="bg-card/90 text-card-foreground shadow-md sticky top-0 z-50 border-b backdrop-blur-lg transition-all duration-300 hidden md:block"
             initial={{ y: -100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -100, opacity: 0 }}
@@ -417,11 +427,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
       </motion.main>
 
-      {/* Floating navbar toggle when minimized - only show when top nav is hidden */}
+      {/* Floating navbar toggle when minimized - Desktop Only */}
       <AnimatePresence>
-        {isNavbarMinimized && showHeaderFooter && (shouldHideBottomNav || forceShowBottomNav || (isClient && window.innerWidth >= 768)) && (
+        {isNavbarMinimized && shouldShowTopNav && (
           <motion.button
-            className="fixed top-4 right-4 z-40 bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
+            className="hidden md:block fixed top-4 right-4 z-40 bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
@@ -437,124 +447,123 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       <Toaster />
       <RoutePreloader />
       
+      {/* Bottom Navigation - Mobile Only */}
       <AnimatePresence>
-        {showHeaderFooter && (
+        {shouldShowBottomNav && (
           <>
             {/* Single Bottom Navigation for Mobile */}
             <AnimatePresence>
-              {isClient && window.innerWidth < 768 && (
-                <motion.div
-                  className="fixed bottom-0 left-0 right-0 z-50"
-                  initial={{ y: 100 }}
-                  animate={{ 
-                    y: shouldHideBottomNav && !forceShowBottomNav ? 100 : 0 
-                  }}
-                  exit={{ y: 100 }}
-                  transition={{ 
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30
-                  }}
-                >
-                  {/* Minimized state - just expand icon */}
-                  <AnimatePresence>
-                    {isBottomNavMinimized && (
-                      <motion.div
-                        className="flex justify-center pb-2"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ duration: 0.2 }}
+              <motion.div
+                className="md:hidden fixed bottom-0 left-0 right-0 z-50"
+                initial={{ y: 100 }}
+                animate={{ 
+                  y: shouldHideBottomNav && !forceShowBottomNav ? 100 : 0 
+                }}
+                exit={{ y: 100 }}
+                transition={{ 
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30
+                }}
+              >
+                {/* Minimized state - just expand icon */}
+                <AnimatePresence>
+                  {isBottomNavMinimized && (
+                    <motion.div
+                      className="flex justify-center pb-2"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <motion.button
+                        className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={toggleBottomNav}
+                        title="Expand navigation"
                       >
-                        <motion.button
-                          className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
-                          whileTap={{ scale: 0.95 }}
+                        <ArrowLeft size={16} className="-rotate-90" />
+                      </motion.button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Full bottom navigation */}
+                <AnimatePresence>
+                  {!isBottomNavMinimized && (
+                    <motion.div
+                      drag="y"
+                      dragConstraints={{ top: -100, bottom: 100 }}
+                      dragElastic={0.2}
+                      onDrag={handleBottomNavDrag}
+                      onDragStart={() => setIsDraggingBottomNav(true)}
+                      onDragEnd={handleBottomNavDragEnd}
+                      className="bg-background border-t relative cursor-grab active:cursor-grabbing"
+                      style={{
+                        y: bottomNavDragY,
+                      }}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ duration: 0.3 }}
+                      whileDrag={{ 
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                        scale: 1.02 
+                      }}
+                    >
+                      {/* Drag handle */}
+                      <div className="flex justify-center py-2 border-b border-border/50">
+                        <div className="w-12 h-1 bg-muted-foreground/30 rounded-full" />
+                      </div>
+
+                      {/* Minimize button */}
+                      {/* <div className="absolute top-2 right-2 z-10">
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={toggleBottomNav}
-                          title="Expand navigation"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          title="Minimize navigation"
                         >
-                          <ArrowLeft size={16} className="-rotate-90" />
-                        </motion.button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                          <ArrowLeft size={12} className="rotate-90" />
+                        </Button>
+                      </div> */}
 
-                  {/* Full bottom navigation */}
-                  <AnimatePresence>
-                    {!isBottomNavMinimized && (
-                      <motion.div
-                        drag="y"
-                        dragConstraints={{ top: -100, bottom: 100 }}
-                        dragElastic={0.2}
-                        onDrag={handleBottomNavDrag}
-                        onDragStart={() => setIsDraggingBottomNav(true)}
-                        onDragEnd={handleBottomNavDragEnd}
-                        className="bg-background border-t relative cursor-grab active:cursor-grabbing"
-                        style={{
-                          y: bottomNavDragY,
-                        }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ duration: 0.3 }}
-                        whileDrag={{ 
-                          boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
-                          scale: 1.02 
-                        }}
-                      >
-                        {/* Drag handle */}
-                        <div className="flex justify-center py-2 border-b border-border/50">
-                          <div className="w-12 h-1 bg-muted-foreground/30 rounded-full" />
-                        </div>
-
-                        {/* Minimize button */}
-                        {/* <div className="absolute top-2 right-2 z-10">
+                      {/* Close button when force showing (only in chat scenarios) */}
+                      {forceShowBottomNav && shouldHideBottomNav && (
+                        <div className="absolute top-2 left-2 z-10">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            onClick={toggleBottomNav}
-                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                            title="Minimize navigation"
+                            onClick={() => setForceShowBottomNav(false)}
+                            className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm border-border hover:bg-muted hover:border-muted-foreground/30 transition-all duration-200"
+                            title="Hide navigation"
                           >
-                            <ArrowLeft size={12} className="rotate-90" />
+                            <div className="flex flex-col items-center gap-0.5">
+                              <ArrowLeft size={10} className="rotate-90" />
+                              <div className="w-3 h-0.5 bg-current rounded-full opacity-60" />
+                            </div>
                           </Button>
-                        </div> */}
-
-                        {/* Close button when force showing (only in chat scenarios) */}
-                        {forceShowBottomNav && shouldHideBottomNav && (
-                          <div className="absolute top-2 left-2 z-10">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setForceShowBottomNav(false)}
-                              className="h-8 w-8 p-0 bg-background/90 backdrop-blur-sm border-border hover:bg-muted hover:border-muted-foreground/30 transition-all duration-200"
-                              title="Hide navigation"
-                            >
-                              <div className="flex flex-col items-center gap-0.5">
-                                <ArrowLeft size={10} className="rotate-90" />
-                                <div className="w-3 h-0.5 bg-current rounded-full opacity-60" />
-                              </div>
-                            </Button>
-                          </div>
-                        )}
-
-                        <div data-bottom-nav>
-                          <BottomNavigationBar
-                            navLinks={navLinks}
-                            handleLogout={handleLogout}
-                            isSheetOpen={isMobileMenuOpen}
-                            setIsSheetOpen={setIsMobileMenuOpen}
-                          />
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              )}
+                      )}
+
+                      <div data-bottom-nav>
+                        <BottomNavigationBar
+                          navLinks={navLinks}
+                          handleLogout={handleLogout}
+                          isSheetOpen={isMobileMenuOpen}
+                          setIsSheetOpen={setIsMobileMenuOpen}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             </AnimatePresence>
 
-            {/* Show navigation toggle when bottom nav is completely hidden */}
+            {/* Show navigation toggle when bottom nav is completely hidden - Mobile Only */}
             <AnimatePresence>
-              {shouldHideBottomNav && !forceShowBottomNav && !isBottomNavMinimized && isClient && window.innerWidth < 768 && (
+              {shouldHideBottomNav && !forceShowBottomNav && !isBottomNavMinimized && (
                 <motion.button
                   className="md:hidden fixed bottom-4 right-4 z-40 bg-accent text-accent-foreground p-2 rounded-full shadow-lg border-2 border-accent-foreground/20"
                   initial={{ scale: 0, opacity: 0 }}

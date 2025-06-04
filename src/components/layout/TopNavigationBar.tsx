@@ -45,21 +45,31 @@ interface TopNavigationBarProps {
 
 const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLogout, pathname }) => {
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+    const [isMobile, setIsMobile] = useState(true); // Start with true to prevent flash
 
-    // Check if device is mobile
+    // Check if device is mobile with more robust detection
     useEffect(() => {
         const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
+            const newIsMobile = window.innerWidth < 768;
+            setIsMobile(newIsMobile);
         };
         
+        // Initial check
         checkMobile();
-        window.addEventListener('resize', checkMobile);
         
-        return () => window.removeEventListener('resize', checkMobile);
+        // Add event listeners with debounced checks
+        const debouncedCheck = () => setTimeout(checkMobile, 50);
+        
+        window.addEventListener('resize', debouncedCheck);
+        window.addEventListener('orientationchange', debouncedCheck);
+        
+        return () => {
+            window.removeEventListener('resize', debouncedCheck);
+            window.removeEventListener('orientationchange', debouncedCheck);
+        };
     }, []);
 
-    // Don't render anything on mobile screens
+    // Absolutely never render on mobile screens
     if (isMobile) {
         return null;
     }    // Primary navigation items (shown directly in navbar)

@@ -60,7 +60,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({ navLinks, han
     };
 
     return (
-        <nav className="bg-background px-2 py-2 relative">
+        <nav className="md:hidden bg-background px-2 py-2 relative">
             <div className="flex justify-around items-center max-w-md mx-auto">
                 {/* Show first 4 nav items directly */}
                 {mainBottomNavItems.map(({ href, label, icon: Icon }) => (
