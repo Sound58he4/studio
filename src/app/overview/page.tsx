@@ -188,159 +188,48 @@ export default function OverviewPage() {
 
     if (isLoading || authLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
-                {/* Animated Background Elements */}
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <motion.div
-                        className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl"
-                        animate={{ 
-                            scale: [1, 1.2, 1],
-                            rotate: [0, 180, 360],
-                            opacity: [0.3, 0.5, 0.3]
-                        }}
-                        transition={{ 
-                            duration: 20,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                    />
-                    <motion.div
-                        className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full blur-3xl"
-                        animate={{ 
-                            scale: [1.2, 1, 1.2],
-                            rotate: [360, 180, 0],
-                            opacity: [0.2, 0.4, 0.2]
-                        }}
-                        transition={{ 
-                            duration: 25,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                    />
-                </div>
-
-                <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 relative z-10">
-                    {/* Profile Header Skeleton */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
-                            <CardHeader>
-                                <div className="flex items-center gap-4">
-                                    <motion.div
-                                        animate={{ 
-                                            scale: [1, 1.05, 1],
-                                            rotate: [0, 5, 0]
-                                        }}
-                                        transition={{ 
-                                            duration: 2,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    >
-                                        <Skeleton className="h-24 w-24 rounded-full" />
-                                    </motion.div>
-                                    <div className="space-y-2">
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: "192px" }}
-                                            transition={{ duration: 1, delay: 0.3 }}
-                                        >
-                                            <Skeleton className="h-6 w-48" />
-                                        </motion.div>
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: "128px" }}
-                                            transition={{ duration: 1, delay: 0.5 }}
-                                        >
-                                            <Skeleton className="h-4 w-32" />
-                                        </motion.div>
-                                        <motion.div
-                                            initial={{ width: 0 }}
-                                            animate={{ width: "96px" }}
-                                            transition={{ duration: 1, delay: 0.7 }}
-                                        >
-                                            <Skeleton className="h-4 w-24" />
-                                        </motion.div>
-                                    </div>
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+                <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+                    {/* Simplified Profile Header Skeleton */}
+                    <Card className="bg-card/80 border-border/50">
+                        <CardHeader>
+                            <div className="flex items-center gap-4">
+                                <Skeleton className="h-20 w-20 sm:h-24 sm:w-24 rounded-full" />
+                                <div className="space-y-2">
+                                    <Skeleton className="h-6 w-48" />
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-4 w-24" />
                                 </div>
-                            </CardHeader>
-                        </Card>
-                    </motion.div>
+                            </div>
+                        </CardHeader>
+                    </Card>
 
-                    {/* Stats Cards Skeleton */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
-                            <CardHeader>
-                                <motion.div
-                                    animate={{ opacity: [0.5, 1, 0.5] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                >
-                                    <Skeleton className="h-6 w-1/2" />
-                                </motion.div>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-4">
-                                {[...Array(4)].map((_, i) => (
-                                    <motion.div
-                                        key={i}
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ 
-                                            duration: 0.5,
-                                            delay: 0.4 + i * 0.1,
-                                            type: "spring",
-                                            stiffness: 300
-                                        }}
-                                    >
-                                        <Skeleton className="h-16 w-full rounded-lg" />
-                                    </motion.div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                    {/* Simplified Stats Cards Skeleton */}
+                    <Card className="bg-card/80 border-border/50">
+                        <CardHeader>
+                            <Skeleton className="h-6 w-1/2" />
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-4">
+                            {[...Array(4)].map((_, i) => (
+                                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                            ))}
+                        </CardContent>
+                    </Card>
 
                     {/* Additional Cards Skeleton */}
                     {[...Array(3)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 + i * 0.1 }}
-                        >
-                            <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
-                                <CardHeader>
-                                    <motion.div
-                                        animate={{ opacity: [0.5, 1, 0.5] }}
-                                        transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
-                                    >
-                                        <Skeleton className="h-6 w-3/4" />
-                                    </motion.div>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        {[...Array(3)].map((_, j) => (
-                                            <motion.div
-                                                key={j}
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ 
-                                                    duration: 0.5,
-                                                    delay: 0.6 + i * 0.1 + j * 0.05
-                                                }}
-                                            >
-                                                <Skeleton className="h-4 w-full" />
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
+                        <Card key={i} className="bg-card/80 border-border/50">
+                            <CardHeader>
+                                <Skeleton className="h-6 w-3/4" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <Skeleton className="h-4 w-1/2" />
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </div>
@@ -349,180 +238,69 @@ export default function OverviewPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    <motion.div
-                        className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-destructive/10 to-red-500/10 rounded-full blur-3xl"
-                        animate={{ 
-                            scale: [1, 1.2, 1],
-                            opacity: [0.2, 0.4, 0.2]
-                        }}
-                        transition={{ 
-                            duration: 3,
-                            repeat: Infinity,
-                            ease: "easeInOut"
-                        }}
-                    />
-                </div>
-                
-                <div className="max-w-xl mx-auto my-10 p-4 text-center relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.8, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        transition={{ 
-                            duration: 0.6,
-                            type: "spring",
-                            stiffness: 300
-                        }}
-                    >
-                        <Card className="border-destructive bg-card/60 backdrop-blur-lg shadow-xl">
-                            <CardHeader>
-                                <motion.div
-                                    animate={{ 
-                                        rotate: [0, 10, -10, 0],
-                                        scale: [1, 1.1, 1]
-                                    }}
-                                    transition={{ 
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }}
-                                >
-                                    <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-                                </motion.div>
-                                <CardTitle className="text-destructive">Error Loading Overview</CardTitle>
-                                <CardDescription>{error}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                >
-                                    <Button onClick={fetchData} variant="outline">
-                                        Try Again
-                                    </Button>
-                                </motion.div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+                <div className="max-w-xl mx-auto my-10 p-4 text-center">
+                    <Card className="border-destructive bg-card/80">
+                        <CardHeader>
+                            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+                            <CardTitle className="text-destructive">Error Loading Overview</CardTitle>
+                            <CardDescription>{error}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button onClick={fetchData} variant="outline">
+                                Try Again
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         );
     }
     
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+            <div className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-20 sm:pb-8">
                 <motion.div
-                    className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl"
-                    animate={{ 
-                        scale: [1, 1.2, 1],
-                        rotate: [0, 180, 360],
-                        opacity: [0.3, 0.5, 0.3]
-                    }}
-                    transition={{ 
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-                <motion.div
-                    className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full blur-3xl"
-                    animate={{ 
-                        scale: [1.2, 1, 1.2],
-                        rotate: [360, 180, 0],
-                        opacity: [0.2, 0.4, 0.2]
-                    }}
-                    transition={{ 
-                        duration: 25,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-            </div>
-
-            <div className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-3 py-4 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 relative z-10 pb-12 sm:pb-8">
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
+                    initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: 0.3 }}
                 >
-                    <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent text-center sm:text-left">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight text-center sm:text-left">
                         Activity Overview
                     </h1>
                 </motion.div>
 
                 {profileHeaderData && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
+                        transition={{ duration: 0.3, delay: 0.1 }}
                     >
-                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
+                        <Card className="bg-card/80 border-border/50">
                             <CardHeader className="pb-4">
                                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                                    <motion.div
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ 
-                                            duration: 0.6,
-                                            type: "spring",
-                                            stiffness: 300
-                                        }}
-                                        whileHover={{ 
-                                            scale: 1.05,
-                                            transition: { type: "spring", stiffness: 400 }
-                                        }}
-                                        className="relative"
-                                    >
+                                    <div className="relative">
                                         <img
                                             src={profileHeaderData.photoURL}
                                             alt={`${profileHeaderData.displayName}'s profile`}
-                                            className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-4 border-primary/20 shadow-lg"
+                                            className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-4 border-primary/20"
                                             onError={(e) => {
                                                 e.currentTarget.src = `https://placehold.co/80x80.png?text=${profileHeaderData.displayName.charAt(0)}`;
                                             }}
                                         />
-                                        <motion.div
-                                            className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-background"
-                                            animate={{ 
-                                                scale: [1, 1.2, 1],
-                                                opacity: [1, 0.8, 1]
-                                            }}
-                                            transition={{ 
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                        />
-                                    </motion.div>
+                                        <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-background" />
+                                    </div>
                                     <div className="space-y-1 text-center sm:text-left flex-1">
-                                        <motion.h2 
-                                            className="text-xl sm:text-2xl font-bold text-primary"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.6, delay: 0.3 }}
-                                        >
+                                        <h2 className="text-xl sm:text-2xl font-bold text-primary">
                                             {profileHeaderData.displayName}
-                                        </motion.h2>
-                                        <motion.p 
-                                            className="text-sm sm:text-base text-muted-foreground"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.6, delay: 0.4 }}
-                                        >
+                                        </h2>
+                                        <p className="text-sm sm:text-base text-muted-foreground">
                                             Welcome to your fitness journey!
-                                        </motion.p>
-                                        <motion.div
-                                            className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-muted-foreground"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.6, delay: 0.5 }}
-                                        >
+                                        </p>
+                                        <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-muted-foreground">
                                             <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                                             <span>Last active: Today</span>
-                                        </motion.div>
+                                        </div>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -530,28 +308,16 @@ export default function OverviewPage() {
                     </motion.div>
                 )}
 
-                {/* Today's Points - Moved above This Week's Activity */}
+                {/* Today's Points */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.5 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
                 >
-                    <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 backdrop-blur-lg shadow-xl">
+                    <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2">
-                                <motion.div
-                                    animate={{ 
-                                        rotate: [0, 360],
-                                        scale: [1, 1.2, 1]
-                                    }}
-                                    transition={{ 
-                                        duration: 2,
-                                        repeat: Infinity,
-                                        ease: "easeInOut"
-                                    }}
-                                >
-                                    <Star className="h-5 w-5 text-yellow-500" />
-                                </motion.div>
+                                <Star className="h-5 w-5 text-yellow-500" />
                                 Today's Points
                             </CardTitle>
                         </CardHeader>
@@ -559,36 +325,14 @@ export default function OverviewPage() {
                             {pointsData ? (
                                 <div className="flex items-center justify-between">
                                     <div className="space-y-1">
-                                        <motion.p 
-                                            className="text-3xl font-bold text-yellow-600 dark:text-yellow-400"
-                                            animate={{ 
-                                                scale: [1, 1.05, 1]
-                                            }}
-                                            transition={{ 
-                                                duration: 2,
-                                                repeat: Infinity,
-                                                ease: "easeInOut"
-                                            }}
-                                        >
+                                        <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
                                             {pointsData.todayPoints}<span className="text-lg text-muted-foreground">/100</span>
-                                        </motion.p>
+                                        </p>
                                         <p className="text-sm text-muted-foreground">Points earned today</p>
                                     </div>
                                     <div className="text-right space-y-1">
                                         <div className="flex items-center gap-1">
-                                            <motion.div
-                                                animate={{ 
-                                                    y: [0, -3, 0],
-                                                    rotate: [0, 10, 0]
-                                                }}
-                                                transition={{ 
-                                                    duration: 2.5,
-                                                    repeat: Infinity,
-                                                    ease: "easeInOut"
-                                                }}
-                                            >
-                                                <Trophy className="h-5 w-5 text-orange-500" />
-                                            </motion.div>
+                                            <Trophy className="h-5 w-5 text-orange-500" />
                                             <span className="text-sm font-medium text-muted-foreground">Total Points</span>
                                         </div>
                                         <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">
@@ -617,35 +361,18 @@ export default function OverviewPage() {
                     </Card>
                 </motion.div>
 
+                {/* This Week's Activity */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.7 }}
+                    transition={{ duration: 0.3, delay: 0.3 }}
                 >
-                    <Card className="shadow-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card/60 backdrop-blur-lg">
+                    <Card className="border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card/80">
                         <CardHeader>
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.6, delay: 0.8 }}
-                            >
-                                <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                                    <motion.div
-                                        animate={{ 
-                                            rotate: [0, 360],
-                                            scale: [1, 1.1, 1]
-                                        }}
-                                        transition={{ 
-                                            duration: 3,
-                                            repeat: Infinity,
-                                            ease: "easeInOut"
-                                        }}
-                                    >
-                                        <TrendingUp size={22} />
-                                    </motion.div>
-                                    This Week's Activity
-                                </CardTitle>
-                            </motion.div>
+                            <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
+                                <TrendingUp size={22} />
+                                This Week's Activity
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                             {weeklyActivitySummary ? (
@@ -656,123 +383,52 @@ export default function OverviewPage() {
                                         { icon: Activity, color: "green", label: "Strength Workouts", value: weeklyActivitySummary.strengthWorkouts },
                                         { icon: Zap, color: "purple", label: "Cardio Workouts", value: weeklyActivitySummary.cardioWorkouts }
                                     ].map((item, index) => (
-                                        <motion.div
-                                            key={item.label}
-                                            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-                                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                                            transition={{ 
-                                                duration: 0.5,
-                                                delay: 0.9 + index * 0.1,
-                                                type: "spring",
-                                                stiffness: 300
-                                            }}
-                                            whileHover={{ 
-                                                scale: 1.05,
-                                                y: -2,
-                                                transition: { type: "spring", stiffness: 400 }
-                                            }}
-                                            className="group"
-                                        >
-                                            <div className="flex items-center gap-3 p-3 bg-muted/30 backdrop-blur-sm rounded-lg border group-hover:bg-muted/50 transition-all duration-300">
-                                                <motion.div
-                                                    whileHover={{ 
-                                                        rotate: 10,
-                                                        scale: 1.2
-                                                    }}
-                                                    transition={{ type: "spring", stiffness: 400 }}
-                                                >
-                                                    <item.icon className={cn(
-                                                        "h-6 w-6",
-                                                        item.color === "blue" && "text-blue-500",
-                                                        item.color === "orange" && "text-orange-500",
-                                                        item.color === "green" && "text-green-500",
-                                                        item.color === "purple" && "text-purple-500"
-                                                    )} />
-                                                </motion.div>
-                                                <div>
-                                                    <p className="text-muted-foreground">{item.label}</p>
-                                                    <motion.p 
-                                                        className="font-bold text-lg"
-                                                        animate={{ 
-                                                            scale: [1, 1.02, 1]
-                                                        }}
-                                                        transition={{ 
-                                                            duration: 2,
-                                                            repeat: Infinity,
-                                                            ease: "easeInOut",
-                                                            delay: index * 0.2
-                                                        }}
-                                                    >
-                                                        {item.value}
-                                                    </motion.p>
-                                                </div>
+                                        <div key={item.label} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
+                                            <item.icon className={cn(
+                                                "h-6 w-6",
+                                                item.color === "blue" && "text-blue-500",
+                                                item.color === "orange" && "text-orange-500",
+                                                item.color === "green" && "text-green-500",
+                                                item.color === "purple" && "text-purple-500"
+                                            )} />
+                                            <div>
+                                                <p className="text-muted-foreground">{item.label}</p>
+                                                <p className="font-bold text-lg">{item.value}</p>
                                             </div>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </>
                             ) : (
-                                <motion.p 
-                                    className="text-muted-foreground italic col-span-full text-center py-4"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.6, delay: 0.8 }}
-                                >
+                                <p className="text-muted-foreground italic col-span-full text-center py-4">
                                     No workout data for this week yet.
-                                </motion.p>
+                                </p>
                             )}
                         </CardContent>
                     </Card>
                 </motion.div>
 
-                {/* Moved components from Dashboard */}
+                {/* Health Tips and Goals Section */}
                 <motion.div 
                     className="space-y-4 sm:space-y-6"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                        duration: 0.6, 
-                        delay: 1.3,
-                        staggerChildren: 0.1
-                    }}
+                    transition={{ duration: 0.3, delay: 0.4 }}
                 >
                     {randomTip && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 1.4 }}
-                        >
+                        <div>
                             <FitnessTip tip={randomTip} />
-                        </motion.div>
+                        </div>
                     )}
                     
-                    {/* Sleep Goals and Hydration - Mobile-first single column, then responsive grid */}
-                    <motion.div 
-                        className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 min-h-[120px]"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ 
-                            duration: 0.6,
-                            delay: 1.5,
-                            staggerChildren: 0.1
-                        }}
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.6, delay: 1.6 }}
-                            className="w-full"
-                        >
+                    {/* Sleep Goals and Hydration - Ensure proper spacing for mobile */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="w-full">
                             <SleepGoals />
-                        </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.6, delay: 1.7 }}
-                            className="w-full"
-                        >
+                        </div>
+                        <div className="w-full">
                             <WaterIntakeTip />
-                        </motion.div>
-                    </motion.div>
+                        </div>
+                    </div>
                 </motion.div>
             </div>
         </div>

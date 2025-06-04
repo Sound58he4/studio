@@ -468,7 +468,7 @@ export default function QuickLogPage() {
                     <CardTitle className="text-lg font-semibold text-accent flex items-center gap-2"><History size={18}/> Log from Your History</CardTitle>
                     <CardDescription className="text-sm">Select a past meal to log it for today or save as a new quick item.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-0 max-h-96 overflow-y-auto">
+                <CardContent className="p-0 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
                     {isLoadingHistory ? (
                         <div className="space-y-2"><Skeleton className="h-16 w-full"/><Skeleton className="h-16 w-full"/><Skeleton className="h-16 w-full"/></div>
                     ) : historyError ? (
@@ -476,24 +476,26 @@ export default function QuickLogPage() {
                     ) : historyLogItems.length === 0 ? (
                         <p className="text-center text-muted-foreground py-6 italic">No recent food history found to log from.</p>
                     ) : (
-                        <ul className="space-y-2">
-                            {historyLogItems.map(log => (
-                                <li key={log.id} className="p-2.5 border rounded-md bg-background hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                    <div className="flex-grow">
-                                        <p className="font-medium text-sm">{log.identifiedFoodName || log.foodItem}</p>
-                                        <p className="text-xs text-muted-foreground tabular-nums">
-                                            {log.calories.toFixed(0)} kcal &bull; P:{log.protein.toFixed(1)}g &bull; C:{log.carbohydrates.toFixed(1)}g &bull; F:{log.fat.toFixed(1)}g
-                                            {log.originalDescription && <span className="italic"> ({log.originalDescription})</span>}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground/70">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
-                                    </div>
-                                    <div className="flex gap-1.5 sm:ml-auto mt-2 sm:mt-0 flex-shrink-0">
-                                        <Button variant="outline" size="sm" onClick={() => triggerLogFromHistoryDialog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs">Log Now</Button>
-                                        <Button variant="outline" size="sm" onClick={() => handleAddHistoryItemToQuickLog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs"><BookmarkPlus size={12} className="mr-1"/>Save to Quick</Button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="pr-2">
+                            <ul className="space-y-2">
+                                {historyLogItems.map(log => (
+                                    <li key={log.id} className="p-2.5 border rounded-md bg-background hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                        <div className="flex-grow">
+                                            <p className="font-medium text-sm">{log.identifiedFoodName || log.foodItem}</p>
+                                            <p className="text-xs text-muted-foreground tabular-nums">
+                                                {log.calories.toFixed(0)} kcal &bull; P:{log.protein.toFixed(1)}g &bull; C:{log.carbohydrates.toFixed(1)}g &bull; F:{log.fat.toFixed(1)}g
+                                                {log.originalDescription && <span className="italic"> ({log.originalDescription})</span>}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground/70">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
+                                        </div>
+                                        <div className="flex gap-1.5 sm:ml-auto mt-2 sm:mt-0 flex-shrink-0">
+                                            <Button variant="outline" size="sm" onClick={() => triggerLogFromHistoryDialog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs">Log Now</Button>
+                                            <Button variant="outline" size="sm" onClick={() => handleAddHistoryItemToQuickLog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs"><BookmarkPlus size={12} className="mr-1"/>Save to Quick</Button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
                 </CardContent>
              </Card>
@@ -508,38 +510,67 @@ export default function QuickLogPage() {
                 <p className="text-center text-muted-foreground py-8 mt-6">You haven't added any quick log items yet. Click "Add New Quick Item" to start!</p>
              ) : items.length > 0 ? (
                 <div className="space-y-3 mt-4 sm:mt-6">
-                    <h3 className="text-sm sm:text-md font-semibold text-foreground/80 mb-2">Your Saved Quick Log Items</h3>
-                    {items.map(item => (
-                        <Card key={item.id} className={cn("p-3 sm:p-4 group hover:shadow-md transition-shadow border-border/50", loggedTodayMap[item.id] && "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700")}>
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                                <div className="flex-grow min-w-0">
-                                    <p className="font-medium text-sm sm:text-base truncate">{item.foodName}</p>
-                                    <p className="text-xs text-muted-foreground tabular-nums">
-                                        {item.calories.toFixed(0)} kcal &bull; P:{item.protein.toFixed(1)}g &bull; C:{item.carbohydrates.toFixed(1)}g &bull; F:{item.fat.toFixed(1)}g
-                                        {item.servingSizeDescription && <span className="italic block sm:inline"> ({item.servingSizeDescription})</span>}
-                                    </p>
-                                </div>
-                                <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto sm:ml-auto">
-                                   <Button variant={loggedTodayMap[item.id] ? "secondary" : "default"} size="sm" onClick={() => handleLogForTodayFromPreset(item)} disabled={isSubmitting || loggedTodayMap[item.id]} className="h-8 px-3 text-xs sm:text-sm shadow-sm hover:scale-105 transition-transform flex-1 sm:flex-none">
-                                       {loggedTodayMap[item.id] ? <CheckCircle size={14} className="mr-1.5 text-green-600"/> : <PlusCircle size={14} className="mr-1.5"/>}
-                                       {loggedTodayMap[item.id] ? "Logged Today" : "Log Today"}
-                                   </Button>
-                                    <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 text-muted-foreground hover:text-primary" onClick={() => handleEdit(item)} title="Edit Item"><Edit3 size={14}/></Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete Item"><Trash2 size={14}/></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>Delete Quick Item?</AlertDialogTitle><AlertDialogDescription>Delete "{item.foodName}" from your quick log presets?</AlertDialogDescription></AlertDialogHeader>
-                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm sm:text-md font-semibold text-foreground/80">Your Saved Quick Log Items ({items.length})</h3>
+                        {items.length > 5 && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                className="text-xs text-muted-foreground hover:text-primary"
+                            >
+                                ↑ Top
+                            </Button>
+                        )}
+                    </div>
+                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2 space-y-3">
+                        {items.map((item, index) => (
+                            <Card key={item.id} className={cn("p-3 sm:p-4 group hover:shadow-md transition-shadow border-border/50", loggedTodayMap[item.id] && "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700")}>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                                    <div className="flex-grow min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="font-medium text-sm sm:text-base truncate">{item.foodName}</p>
+                                            <span className="text-xs text-muted-foreground/50 font-mono">#{index + 1}</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground tabular-nums">
+                                            {item.calories.toFixed(0)} kcal &bull; P:{item.protein.toFixed(1)}g &bull; C:{item.carbohydrates.toFixed(1)}g &bull; F:{item.fat.toFixed(1)}g
+                                            {item.servingSizeDescription && <span className="italic block sm:inline"> ({item.servingSizeDescription})</span>}
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto sm:ml-auto">
+                                       <Button variant={loggedTodayMap[item.id] ? "secondary" : "default"} size="sm" onClick={() => handleLogForTodayFromPreset(item)} disabled={isSubmitting || loggedTodayMap[item.id]} className="h-8 px-3 text-xs sm:text-sm shadow-sm hover:scale-105 transition-transform flex-1 sm:flex-none">
+                                           {loggedTodayMap[item.id] ? <CheckCircle size={14} className="mr-1.5 text-green-600"/> : <PlusCircle size={14} className="mr-1.5"/>}
+                                           {loggedTodayMap[item.id] ? "Logged Today" : "Log Today"}
+                                       </Button>
+                                        <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 text-muted-foreground hover:text-primary" onClick={() => handleEdit(item)} title="Edit Item"><Edit3 size={14}/></Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete Item"><Trash2 size={14}/></Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete Quick Item?</AlertDialogTitle><AlertDialogDescription>Delete "{item.foodName}" from your quick log presets?</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
                                     </div>
                                 </div>
+                            </Card>
+                        ))}
+                        {items.length > 10 && (
+                            <div className="flex justify-center pt-4 pb-2">
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                    className="text-xs text-muted-foreground hover:text-primary"
+                                >
+                                    ↑ Back to Top
+                                </Button>
                             </div>
-                        </Card>
-                    ))}
+                        )}
+                    </div>
                 </div>
              ) : null
           )}

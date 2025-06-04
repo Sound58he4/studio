@@ -1,4 +1,3 @@
-
 // src/app/settings/page.tsx
 "use client";
 
@@ -464,48 +463,67 @@ export default function SettingsPage() {
             {/* --- Find Users Section --- */}
             <section className="space-y-4 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
                <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2 mb-4 text-foreground/90"> <UserSearch className="h-5 w-5 text-green-500"/> Find & Follow Users </h3>
-               <form onSubmit={handleSearchUsers} className="flex items-center gap-2">
+               <form onSubmit={handleSearchUsers} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                    <Input
                      type="search"
                      placeholder="Search by display name..."
                      value={searchQuery}
                      onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                     className="h-9 flex-grow text-sm"
+                     className="h-10 sm:h-9 flex-grow text-sm"
                      disabled={isSearching}
                    />
-                   <Button type="submit" size="sm" disabled={isSearching || searchQuery.trim().length < 2}>
-                     {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserSearch className="h-4 w-4"/>}
+                   <Button type="submit" size="default" className="h-10 sm:h-9 px-4 whitespace-nowrap" disabled={isSearching || searchQuery.trim().length < 2}>
+                     {isSearching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserSearch className="h-4 w-4 mr-2"/>}
+                     <span className="hidden sm:inline">Search</span>
+                     <span className="sm:hidden">Find Users</span>
                    </Button>
                </form>
                 {/* Search Results */}
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                     {searchResults.length > 0 && searchResults.map(foundUser => (
-                        <div key={foundUser.id} className="flex items-center justify-between gap-2 p-2 border rounded-md bg-background hover:bg-muted/50 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
+                        <div key={foundUser.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center gap-3 flex-grow min-w-0">
+                                <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                                     <AvatarImage src={foundUser.photoURL ?? undefined} alt={foundUser.displayName || 'User'} />
                                     <AvatarFallback>{foundUser.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                     <p className="text-sm font-medium truncate">{foundUser.displayName || 'Unnamed User'}</p>
+                                <div className="flex-grow min-w-0">
+                                     <p className="text-sm sm:text-sm font-medium truncate">{foundUser.displayName || 'Unnamed User'}</p>
                                      {/* <p className="text-xs text-muted-foreground truncate">{foundUser.email}</p> */}
                                 </div>
                             </div>
                              <Button
-                                 size="sm"
+                                 size="default"
                                  variant={foundUser.requestStatus === 'pending' ? 'outline' : foundUser.requestStatus === 'following' ? 'secondary' : 'default'}
                                  onClick={() => handleSendRequest(foundUser)}
                                  disabled={foundUser.requestStatus === 'pending' || foundUser.requestStatus === 'following' || foundUser.requestStatus === 'is_self'}
-                                 className={cn("text-xs h-7 px-2 transition-all duration-200",
+                                 className={cn("text-sm h-10 px-4 transition-all duration-200 w-full sm:w-auto min-w-[120px] whitespace-nowrap",
                                       foundUser.requestStatus === 'pending' && "cursor-not-allowed border-dashed text-muted-foreground",
                                       foundUser.requestStatus === 'following' && "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700 cursor-default"
                                  )}
                              >
-                                 {foundUser.requestStatus === 'pending' ? 'Requested' : foundUser.requestStatus === 'following' ? 'Following' : <><Send size={12} className="mr-1"/> Request View</>}
+                                 {foundUser.requestStatus === 'pending' ? (
+                                    <>
+                                        <Clock className="h-4 w-4 mr-2" />
+                                        <span className="hidden sm:inline">Requested</span>
+                                        <span className="sm:hidden">Request Sent</span>
+                                    </>
+                                 ) : foundUser.requestStatus === 'following' ? (
+                                    <>
+                                        <UserCheck className="h-4 w-4 mr-2" />
+                                        Following
+                                    </>
+                                 ) : (
+                                    <>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        <span className="hidden sm:inline">Request View</span>
+                                        <span className="sm:hidden">Send Request</span>
+                                    </>
+                                 )}
                              </Button>
                         </div>
                     ))}
-                    {isSearching && <div className="text-center py-4"><Loader2 className="h-5 w-5 animate-spin text-primary mx-auto"/></div>}
+                    {isSearching && <div className="text-center py-6"><Loader2 className="h-6 w-6 animate-spin text-primary mx-auto"/></div>}
                 </div>
             </section>
 
@@ -513,35 +531,57 @@ export default function SettingsPage() {
             <section className="space-y-4 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
                 <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2 mb-4 text-foreground/90"> <UserCheck className="h-5 w-5 text-green-600"/> Friends ({friends.length}) </h3>
                 {isLoadingFriends ? (
-                     <div className="space-y-3 py-4"> <Skeleton className="h-14 w-full bg-muted/50" /> </div>
+                     <div className="space-y-3 py-4"> <Skeleton className="h-16 w-full bg-muted/50" /> </div>
                  ) : friends.length > 0 ? (
-                      <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                      <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                          {friends.map(friend => (
-                             <div key={friend.id} className="flex items-center justify-between gap-2 p-2 border rounded-md bg-background hover:bg-muted/50 transition-colors">
-                                 <div className="flex items-center gap-2 flex-grow min-w-0">
-                                     <Avatar className="h-8 w-8 flex-shrink-0">
+                             <div key={friend.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                                 <div className="flex items-center gap-3 flex-grow min-w-0">
+                                     <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                                          <AvatarImage src={friend.photoURL ?? undefined} alt={friend.displayName || 'User'} />
                                          <AvatarFallback>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                                      </Avatar>
                                      <div className="flex-grow min-w-0">
                                           <p className="text-sm font-medium truncate">{friend.displayName || 'Unnamed User'}</p>
-                                          <p className="text-xs text-green-600">Following</p>
+                                          <p className="text-xs text-green-600 flex items-center gap-1">
+                                            <UserCheck className="h-3 w-3" />
+                                            Following
+                                          </p>
                                      </div>
                                  </div>
                                   <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                          <Button variant="outline" size="sm" className="text-xs h-7 px-2 text-destructive border-destructive/50 hover:bg-destructive/10 flex-shrink-0" title="Remove Friend"><UserX size={14} className="mr-1"/>Remove</Button>
+                                          <Button 
+                                            variant="outline" 
+                                            size="default" 
+                                            className="text-sm h-10 px-4 text-destructive border-destructive/50 hover:bg-destructive/10 w-full sm:w-auto min-w-[100px] whitespace-nowrap" 
+                                            title="Remove Friend"
+                                          >
+                                            <UserX className="h-4 w-4 mr-2"/>
+                                            Remove
+                                          </Button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                          <AlertDialogHeader><AlertDialogTitle>Remove Friend?</AlertDialogTitle><AlertDialogDescription>Stop sharing progress with {friend.displayName || 'this user'}?</AlertDialogDescription></AlertDialogHeader>
-                                          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleRemoveFriend(friend.id)} className={cn(buttonVariants({ variant: "destructive" }))}>Remove</AlertDialogAction></AlertDialogFooter>
+                                      <AlertDialogContent className="mx-4 max-w-md">
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Remove Friend?</AlertDialogTitle>
+                                            <AlertDialogDescription>Stop sharing progress with {friend.displayName || 'this user'}?</AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                            <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                              onClick={() => handleRemoveFriend(friend.id)} 
+                                              className={cn(buttonVariants({ variant: "destructive" }), "w-full sm:w-auto")}
+                                            >
+                                              Remove
+                                            </AlertDialogAction>
+                                          </AlertDialogFooter>
                                       </AlertDialogContent>
                                   </AlertDialog>
                              </div>
                          ))}
                      </div>
                  ) : (
-                     <p className="text-center text-muted-foreground text-sm italic py-4">Find and add friends to share progress.</p>
+                     <p className="text-center text-muted-foreground text-sm italic py-6">Find and add friends to share progress.</p>
                  )}
             </section>
 
@@ -549,40 +589,79 @@ export default function SettingsPage() {
              <section className="space-y-4 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
                <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2 mb-4 text-foreground/90"> <Users className="h-5 w-5 text-purple-500"/> Incoming View Requests </h3>
                 {isLoadingRequests ? (
-                    <div className="space-y-3 py-4"> <Skeleton className="h-14 w-full bg-muted/50" /> <Skeleton className="h-14 w-full bg-muted/50" /> </div>
+                    <div className="space-y-3 py-4"> <Skeleton className="h-16 w-full bg-muted/50" /> <Skeleton className="h-16 w-full bg-muted/50" /> </div>
                 ) : incomingRequests.length > 0 ? (
-                     <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                     <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                         {incomingRequests.map(request => (
-                            <div key={request.id} className="flex items-center justify-between gap-2 p-2 border rounded-md bg-background hover:bg-muted/50 transition-colors">
-                                <div className="flex items-center gap-2 flex-grow min-w-0">
-                                    <Avatar className="h-8 w-8 flex-shrink-0">
+                            <div key={request.id} className="flex flex-col gap-3 p-3 border rounded-lg bg-background hover:bg-muted/50 transition-colors">
+                                <div className="flex items-center gap-3 flex-grow min-w-0">
+                                    <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                                         <AvatarImage src={request.requestingUserPhotoURL ?? undefined} alt={request.requestingUserDisplayName || 'User'} />
                                         <AvatarFallback>{request.requestingUserDisplayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-grow min-w-0">
                                          <p className="text-sm font-medium truncate">{request.requestingUserDisplayName || 'Unknown User'}</p>
-                                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock size={10}/>
-                                          {request.timestamp ? formatDistanceToNow(parseISO(request.timestamp), { addSuffix: true }) : 'Unknown time'}
+                                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <Clock className="h-3 w-3"/>
+                                            {request.timestamp ? formatDistanceToNow(parseISO(request.timestamp), { addSuffix: true }) : 'Unknown time'}
                                           </p>
                                     </div>
                                 </div>
-                                 <div className="flex gap-1.5 flex-shrink-0">
+                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                             <Button variant="ghost" size="icon" className="h-7 w-7 text-green-600 hover:bg-green-100/50 rounded-full" title="Accept"><CheckCircle size={16}/></Button>
+                                             <Button 
+                                               variant="default" 
+                                               size="default" 
+                                               className="h-10 text-sm bg-green-600 hover:bg-green-700 text-white w-full sm:flex-1" 
+                                               title="Accept"
+                                             >
+                                               <CheckCircle className="h-4 w-4 mr-2"/>
+                                               Accept Request
+                                             </Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                             <AlertDialogHeader><AlertDialogTitle>Accept Request?</AlertDialogTitle><AlertDialogDescription>Allow {request.requestingUserDisplayName || 'this user'} to view your progress?</AlertDialogDescription></AlertDialogHeader>
-                                             <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleAcceptRequest(request)} className={cn(buttonVariants({ className: "bg-green-600 hover:bg-green-700" }))}>Accept</AlertDialogAction></AlertDialogFooter>
+                                        <AlertDialogContent className="mx-4 max-w-md">
+                                             <AlertDialogHeader>
+                                               <AlertDialogTitle>Accept Request?</AlertDialogTitle>
+                                               <AlertDialogDescription>Allow {request.requestingUserDisplayName || 'this user'} to view your progress?</AlertDialogDescription>
+                                             </AlertDialogHeader>
+                                             <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                               <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                                               <AlertDialogAction 
+                                                 onClick={() => handleAcceptRequest(request)} 
+                                                 className={cn(buttonVariants({ className: "bg-green-600 hover:bg-green-700 w-full sm:w-auto" }))}
+                                               >
+                                                 Accept
+                                               </AlertDialogAction>
+                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
                                     <AlertDialog>
                                          <AlertDialogTrigger asChild>
-                                             <Button variant="ghost" size="icon" className="h-7 w-7 text-red-600 hover:bg-red-100/50 rounded-full" title="Decline"><XCircle size={16}/></Button>
+                                             <Button 
+                                               variant="outline" 
+                                               size="default" 
+                                               className="h-10 text-sm text-red-600 border-red-200 hover:bg-red-50 w-full sm:flex-1" 
+                                               title="Decline"
+                                             >
+                                               <XCircle className="h-4 w-4 mr-2"/>
+                                               Decline
+                                             </Button>
                                          </AlertDialogTrigger>
-                                         <AlertDialogContent>
-                                              <AlertDialogHeader><AlertDialogTitle>Decline Request?</AlertDialogTitle><AlertDialogDescription>Deny access for {request.requestingUserDisplayName || 'this user'}?</AlertDialogDescription></AlertDialogHeader>
-                                              <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeclineRequest(request.id)} className={cn(buttonVariants({ variant: "destructive" }))}>Decline</AlertDialogAction></AlertDialogFooter>
+                                         <AlertDialogContent className="mx-4 max-w-md">
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Decline Request?</AlertDialogTitle>
+                                                <AlertDialogDescription>Deny access for {request.requestingUserDisplayName || 'this user'}?</AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                                <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                                                <AlertDialogAction 
+                                                  onClick={() => handleDeclineRequest(request.id)} 
+                                                  className={cn(buttonVariants({ variant: "destructive" }), "w-full sm:w-auto")}
+                                                >
+                                                  Decline
+                                                </AlertDialogAction>
+                                              </AlertDialogFooter>
                                          </AlertDialogContent>
                                     </AlertDialog>
                                  </div>
@@ -590,7 +669,7 @@ export default function SettingsPage() {
                         ))}
                     </div>
                 ) : (
-                    <p className="text-center text-muted-foreground text-sm italic py-4">No pending requests.</p>
+                    <p className="text-center text-muted-foreground text-sm italic py-6">No pending requests.</p>
                 )}
              </section>
 
@@ -616,24 +695,24 @@ export default function SettingsPage() {
                             <AlertDialogTrigger asChild>
                                 <Button 
                                     variant="destructive" 
-                                    size="sm" 
-                                    className="text-xs h-8 px-3"
+                                    size="default" 
+                                    className="text-sm h-10 px-4 w-full sm:w-auto"
                                     disabled={isDeletingAccount}
                                 >
                                     {isDeletingAccount ? (
                                         <>
-                                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                             Deleting...
                                         </>
                                     ) : (
                                         <>
-                                            <Trash2 className="mr-2 h-3 w-3" />
+                                            <Trash2 className="mr-2 h-4 w-4" />
                                             Delete Account
                                         </>
                                     )}
                                 </Button>
                             </AlertDialogTrigger>
-                            <AlertDialogContent className="border-destructive/30">
+                            <AlertDialogContent className="border-destructive/30 mx-4 max-w-md">
                                 <AlertDialogHeader>
                                     <AlertDialogTitle className="text-destructive flex items-center gap-2">
                                         <Trash2 className="h-5 w-5" />
@@ -655,7 +734,7 @@ export default function SettingsPage() {
                                             <input 
                                                 type="text" 
                                                 id="delete-confirmation"
-                                                className="w-full p-2 mt-2 text-sm border border-destructive/30 rounded-md bg-background"
+                                                className="w-full p-3 mt-2 text-sm border border-destructive/30 rounded-md bg-background"
                                                 placeholder="Type DELETE here"
                                                 autoComplete="off"
                                                 value={confirmDeleteText}
@@ -676,8 +755,8 @@ export default function SettingsPage() {
                                         </div>
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel disabled={isDeletingAccount}>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                                    <AlertDialogCancel disabled={isDeletingAccount} className="w-full sm:w-auto">
                                         Cancel
                                     </AlertDialogCancel>
                                     <AlertDialogAction 
@@ -686,7 +765,7 @@ export default function SettingsPage() {
                                         disabled={isDeletingAccount || confirmDeleteText !== 'DELETE'}
                                         className={cn(
                                             buttonVariants({ variant: "destructive" }), 
-                                            "gap-2 focus:ring-2 focus:ring-destructive focus:ring-offset-2 transition-all",
+                                            "gap-2 focus:ring-2 focus:ring-destructive focus:ring-offset-2 transition-all w-full sm:w-auto",
                                             confirmDeleteText === 'DELETE' && !isDeletingAccount ? "animate-pulse" : ""
                                         )}
                                     >

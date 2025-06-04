@@ -695,7 +695,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-2 sm:py-4 md:py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-2 sm:py-4 md:py-8 pb-24 sm:pb-8">
       {/* Animated Background Elements - Hidden on mobile for performance */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
         <motion.div
@@ -726,9 +726,9 @@ export default function ProfilePage() {
         />
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-2 sm:px-4 md:px-6">
+      <div className="relative max-w-4xl mx-auto px-2 sm:px-4 md:px-6 pb-safe">
         <FadeInWrapper>
-          <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden">
+          <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden mb-8 sm:mb-4">
             <motion.div
               className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10"
               initial={{ height: 0 }}
@@ -1580,9 +1580,9 @@ export default function ProfilePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.6 }}
-                    className="pt-8"
+                    className="pt-8 pb-4 sm:pt-8 sm:pb-2"
                   >
-                    <CardFooter className="pt-6 pb-2 justify-center">
+                    <CardFooter className="pt-6 pb-8 sm:pb-4 md:pb-8 justify-center px-4 sm:px-6">
                       <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1592,9 +1592,9 @@ export default function ProfilePage() {
                           type="submit" 
                           size="lg" 
                           className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 
-                                   text-primary-foreground py-3 px-6 text-base font-semibold shadow-lg 
+                                   text-primary-foreground py-4 sm:py-3 px-6 text-base font-semibold shadow-lg 
                                    transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:ring-offset-2
-                                   disabled:opacity-50 disabled:cursor-not-allowed" 
+                                   disabled:opacity-50 disabled:cursor-not-allowed h-12 sm:h-11 md:h-12" 
                           disabled={isSaving || !form.formState.isDirty || isProcessingAiTargets}
                         >
                           <AnimatePresence mode="wait">
