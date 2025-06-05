@@ -13,8 +13,20 @@ import {
   Smartphone,
   Trophy
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export function CTASection() {  const benefits = [
+export function CTASection() {
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    router.push('/authorize');
+    //Refresh the page after 1000 milliseconds
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
+  const benefits = [
     {
       icon: Shield,
       text: "Privacy Focused"
@@ -134,6 +146,7 @@ export function CTASection() {  const benefits = [
             <Button 
               size="lg" 
               className="group px-8 py-4 text-lg h-auto relative overflow-hidden min-w-[200px]"
+              onClick={handleGetStarted}
             >
               <span className="relative z-10 flex items-center gap-2">
                 Get Started Free

@@ -1,4 +1,3 @@
-
 // src/app/ai-assistant/page.tsx
 "use client";
 
@@ -206,7 +205,7 @@ export default function AIAssistantPage() {
     
     return (
         <motion.div 
-            className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col bg-card relative px-2 sm:px-4 pb-4 sm:pb-2"
+            className="h-[calc(100dvh-var(--header-height,0px)-var(--bottom-nav-height,0px))] flex flex-col bg-card relative px-2 sm:px-4 pb-4 sm:pb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
