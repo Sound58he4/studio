@@ -68,6 +68,12 @@ export default function AuthorizePage() {
     console.log("[Authorize Page] Navigating to /profile...");
     router.replace('/profile'); // Use replace to avoid auth page in history
     console.log("[Authorize Page] Navigation to /profile initiated.");
+    
+    // Refresh page after 100ms to ensure auth state is updated
+    setTimeout(() => {
+      console.log("[Authorize Page] Refreshing page after navigation...");
+      window.location.reload();
+    }, 100);
   };
 
   const getFirebaseAuthErrorMessage = (err: any): string => {
