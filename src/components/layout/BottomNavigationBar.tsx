@@ -47,9 +47,9 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   // Primary navigation items (most used) - reduced to 4 items
   const primaryNavItems = [
     navLinks.find(link => link.href === '/dashboard'),
-    navLinks.find(link => link.href === '/log'),
+    navLinks.find(link => link.href === '/overview'),
     navLinks.find(link => link.href === '/ai-assistant'),
-    navLinks.find(link => link.href === '/profile'),
+    navLinks.find(link => link.href === '/quick-log'),
   ].filter(Boolean) as NavLink[];
 
   // Secondary navigation items (for the sheet)
