@@ -37,7 +37,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const [isMobile, setIsMobile] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
-  const [showNavInChat, setShowNavInChat] = useState(false); // Single state: show nav in chat or not
   const [isNavbarMinimized, setIsNavbarMinimized] = useState(false); // Desktop navbar minimize state
 
   useEffect(() => {
@@ -179,8 +178,8 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       document.documentElement.style.setProperty('--header-height', headerHeight);
 
       const updateBottomNavHeight = () => {
-        // Simple logic: show nav height when on non-chat pages or when user wants nav in chat
-        if (isMobile && showHeaderFooter && (!isChatPage || showNavInChat)) {
+        // Always show nav height when on mobile and header/footer should be shown
+        if (isMobile && showHeaderFooter) {
           const bottomNavHeight = bottomNavElement ? `${(bottomNavElement as HTMLElement).offsetHeight}px` : '4rem';
           document.documentElement.style.setProperty('--bottom-nav-height', bottomNavHeight);
         } else {
@@ -202,11 +201,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         window.removeEventListener('orientationchange', handleResize);
       };
     }
-  }, [isClient, showHeaderFooter, isChatPage, shouldShowTopNav, isMobile, showNavInChat]);
-
-  const toggleChatNavMode = useCallback(() => {
-    setShowNavInChat(!showNavInChat);
-  }, [showNavInChat]);
+  }, [isClient, showHeaderFooter, shouldShowTopNav, isMobile]);
 
   // Optimized navigation handler with better performance
   const handleOptimisticNavigation = useCallback((href: string) => {
@@ -330,51 +325,22 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Bottom Navigation - Mobile Only */}
       {shouldShowBottomNav && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
-          {/* Show navigation when not on chat pages OR when user wants nav in chat */}
-          {(!isChatPage || showNavInChat) && (
-            <div
-              className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg"
-              style={{
-                paddingBottom: 'env(safe-area-inset-bottom)',
-              }}
-            >
-              <div data-bottom-nav>
-                <BottomNavigationBar
-                  navLinks={navLinks}
-                  handleLogout={handleLogout}
-                  isSheetOpen={isMobileMenuOpen}
-                  setIsSheetOpen={setIsMobileMenuOpen}
-                />
-              </div>
+          <div
+            className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg"
+            style={{
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
+          >
+            <div data-bottom-nav>
+              <BottomNavigationBar
+                navLinks={navLinks}
+                handleLogout={handleLogout}
+                isSheetOpen={isMobileMenuOpen}
+                setIsSheetOpen={setIsMobileMenuOpen}
+              />
             </div>
-          )}
+          </div>
         </div>
-      )}
-
-      {/* Single Smart Toggle - Only on Chat Pages */}
-      {isChatPage && isMobile && showHeaderFooter && (
-        <button
-          className={cn(
-            "md:hidden fixed bottom-4 left-4 z-[60] px-3 py-2 rounded-full shadow-lg transition-all duration-200 text-xs font-medium flex items-center gap-1.5",
-            showNavInChat 
-              ? "bg-muted text-muted-foreground border border-border" 
-              : "bg-primary text-primary-foreground"
-          )}
-          onClick={toggleChatNavMode}
-          title={showNavInChat ? "Switch to Chat Mode" : "Switch to Navigation Mode"}
-        >
-          {showNavInChat ? (
-            <>
-              <Bot size={14} />
-              <span>Chat</span>
-            </>
-          ) : (
-            <>
-              <Menu size={14} />
-              <span>Nav</span>
-            </>
-          )}
-        </button>
       )}
     </div>
   );
