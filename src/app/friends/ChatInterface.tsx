@@ -273,17 +273,18 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
     }, [friend]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-background overflow-hidden relative" data-chat-container>
+        <div className="flex flex-col h-full w-full bg-card overflow-hidden relative" data-chat-container>
             {friend ? (
                 <>
                     <div className="flex-1 min-h-0 overflow-hidden">
                         <div 
                             ref={scrollAreaRef}
-                            className="h-full overflow-y-auto scroll-smooth"
+                            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth"
                             onScroll={handleScroll}
                             style={{
                                 scrollBehavior: 'smooth',
-                                paddingBottom: '1rem'
+                                paddingBottom: '1rem',
+                                wordWrap: 'break-word'
                             }}
                         >
                             <MessageList
@@ -315,7 +316,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     </AnimatePresence>
 
                     {isAISelected && showSuggestions && (
-                        <div className="flex-shrink-0 bg-background border-t">
+                        <div className="flex-shrink-0 bg-card border-t">
                             <AISuggestionBar 
                                 onSuggestionClick={(prompt) => {
                                     setNewMessage(prompt); 
@@ -341,7 +342,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                         </div>
                     )}
                     
-                    <div className="flex-shrink-0 bg-background border-t">
+                    <div className="flex-shrink-0 bg-card border-t">
                         <MessageInput
                             ref={messageInputRef} 
                             newMessage={newMessage}

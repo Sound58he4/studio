@@ -119,12 +119,12 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     console.log("[Layout] handleLogout called.");
-    const currentUserId = userId;
-    try {
+    const currentUserId = userId;    try {
       await auth.signOut();
       console.log("[Layout] Firebase sign-out successful.");
       document.cookie = 'isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-      console.log("[Layout] Cleared isLoggedIn cookie.");
+      document.cookie = 'userDisplayName=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      console.log("[Layout] Cleared authentication cookies.");
 
       if (isClient) {
         if (currentUserId) {
@@ -296,14 +296,21 @@ function MainLayout({ children }: { children: React.ReactNode }) {
           isChatPage ? 'h-[calc(100vh-var(--header-height,0px)-var(--bottom-nav-height,0px))] overflow-hidden' :
           (showHeaderFooter && !applyMainPadding ? 'px-2 sm:px-4 pb-[var(--bottom-nav-height)] md:pb-8' : '')
         )}
+        style={{ 
+          position: 'relative',
+          zIndex: 1
+        }}
       >
         {/* Background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
           <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl opacity-40" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/5 to-primary/5 rounded-full blur-3xl opacity-30" />
         </div>
 
-        <div className="relative z-10 h-full">
+        <div className={cn(
+          "relative h-full",
+          isChatPage ? "z-10" : "z-10"
+        )}>
           {children}
         </div>
       </main>
@@ -311,7 +318,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {/* Floating navbar toggle when minimized - Desktop Only */}
       {isNavbarMinimized && shouldShowTopNav && (
         <button
-          className="hidden md:block fixed top-4 right-4 z-40 bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
+          className="hidden md:block fixed top-4 right-4 z-50 bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
           onClick={() => setIsNavbarMinimized(false)}
           title="Expand navbar"
         >
@@ -324,7 +331,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       
       {/* Bottom Navigation - Mobile Only */}
       {shouldShowBottomNav && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
           <div
             className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg"
             style={{

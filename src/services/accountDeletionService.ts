@@ -8,9 +8,10 @@ import { deleteUserAccount } from '@/services/firestore/profileService';
  * Clears all client-side authentication state, including cookies and local storage
  */
 function clearAuthState(): void {
-    // Clear the isLoggedIn cookie with multiple domain approaches for robustness
+    // Clear the authentication cookies with multiple domain approaches for robustness
     const expiredDate = new Date(0).toUTCString();
     document.cookie = `isLoggedIn=; path=/; expires=${expiredDate}; SameSite=Lax`;
+    document.cookie = `userDisplayName=; path=/; expires=${expiredDate}; SameSite=Lax`;
     
     // Clear any other auth-related items from localStorage
     try {

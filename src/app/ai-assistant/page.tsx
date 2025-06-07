@@ -205,7 +205,7 @@ export default function AIAssistantPage() {
     
     return (
         <motion.div 
-            className="h-[calc(100dvh-var(--header-height,0px)-var(--bottom-nav-height,0px))] flex flex-col bg-card relative px-2 sm:px-4 pb-4 sm:pb-2"
+            className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col bg-card relative px-2 sm:px-4 pb-4 sm:pb-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
@@ -225,8 +225,8 @@ export default function AIAssistantPage() {
                         key={i}
                         className="absolute w-2 h-2 bg-primary/20 rounded-full"
                         initial={{ 
-                            x: Math.random() * window.innerWidth, 
-                            y: window.innerHeight + 20,
+                            x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200), 
+                            y: (typeof window !== 'undefined' ? window.innerHeight : 800) + 20,
                             opacity: 0 
                         }}
                         animate={{ 
@@ -262,7 +262,7 @@ export default function AIAssistantPage() {
             </motion.div>
             
             <motion.div 
-                className="flex-grow min-h-0 flex flex-col relative z-10"
+                className="flex-1 min-h-0 flex flex-col relative z-10"
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.2 }}

@@ -51,17 +51,34 @@ export default function AuthorizePage() {
     // Middleware handles redirecting logged-in users away from /authorize
   }, []);
 
-  const setLoginCookieAndRedirect = (user: any) => {
+  const setLoginCookieAndRedirect = async (user: any) => {
     console.log("[Authorize Page] Login successful for user:", user.uid, user.email);
-    console.log("[Authorize Page] Setting isLoggedIn cookie...");
+    console.log("[Authorize Page] Setting login cookies...");
+    
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString(); // 7 days expiration
     const cookieOptions = `path=/; expires=${expires}; SameSite=Lax${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+    
+    // Set the isLoggedIn cookie
     document.cookie = `isLoggedIn=true; ${cookieOptions}`;
-    console.log("[Authorize Page] isLoggedIn cookie set. Current document.cookie:", document.cookie);
+    
+    // Get the display name from Firebase user or fallback to email or user ID
+    let displayName = user.displayName;
+    if (!displayName && user.email) {
+      displayName = user.email.split('@')[0]; // Use email prefix as fallback
+    }
+    if (!displayName) {
+      displayName = `user_${user.uid.substring(0, 6)}`; // Use user ID prefix as fallback
+    }
+    
+    // Set the userDisplayName cookie for middleware access
+    document.cookie = `userDisplayName=${encodeURIComponent(displayName)}; ${cookieOptions}`;
+    
+    console.log("[Authorize Page] Cookies set - isLoggedIn: true, userDisplayName:", displayName);
+    console.log("[Authorize Page] Current document.cookie:", document.cookie);
 
     toast({
       title: "Login Successful",
-      description: `Welcome! Redirecting to profile...`,
+      description: `Welcome ${displayName}! Redirecting to profile...`,
       variant: 'default',
     });
 
@@ -123,7 +140,7 @@ export default function AuthorizePage() {
     try {
       const result = await signInWithPopup(auth, provider);
       console.log("[Authorize Page] Google sign in result obtained.");
-      setLoginCookieAndRedirect(result.user);
+      await setLoginCookieAndRedirect(result.user);
     } catch (err: any) {
       console.error("[Authorize Page] Google sign in error occurred.");
       const friendlyError = getFirebaseAuthErrorMessage(err);
@@ -162,7 +179,7 @@ export default function AuthorizePage() {
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
       console.log("[Authorize Page] Email/Password sign in result obtained.");
-      setLoginCookieAndRedirect(result.user);
+      await setLoginCookieAndRedirect(result.user);
     } catch (err: any) {
       console.error("[Authorize Page] Email/Password sign in error occurred.");
       const friendlyError = getFirebaseAuthErrorMessage(err);
@@ -219,7 +236,7 @@ export default function AuthorizePage() {
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       console.log("[Authorize Page] Email/Password sign up result obtained.");
-      setLoginCookieAndRedirect(result.user);
+      await setLoginCookieAndRedirect(result.user);
     } catch (err: any) {
       console.error("[Authorize Page] Email/Password sign up error occurred.");
       const friendlyError = getFirebaseAuthErrorMessage(err);

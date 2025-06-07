@@ -199,12 +199,11 @@ export default function FriendsPage() {
 
     return (
         <motion.div 
-            className={cn(
-                "h-[calc(100vh-var(--header-height,60px))] flex flex-col md:flex-row bg-muted/30 overflow-hidden relative"
-            )}
+            className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col md:flex-row bg-muted/30 overflow-hidden relative"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6 }}
+            style={{ zIndex: 1 }}
         >
             {/* Full Chat Mode Toggle */}
             <AnimatePresence>
@@ -376,8 +375,11 @@ export default function FriendsPage() {
                             transition={{ duration: 0.3 }}
                             className="flex flex-col h-full w-full"
                         >
-                            {/* Show header only on desktop */}
-                            <div className="flex-shrink-0 hidden md:block">
+                            {/* Show header only on desktop or when not in full chat mode */}
+                            <div className={cn(
+                                "flex-shrink-0",
+                                isFullChatMode ? "hidden" : "hidden md:block"
+                            )}>
                                 <ChatHeader
                                     friend={selectedFriendAction.friend}
                                     chatId={currentChatId} 
@@ -390,7 +392,7 @@ export default function FriendsPage() {
                                 isLoadingChatId ? (
                                     <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
                                 ) : currentChatId ? (
-                                    <div className="flex-1 min-h-0 relative w-full">
+                                    <div className="flex-1 min-h-0 relative w-full h-full px-2 sm:px-4 pb-4 sm:pb-2">
                                         <ChatInterface friend={selectedFriendAction.friend} currentUserId={userId} chatId={currentChatId} />
                                     </div>
                                 ) : (

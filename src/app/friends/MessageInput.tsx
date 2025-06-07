@@ -1,4 +1,3 @@
-
 // src/components/friends/MessageInput.tsx
 "use client";
 
@@ -143,7 +142,7 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
     };
 
     return (
-        <div className="p-2 border-t bg-muted/50 flex-shrink-0 min-h-[56px] flex flex-col justify-center">
+        <div className="p-2 border-t bg-card/90 backdrop-blur-sm flex-shrink-0 min-h-[56px] flex flex-col justify-center">
             {(audioPreviewUrl || imagePreview) && (
                 <div className="mb-2 p-2 border rounded-md bg-background shadow-sm relative">
                     {audioPreviewUrl && !isRecording && (
@@ -173,7 +172,7 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                  </div>
             )}
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center">
+            <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 items-center min-w-0">
                  {isAISelected && (
                      <>
                         <input type="file" accept="image/*" ref={imageInputRef} onChange={handleImageChange} className="hidden" />
@@ -186,12 +185,12 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                      </>
                  )}
                 <Input
-                    ref={ref} // Forwarding the ref to the underlying Input component
+                    ref={ref}
                     placeholder={isAISelected ? "Ask Bago AI anything..." : "Send a message..."}
                     value={newMessage}
                     onChange={onInputChange}
                     onKeyDown={handleKeyDown}
-                    className="flex-grow h-10 text-sm bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 shadow-inner"
+                    className="flex-grow min-w-0 h-10 text-sm bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-200 shadow-inner"
                     autoComplete="off"
                     aria-label="Chat message input"
                     disabled={isSending || isRecording}
@@ -207,4 +206,3 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
 MessageInput.displayName = 'MessageInput';
 export default MessageInput;
 
-    

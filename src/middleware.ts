@@ -11,7 +11,17 @@ export function middleware(request: NextRequest) {
 
   const isLoggedInCookieValue = request.cookies.get('isLoggedIn')?.value;
   const isLoggedIn = isLoggedInCookieValue === 'true'; // Check cookie directly
+  const userDisplayNameCookie = request.cookies.get('userDisplayName')?.value;
+  const userDisplayName = userDisplayNameCookie ? decodeURIComponent(userDisplayNameCookie) : null;
+  
   console.log(`[Middleware] Read isLoggedIn cookie value: "${isLoggedInCookieValue}" -> Evaluated isLoggedIn: ${isLoggedIn}`);
+  
+  // Log user activity for logged-in users
+  if (isLoggedIn && userDisplayName) {
+    console.log(`[Middleware] 🎯 LOGGED-IN USER ACTIVITY: "${userDisplayName}" visited route: ${pathname}`);
+  } else if (isLoggedIn && !userDisplayName) {
+    console.log(`[Middleware] 🎯 LOGGED-IN USER ACTIVITY: [Unknown User] visited route: ${pathname}`);
+  }
 
   const protectedRoutes = ['/dashboard', '/profile', '/log', '/report', '/history', '/settings', '/log-exercise'];
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
