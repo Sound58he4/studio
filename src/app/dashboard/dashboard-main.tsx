@@ -29,6 +29,7 @@ import DashboardMainContent from './DashboardMainContent';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardLoadingSkeleton from './DashboardLoadingSkeleton';
 import DashboardErrorState from '@/components/dashboard/DashboardErrorState'; // Corrected alias path
+import { logAccessDeniedError, clearAuthCookies, handleImmediateAccessDeniedRedirect } from '@/services/error-logging';
 
 // Types
 import type {
@@ -643,12 +644,38 @@ export function DashboardMainPage() {
   ]);
 
   useEffect(() => {
-    if (!authLoading && userId && !hasLoadedInitialData && isClient) {
-      loadInitialDashboardData(false); // Never force recalculate from initial load
-    } else if (!authLoading && !userId && isClient) {
-      setIsLoadingInitialData(false); setCriticalError("Access Denied. Please log in.");
+    setIsClient(true);
+  }, []);
+
+  const handleAccessDeniedNavigation = useCallback(async (reason: string) => {
+    try {
+      // This will clear cookies, navigate immediately, and refresh in 0.1s
+      await logAccessDeniedError(userId, reason, {
+        authLoading,
+        hasUserId: !!userId,
+        currentPath: typeof window !== 'undefined' ? window.location.pathname : undefined,
+        timestamp: new Date().toISOString(),
+        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined,
+      });
+    } catch (error) {
+      console.error('[Dashboard] Error during access denied handling:', error);
+      // Fallback: still clear cookies and navigate immediately
+      clearAuthCookies();
+      handleImmediateAccessDeniedRedirect();
     }
-  }, [authLoading, userId, hasLoadedInitialData, loadInitialDashboardData, isClient, router]);
+  }, [userId, authLoading]);
+
+  useEffect(() => {
+    if (!authLoading && userId && !hasLoadedInitialData && isClient) {
+      loadInitialDashboardData(false);
+    } else if (!authLoading && !userId && isClient) {
+      setIsLoadingInitialData(false);
+      const reason = "User not authenticated";
+      setCriticalError("Access Denied. Please log in.");
+      // Immediate redirect without waiting for user interaction
+      handleAccessDeniedNavigation(reason);
+    }
+  }, [authLoading, userId, hasLoadedInitialData, loadInitialDashboardData, isClient, handleAccessDeniedNavigation]);
 
   useEffect(() => {
     if (!hasLoadedInitialData || isLoadingInitialData || !isClient || !userProfile) return;
@@ -962,9 +989,30 @@ export function DashboardMainPage() {
   }, [completedWorkouts, isGeneratingPlan, weeklyWorkoutPlan, todayDayName]);
 
   if (authLoading && !isClient) return <DashboardLoadingSkeleton />;
-  if (!userId && !authLoading && isClient) return <DashboardErrorState message="Access Denied. Please log in." onRetry={() => router ? router.push('/authorize') : window.location.href = '/authorize'} />;
+  if (!userId && !authLoading && isClient) {
+    // This should rarely be reached due to immediate redirect in useEffect
+    handleAccessDeniedNavigation("User clicked retry on access denied error");
+    return <DashboardLoadingSkeleton />;
+  }
   if (isLoadingInitialData && !hasLoadedInitialData) return <DashboardLoadingSkeleton />;
-  if (criticalError) return (<DashboardErrorState message={criticalError} onRetry={() => { setCriticalError(null); setUiError(null); setHasLoadedInitialData(false); loadInitialDashboardData(); }} isProfileError={criticalError.includes("profile")} />);
+  if (criticalError) {
+    return (
+      <DashboardErrorState 
+        message={criticalError} 
+        onRetry={() => { 
+          if (criticalError.includes("Access Denied")) {
+            handleAccessDeniedNavigation("User clicked retry on critical access denied error");
+          } else {
+            setCriticalError(null); 
+            setUiError(null); 
+            setHasLoadedInitialData(false); 
+            loadInitialDashboardData();
+          }
+        }} 
+        isProfileError={criticalError.includes("profile")} 
+      />
+    );
+  }
 
   const targetActivityCaloriesToday = userProfile?.useAiTargets ? userProfile?.targetActivityCalories : userProfile?.manualTargetActivityCalories;
   const actualBurnForDisplay = activePeriodTab === 'daily' ? periodTotals.caloriesBurned : allWeeklyExerciseLogs.reduce((sum, log) => sum + (Number(log.estimatedCaloriesBurned) || 0), 0);
