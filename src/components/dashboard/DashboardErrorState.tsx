@@ -4,6 +4,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, AlertTriangle, RefreshCw, LogIn, User } from "lucide-react";
@@ -21,7 +22,23 @@ const DashboardErrorState: React.FC<DashboardErrorStateProps> = ({
   isProfileError = false,
   isAccessDenied = false 
 }) => {
+  const router = useRouter();
   const isAccessError = isAccessDenied || message.toLowerCase().includes('access denied') || message.toLowerCase().includes('log in');
+
+  const handleProfileSetup = () => {
+    // Add to history and navigate to profile page directly
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', '/profile');
+      window.location.href = '/profile';
+    }
+    console.log("[ Page] Navigation to /profile initiated.");
+    
+    // Refresh page after 100ms to ensure auth state is updated
+    setTimeout(() => {
+      console.log("[ Page] Refreshing page after navigation...");
+      window.location.reload();
+    }, 100);
+  };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-muted/50">
@@ -69,7 +86,7 @@ const DashboardErrorState: React.FC<DashboardErrorStateProps> = ({
                             className="flex flex-col sm:flex-row gap-3 justify-center"
                         >
                             <Button 
-                                onClick={onRetry}
+                                onClick={isProfileError ? handleProfileSetup : onRetry}
                                 variant={isAccessError ? "default" : "outline"}
                                 className="flex items-center gap-2"
                             >

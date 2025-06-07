@@ -769,7 +769,14 @@ export function DashboardMainPage() {
   const handleRegenerateWorkoutPlan = useCallback(async () => {
     if (!userId || !userProfile || !isProfileDataSufficientForAI(userProfile)) {
       toast({ variant: "destructive", title: "Cannot Regenerate", description: !isProfileDataSufficientForAI(userProfile) ? "Profile incomplete for AI plan." : "Regeneration conditions not met." });
-      if(!isProfileDataSufficientForAI(userProfile) && router) router.push('/profile'); return;
+      if(!isProfileDataSufficientForAI(userProfile) && router) { router.replace('/profile'); // Use replace to avoid auth page in history
+    console.log("[ Page] Navigation to /profile initiated.");
+    
+    // Refresh page after 100ms to ensure auth state is updated
+    setTimeout(() => {
+      console.log("[ Page] Refreshing page after navigation...");
+      window.location.reload();
+    }, 100);}
     }
     setIsGeneratingPlan(true); setUiError(null);
     const todayDateKey = format(new Date(), 'yyyy-MM-dd');
