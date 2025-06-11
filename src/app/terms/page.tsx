@@ -141,10 +141,9 @@ const sectionData = [
       {
         subtitle: "AI Chat Assistant & Conversational AI",
         details: "Our AI-powered chat assistant provides personalized fitness and nutrition guidance, answers questions about your health data, and offers workout recommendations. The assistant uses large language models to understand context and provide relevant responses. This is for informational purposes only and not professional medical advice."
-      },
-      {
+      },      {
         subtitle: "Nutrition Estimation & Calorie Calculation",
-        details: "Our AI flows analyze food descriptions, images, and portion sizes to estimate calories, macronutrients, and micronutrients. The system uses multiple AI models and databases to provide comprehensive nutritional breakdowns. All estimates should be verified with healthcare professionals for medical purposes."
+        details: "Our system combines AI analysis with mathematical formulas to estimate nutrition and calories. Food recognition uses AI models, while calorie burn estimation uses established MET (Metabolic Equivalent of Task) values. Daily nutritional targets are calculated using validated BMR/TDEE formulas. All estimates should be verified with healthcare professionals for medical purposes."
       },
       {
         subtitle: "Workout Plan Generation",

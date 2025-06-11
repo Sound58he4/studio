@@ -486,22 +486,22 @@ export function DashboardMainPage() {
       
       const isFirstTimeSetup = targetsNeedRecalculation && (!fetchedProfile.targetCalories || fetchedProfile.targetCalories <= 0);
       if (isFirstTimeSetup && profileSufficientForAI) {
-        console.log("[Dashboard] First time AI target calculation initiated.");
+        console.log("[Dashboard] First time target calculation initiated.");
         setIsFirstTimeAITargetCalculation(true);
       }
 
       if (fetchedProfile.useAiTargets && targetsNeedRecalculation) {
          if (profileSufficientForAI) {
-            console.log("[Dashboard] Calculating AI targets...");
+            console.log("[Dashboard] Calculating nutritional targets...");
             setIsCalculatingAiTargets(true);
-            const aiInput: CalculateTargetsInput = { 
+            const targetInput: CalculateTargetsInput = { 
                 height: fetchedProfile.height!, weight: fetchedProfile.weight!, age: fetchedProfile.age!, 
                 gender: fetchedProfile.gender!, activityLevel: fetchedProfile.activityLevel!, fitnessGoal: fetchedProfile.fitnessGoal!, 
                 foodPreferences: fetchedProfile.foodPreferences, localFoodStyle: fetchedProfile.localFoodStyle,
             };
             try {
-                const calculatedTargetsResult = await calculateDailyTargets(aiInput);
-                console.log("[Dashboard] AI targets calculated:", calculatedTargetsResult);
+                const calculatedTargetsResult = await calculateDailyTargets(targetInput);
+                console.log("[Dashboard] Nutritional targets calculated:", calculatedTargetsResult);
                 const maintenanceCals = calculatedTargetsResult.targetCalories + (fetchedProfile.fitnessGoal === 'weight_loss' ? 500 : ['weight_gain', 'muscle_building'].includes(fetchedProfile.fitnessGoal!) ? -300 : 0);
                 const updatedProfileDataWithAITargets: Partial<StoredUserProfile> = { 
                     targetCalories: calculatedTargetsResult.targetCalories, targetProtein: calculatedTargetsResult.targetProtein, 
@@ -512,21 +512,21 @@ export function DashboardMainPage() {
                 await saveUserProfile(userId, updatedProfileDataWithAITargets);
                 setUserProfile(prev => prev ? { ...prev, ...updatedProfileDataWithAITargets } : null);
                 currentDailyTargets = calculatedTargetsResult;
-                toast({ title: "AI Targets Updated", description: "Personalized daily goals have been set." });
+                toast({ title: "Targets Calculated!", description: "Personalized daily goals have been set (BMR/TDEE-based)." });
             } catch (aiError: any) {
-                console.error("[Dashboard] AI target calculation error:", aiError);
-                const errorMessage = `AI target calc failed: ${aiError.message || 'Unknown error.'}.`;
+                console.error("[Dashboard] Target calculation error:", aiError);
+                const errorMessage = `Target calculation failed: ${aiError.message || 'Unknown error.'}.`;
                 setUiError(`${errorMessage} ${fetchedProfile.targetCalories ? 'Using previous goals.' : 'Using default goals.'}`);
                 currentDailyTargets = (fetchedProfile.targetCalories && fetchedProfile.targetProtein && fetchedProfile.targetCarbs && fetchedProfile.targetFat && fetchedProfile.targetActivityCalories !== undefined)
                     ? {targetCalories: fetchedProfile.targetCalories, targetProtein: fetchedProfile.targetProtein, targetCarbs: fetchedProfile.targetCarbs, targetFat: fetchedProfile.targetFat, targetActivityCalories: fetchedProfile.targetActivityCalories || 0 } 
                     : { targetCalories: 2000, targetProtein: 100, targetCarbs: 250, targetFat: 70, targetActivityCalories: 300 };
             } finally { setIsCalculatingAiTargets(false); setIsFirstTimeAITargetCalculation(false); }
          } else {
-            setUiError("Profile incomplete. Cannot calculate AI targets. Please complete your profile.");
+            setUiError("Profile incomplete. Cannot calculate nutritional targets. Please complete your profile.");
             currentDailyTargets = null; if(isFirstTimeSetup) setIsFirstTimeAITargetCalculation(false);
          }
       } else if (fetchedProfile.useAiTargets && fetchedProfile.targetCalories && fetchedProfile.targetProtein && fetchedProfile.targetCarbs && fetchedProfile.targetFat && (fetchedProfile.targetActivityCalories !== undefined)) {
-          console.log("[Dashboard] Using existing AI targets from profile.");
+          console.log("[Dashboard] Using existing calculated targets from profile.");
           currentDailyTargets = { targetCalories: fetchedProfile.targetCalories, targetProtein: fetchedProfile.targetProtein, targetCarbs: fetchedProfile.targetCarbs, targetFat: fetchedProfile.targetFat, targetActivityCalories: fetchedProfile.targetActivityCalories || 0 };
       } else if (!fetchedProfile.useAiTargets) {
           currentDailyTargets = (fetchedProfile.manualTargetCalories && fetchedProfile.manualTargetProtein && fetchedProfile.manualTargetCarbs && fetchedProfile.manualTargetFat && (fetchedProfile.manualTargetActivityCalories !== undefined ))
@@ -867,7 +867,7 @@ export function DashboardMainPage() {
   const estimateAndLogCalories = useCallback(async (exercise: ExerciseDetail) => {
     if (!userId || !userProfile?.weight) {
       if (userProfile && (!userProfile.weight || userProfile.weight <= 0)) handleLogCompletedWorkout(exercise, undefined, false);
-      else toast({ variant: "destructive", title: "Error", description: "User weight needed for AI calorie estimation." });
+      else toast({ variant: "destructive", title: "Error", description: "User weight needed for calorie estimation." });
       return;
     }
     setIsEstimatingCalories(exercise.exercise);
@@ -882,7 +882,7 @@ export function DashboardMainPage() {
       };
       const result = await estimateCaloriesBurned(input);
       handleLogCompletedWorkout(exercise, result.estimatedCalories, true);
-      toast({ title: "Calories Estimated!", description: `~${result.estimatedCalories} kcal for ${exercise.exercise}.` });
+      toast({ title: "Calories Calculated!", description: `${result.estimatedCalories} kcal for ${exercise.exercise} (MET-based).` });
     } catch (error: any) { 
       toast({ variant: "destructive", title: "Estimation Failed", description: `Logging ${exercise.exercise} without calories. ${error.message}` }); 
       handleLogCompletedWorkout(exercise, undefined, false);

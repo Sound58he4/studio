@@ -1214,10 +1214,10 @@ export default function ProfilePage() {
                           <div className="space-y-1 sm:mr-4">
                             <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
                               <Sparkles className="h-4 w-4 text-yellow-500" />
-                              Use AI Personalized Targets
+                              Use Smart Personalized Targets
                             </ShadCnFormLabel>
                             <FormDescription className="text-xs font-sans leading-relaxed">
-                              Let Bago automatically calculate your daily goals for nutrition and activity burn.
+                              Let Bago automatically calculate your daily goals using BMR/TDEE formulas.
                             </FormDescription>
                           </div>
                           <FormControl>

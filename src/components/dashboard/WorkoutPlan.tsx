@@ -279,7 +279,7 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                                                             isEstimated ? "text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30" : "text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30"
                                                         )}>
                                                             <Flame size={14}/> 
-                                                            {isEstimated ? 'Est.' : 'Logged'}: {loggedCalories} kcal
+                                                            {isEstimated ? 'Calc.' : 'Logged'}: {loggedCalories} kcal
                                                         </div>
                                                     ) : (
                                                         <span className="text-sm text-muted-foreground italic">No calories logged</span>

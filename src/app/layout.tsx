@@ -180,7 +180,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       const updateBottomNavHeight = () => {
         // Always show nav height when on mobile and header/footer should be shown
         if (isMobile && showHeaderFooter) {
-          const bottomNavHeight = bottomNavElement ? `${(bottomNavElement as HTMLElement).offsetHeight}px` : '4rem';
+          const bottomNavHeight = bottomNavElement ? `${(bottomNavElement as HTMLElement).offsetHeight}px` : '5rem';
           document.documentElement.style.setProperty('--bottom-nav-height', bottomNavHeight);
         } else {
           document.documentElement.style.setProperty('--bottom-nav-height', '0px');
@@ -333,9 +333,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {shouldShowBottomNav && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
           <div
-            className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg"
+            className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg py-2"
             style={{
-              paddingBottom: 'env(safe-area-inset-bottom)',
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
             }}
           >
             <div data-bottom-nav>
