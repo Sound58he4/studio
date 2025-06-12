@@ -811,13 +811,13 @@ export default function WorkoutPlansPage() {
                                     transition={{ delay: 0.3 }}
                                 >
                                     {/* Primary Actions */}
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                                         <Button
                                             onClick={() => handleAddExerciseClick(activeDay)}
                                             size="sm"
-                                            className="flex-1 sm:flex-none"
+                                            className="h-9 text-xs sm:text-sm"
                                         >
-                                            <PlusCircle className="h-4 w-4 mr-2" />
+                                            <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
                                             Add Exercise
                                         </Button>
                                         <Button
@@ -825,38 +825,38 @@ export default function WorkoutPlansPage() {
                                             disabled={!!isGeneratingSimple}
                                             size="sm"
                                             variant="outline"
-                                            className="flex-1 sm:flex-none"
+                                            className="h-9 text-xs sm:text-sm"
                                         >
                                             {isGeneratingSimple === activeDay ? (
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 animate-spin" />
                                             ) : (
-                                                <Wand2 className="h-4 w-4 mr-2" />
+                                                <Wand2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
                                             )}
-                                            AI Suggest
+                                            <span className="truncate">AI Suggest</span>
                                         </Button>
                                         <Button
                                             onClick={() => handleSetRestDay(activeDay)}
                                             size="sm"
                                             variant="secondary"
-                                            className="flex-1 sm:flex-none"
+                                            className="h-9 text-xs sm:text-sm"
                                         >
-                                            Set Rest Day
+                                            <span className="truncate">Set Rest Day</span>
                                         </Button>
                                     </div>
 
                                     {/* PDF Workout Integration - Compact Design */}
                                     <Card className="bg-gradient-to-r from-blue-50/50 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10 border-blue-200/50 dark:border-blue-800/30">
                                         <CardContent className="p-3">
-                                            <div className="flex items-center gap-3 mb-3">
-                                                <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-lg flex items-center justify-center">
-                                                    <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            <div className="flex items-center gap-2 sm:gap-3 mb-3">
+                                                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600 dark:text-blue-400" />
                                                 </div>
-                                                <div className="flex-1">
-                                                    <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
                                                         PDF Workout Plans
                                                     </h3>
-                                                    <p className="text-xs text-blue-700/70 dark:text-blue-300/70">
-                                                        Power, Light, Max & Xtreme routines
+                                                    <p className="text-[10px] sm:text-xs text-blue-700/70 dark:text-blue-300/70 truncate">
+                                                        Power, Light, Max & Xtreme
                                                     </p>
                                                 </div>
                                             </div>
@@ -1028,7 +1028,7 @@ export default function WorkoutPlansPage() {
                                                                             onClick={() => handleEditExerciseClick(activeDay, exercise)}
                                                                             size="sm"
                                                                             variant="ghost"
-                                                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+                                                                            className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                                                                         >
                                                                             <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
                                                                         </Button>
@@ -1036,7 +1036,7 @@ export default function WorkoutPlansPage() {
                                                                             onClick={() => handleRemoveExercise(activeDay, exercise.id)}
                                                                             size="sm"
                                                                             variant="ghost"
-                                                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"
+                                                                            className="h-6 w-6 sm:h-8 sm:w-8 p-0 text-destructive hover:text-destructive"
                                                                         >
                                                                             <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                                         </Button>
@@ -1076,17 +1076,17 @@ export default function WorkoutPlansPage() {
                                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center px-4">
                                                     <Button
                                                         onClick={() => handleAddExerciseClick(activeDay)}
-                                                        className="gap-2 text-sm"
+                                                        className="gap-2 text-xs sm:text-sm h-9 sm:h-10"
                                                         size="sm"
                                                     >
-                                                        <PlusCircle className="h-4 w-4" />
+                                                        <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" />
                                                         Add Exercise
                                                     </Button>
                                                     <Button
                                                         onClick={() => handleSuggestSimpleWorkout(activeDay)}
                                                         disabled={!!isGeneratingSimple}
                                                         variant="outline"
-                                                        className="gap-2 text-sm"
+                                                        className="gap-2 text-xs sm:text-sm h-9 sm:h-10"
                                                         size="sm"
                                                     >
                                                         {isGeneratingSimple === activeDay ? (
@@ -1094,12 +1094,12 @@ export default function WorkoutPlansPage() {
                                                                 animate={{ rotate: 360 }}
                                                                 transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                                                             >
-                                                                <Loader2 className="h-4 w-4" />
+                                                                <Loader2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                             </motion.div>
                                                         ) : (
-                                                            <Wand2 className="h-4 w-4" />
+                                                            <Wand2 className="h-3 w-3 sm:h-4 sm:w-4" />
                                                         )}
-                                                        AI Suggest
+                                                        <span className="truncate">AI Suggest</span>
                                                     </Button>
                                                 </div>
                                             </motion.div>

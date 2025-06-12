@@ -83,13 +83,13 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                     <Button
                         variant="default"
                         size="sm"
-                        className="w-full text-sm font-semibold shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-0 transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative overflow-hidden group"
+                        className="w-full text-xs sm:text-sm font-medium shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-0 transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative overflow-hidden group h-9 sm:h-10"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
-                        <FilePlus2 size={16} className="mr-2 text-white drop-shadow-sm" />
-                        <span className="relative z-10">Add Premium PDF Workout</span>
-                        <div className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full font-normal">
-                            Max • Xtreme • Power • Light
+                        <FilePlus2 size={14} className="mr-1.5 text-white drop-shadow-sm flex-shrink-0" />
+                        <span className="relative z-10 truncate min-w-0">Add PDF Workout</span>
+                        <div className="ml-1 text-[10px] sm:text-xs bg-white/20 px-1.5 py-0.5 rounded-full font-normal hidden xs:block">
+                            Premium
                         </div>
                     </Button>
                 </DialogTrigger>
@@ -124,15 +124,15 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                 <Card className="bg-gradient-to-br from-primary/5 to-purple/5 border-primary/20 shadow-md">
                                     <CardContent className="p-3 sm:p-4">
                                         <div className="flex flex-col space-y-3 sm:space-y-4">
-                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                                <div className="flex items-center gap-2 sm:gap-3">
-                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-purple/20 rounded-lg flex items-center justify-center shadow-inner">
-                                                        <FileTextIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-start gap-2 sm:gap-3">
+                                                    <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-purple/20 rounded-lg flex items-center justify-center shadow-inner flex-shrink-0">
+                                                        <FileTextIcon className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <h4 className="font-semibold text-sm sm:text-base truncate">{selectedPDF.name}</h4>
-                                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-semibold px-2 py-0.5">
+                                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 flex-shrink-0">
                                                                 PREMIUM
                                                             </Badge>
                                                         </div>
@@ -145,59 +145,59 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                                     </div>
                                                 </div>
                                                 
-                                                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                                                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2 sm:justify-end">
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleViewPDF(selectedPDF)}
-                                                        className="flex-1 sm:flex-initial text-xs hover:bg-blue-50 hover:border-blue-300"
+                                                        className="text-xs hover:bg-blue-50 hover:border-blue-300 h-8 sm:h-9"
                                                     >
-                                                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                        <span className="hidden sm:inline">Preview</span>
-                                                        <span className="sm:hidden">View</span>
+                                                        <Eye className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                                                        <span>Preview</span>
                                                     </Button>
                                                     
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDownloadPDF(selectedPDF)}
-                                                        className="flex-1 sm:flex-initial text-xs hover:bg-green-50 hover:border-green-300"
+                                                        className="text-xs hover:bg-green-50 hover:border-green-300 h-8 sm:h-9"
                                                     >
-                                                        <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                        <span className="hidden sm:inline">Download</span>
-                                                        <span className="sm:hidden">Get</span>
+                                                        <Download className="h-3 w-3 mr-1.5 flex-shrink-0" />
+                                                        <span>Download</span>
                                                     </Button>
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-primary/10 pt-3 sm:pt-4">
-                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Switch 
-                                                            id="replace-existing" 
-                                                            checked={replaceExisting} 
-                                                            onCheckedChange={setReplaceExisting}
-                                                        />
-                                                        <Label htmlFor="replace-existing" className="text-xs sm:text-sm">
-                                                            Replace existing exercises
-                                                        </Label>
+                                            <div className="flex flex-col gap-3 border-t border-primary/10 pt-3 sm:pt-4">
+                                                <div className="flex flex-col gap-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Switch 
+                                                                id="replace-existing" 
+                                                                checked={replaceExisting} 
+                                                                onCheckedChange={setReplaceExisting}
+                                                            />
+                                                            <Label htmlFor="replace-existing" className="text-xs sm:text-sm">
+                                                                Replace existing exercises
+                                                            </Label>
+                                                        </div>
+                                                        <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 text-[10px] sm:text-xs shadow-sm flex-shrink-0">
+                                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                                            Available
+                                                        </Badge>
                                                     </div>
-                                                    <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 text-xs self-start shadow-sm">
-                                                        <CheckCircle className="h-3 w-3 mr-1" />
-                                                        Available
-                                                    </Badge>
                                                 </div>
                                                 
                                                 <Button
                                                     onClick={handleAddPDFToDay}
                                                     size="sm"
-                                                    className="w-full sm:w-auto text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                                                    className="w-full text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 h-9 sm:h-10"
                                                 >
-                                                    <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                                    <span className="truncate">
-                                                        {replaceExisting ? "Replace with Premium Plan" : "Add Premium Plan"}
+                                                    <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 flex-shrink-0" />
+                                                    <span className="truncate min-w-0">
+                                                        {replaceExisting ? "Replace with Premium" : "Add Premium Plan"}
                                                     </span>
-                                                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                                                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1.5 flex-shrink-0" />
                                                 </Button>
                                             </div>
                                         </div>
