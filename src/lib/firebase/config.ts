@@ -1,7 +1,7 @@
-
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAnalytics, type Analytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -36,7 +36,12 @@ if (!getApps().length) {
 
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app); // Initialize Firestore
-// const storage: FirebaseStorage = getStorage(app); // Uncomment if using Storage
 
-export { app, auth, db }; // Export auth and db instances
+// Initialize Analytics only in browser environment
+let analytics: Analytics | null = null;
+if (typeof window !== 'undefined') {
+  analytics = getAnalytics(app);
+}
+
+export { app, auth, db, analytics }; // Export auth and db instances
 // export { app, auth, db, storage }; // Export others if needed

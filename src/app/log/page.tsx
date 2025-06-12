@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useAuth } from '@/context/AuthContext'; 
 import { addFoodLog } from '@/services/firestore'; 
 import type { FirestoreFoodLogData } from '@/app/dashboard/types'; 
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface ProcessedFoodResult extends Nutrition {
   id: string;
@@ -37,6 +38,7 @@ interface ProcessedFoodResult extends Nutrition {
 export default function LogFoodPage() {
   const { toast } = useToast();
   const { user, userId, loading: authLoading } = useAuth();
+  const analytics = useAnalytics();
   const [activeTab, setActiveTab] = useState("manual");
   const [isLoading, setIsLoading] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
@@ -115,6 +117,9 @@ export default function LogFoodPage() {
       if (!imagePreview) { setError("Please select an image first."); return; }
       setIsLoading(true); setError(null);
       
+      analytics.trackFeatureClick('image_food_recognition', 'log_page');
+      const startTime = Date.now();
+      
       try {
           let cachedResult = null;
           
@@ -183,6 +188,9 @@ export default function LogFoodPage() {
           toast({ title: "Image Processed", description: `${processedResults.length} item(s) added for review.` });
           resetInputState('image');
       } catch (err: any) {
+          const processingTime = Date.now() - startTime;
+          analytics.trackAIUsage('food_recognition', false, processingTime);
+          analytics.trackError(err, 'image_recognition');
           console.error("Image recognition error:", err); 
           setError(`Image processing failed: ${err.message}.`);
           toast({ title: "Error", description: "Could not process the image.", variant: "destructive" });
@@ -326,10 +334,12 @@ export default function LogFoodPage() {
       if (!audioBlob) { setError("Please record your meal description first."); return; }
       setIsLoading(true); setError(null);
       
+      analytics.trackFeatureClick('voice_food_recognition', 'log_page');
+      const startTime = Date.now();
+      
       const reader = new FileReader(); 
       reader.readAsDataURL(audioBlob);
       reader.onloadend = async () => {
-          const base64Audio = reader.result as string;
           try {
               // Use original voice logging flow (since optimized flow is for text descriptions)
               const input: VoiceFoodLoggingInput = { voiceRecordingDataUri: base64Audio };
@@ -370,6 +380,9 @@ export default function LogFoodPage() {
               toast({ title: "Voice Log Processed", description: `${processedResults.length} item(s) added for review.` });
               resetInputState('voice');
           } catch (err: any) {
+              const processingTime = Date.now() - startTime;
+              analytics.trackAIUsage('voice_processing', false, processingTime);
+              analytics.trackError(err, 'voice_processing');
               console.error("Voice logging error:", err); 
               setError(`Voice processing failed: ${err.message}.`);
               toast({ title: "Error", description: "Could not process voice input.", variant: "destructive" });
@@ -508,6 +521,13 @@ export default function LogFoodPage() {
     setIsLoading(true);
     
     try {
+        // Track each food item logged
+        pendingResults.forEach(item => {
+          analytics.trackFoodLog(item.source, item.identifiedFoodName, item.calories);
+        });
+        
+        analytics.trackFeatureClick('confirm_food_log', 'log_page');
+        
         const logPromises = pendingResults.map(item => {
             const logData: FirestoreFoodLogData = {
               foodItem: item.identifiedFoodName, 
@@ -542,6 +562,7 @@ export default function LogFoodPage() {
         resetInputState();
         
     } catch (e) {
+        analytics.trackError(e as Error, 'food_log_submission');
         console.error("Error saving food logs via service:", e);
         toast({ title: "Logging Error", description: "Could not save log to database.", variant: "destructive"});
     } finally { 

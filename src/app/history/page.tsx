@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext'; // Import useAuth
 import { getFoodLogs, getExerciseLogs, deleteLogEntry, clearAllLogs } from '@/services/firestore'; // Import Firestore service functions
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator'; // Import Separator
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 // Import types from dashboard types
 import type { StoredFoodLogEntry, StoredExerciseLogEntry } from '@/app/dashboard/types';
@@ -33,6 +34,7 @@ export default function HistoryPage() {
   const { toast } = useToast();
   const { user, userId, loading: authLoading } = useAuth();
   const router = useRouter();
+  const analytics = useAnalytics();
   const [allFoodLogs, setAllFoodLogs] = useState<StoredFoodLogEntry[]>([]);
   const [allExerciseLogs, setAllExerciseLogs] = useState<StoredExerciseLogEntry[]>([]);
   const [filteredFoodLogs, setFilteredFoodLogs] = useState<StoredFoodLogEntry[]>([]);
@@ -123,6 +125,10 @@ export default function HistoryPage() {
   // Delete log entry using the service
   const handleDeleteLog = async (idToDelete: string, type: LogType) => {
        if (!userId) { toast({ variant: "destructive", title: "Error", description: "User not authenticated." }); return; }
+       
+       analytics.trackFeatureClick('delete_log_entry', 'history_page');
+       analytics.trackUserAction('delete_log', { log_type: type, log_id: idToDelete });
+       
        const collectionName = type === 'food' ? 'foodLog' : 'exerciseLog';
        console.log(`[History Page] Attempting to delete ${type} log via Service - ID: ${idToDelete}, User: ${userId}`);
        try {
@@ -138,6 +144,10 @@ export default function HistoryPage() {
    // Clear all history using the service
    const clearAllHistory = async (type: LogType) => {
       if (!userId) { toast({ variant: "destructive", title: "Error", description: "User not authenticated." }); return; }
+      
+      analytics.trackFeatureClick('clear_all_history', 'history_page');
+      analytics.trackUserAction('clear_all_logs', { log_type: type });
+      
       const collectionName = type === 'food' ? 'foodLog' : 'exerciseLog';
       console.log(`[History Page] Attempting to clear all ${type} history via Service for user: ${userId}`);
       try {

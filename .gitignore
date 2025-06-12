@@ -74,3 +74,5 @@ google-application-credentials.json
 .genkit/state.json
 
 .firebase
+
+studio
