@@ -173,11 +173,20 @@ export function calculateCaloriesMET(input: CalorieCalculationInput): CalorieCal
   // Calculate calories: MET × weight (kg) × time (hours)
   const calories = adjustedMET * userWeight * durationHours;
   
+  // Add safety bounds: reasonable calorie range for a single exercise
+  const boundedCalories = Math.min(Math.max(1, calories), 2000); // 1-2000 kcal max per exercise
+  
+  // Log warning if original calculation was unrealistic
+  if (calories > 2000) {
+    console.warn(`[MET Calculation] Unrealistic calorie estimate detected and capped: ${Math.round(calories)} -> ${boundedCalories} kcal for ${input.exerciseName}`);
+    console.warn(`[MET Calculation] Input values: sets=${sets}, reps=${reps}, duration=${duration}, userWeight=${userWeight}`);
+  }
+  
   return {
-    estimatedCalories: Math.round(Math.max(1, calories)), // Minimum 1 calorie
+    estimatedCalories: Math.round(boundedCalories),
     metValue: adjustedMET,
     intensity: intensityInfo.level,
-    calculationMethod: `MET (${adjustedMET.toFixed(1)}) × ${userWeight}kg × ${durationHours.toFixed(2)}h`
+    calculationMethod: `MET (${adjustedMET.toFixed(1)}) × ${userWeight}kg × ${durationHours.toFixed(2)}h${calories > 2000 ? ' (capped)' : ''}`
   };
 }
 
@@ -265,19 +274,28 @@ function calculateDuration(
   sets?: number,
   reps?: number
 ): number {
-  // If duration is provided, use it
+  // If duration is provided, use it (but cap at reasonable maximum)
   if (duration && duration > 0) {
-    return duration / 60; // Convert minutes to hours
+    // Cap duration at 3 hours (180 minutes) for safety
+    const cappedDuration = Math.min(duration, 180);
+    return cappedDuration / 60; // Convert minutes to hours
   }
   
   // For strength training, estimate duration based on sets and reps
   if (exerciseType === 'strength' && sets && reps) {
+    // Add validation for reasonable bounds
+    const cappedSets = Math.min(Math.max(sets, 1), 20); // 1-20 sets max
+    const cappedReps = Math.min(Math.max(reps, 1), 100); // 1-100 reps max
+    
     // Estimate: 2-3 seconds per rep + rest time between sets
     const timePerRep = 2.5; // seconds
-    const timePerSet = reps * timePerRep; // seconds per set
+    const timePerSet = cappedReps * timePerRep; // seconds per set
     const restBetweenSets = 90; // seconds (1.5 minutes average rest)
-    const totalSeconds = (sets * timePerSet) + ((sets - 1) * restBetweenSets);
-    return totalSeconds / 3600; // Convert to hours
+    const totalSeconds = (cappedSets * timePerSet) + ((cappedSets - 1) * restBetweenSets);
+    
+    // Cap total duration at 3 hours for extreme safety
+    const durationHours = Math.min(totalSeconds / 3600, 3.0);
+    return durationHours;
   }
   
   // Default duration based on exercise type

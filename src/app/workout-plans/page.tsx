@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, ClipboardList, PlusCircle, Trash2, CalendarDays, Save, Edit, AlertCircle, Wand2, Info, Youtube, Check, X, FileText, RefreshCw } from 'lucide-react'; // Added Check, X, FileText, RefreshCw
+import { Loader2, Sparkles, ClipboardList, PlusCircle, Trash2, CalendarDays, Save, Edit, AlertCircle, Wand2, Info, Youtube, Check, X, FileText, RefreshCw, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getDay, format } from 'date-fns';
 import { getUserProfile, getWorkoutPlan, saveWorkoutPlan } from '@/services/firestore'; // Removed unused imports
 import { generateWorkoutPlan, WeeklyWorkoutPlan as AIWeeklyWorkoutPlan, ExerciseDetail as AIExerciseDetail } from '@/ai/flows/generate-workout-plan';
@@ -113,6 +113,9 @@ export default function WorkoutPlansPage() {
     const [pdfWorkouts, setPdfWorkouts] = useState<Record<DayOfWeek, PDFWorkoutItem[]>>({
         Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: []
     });
+    // State for unsaved changes tracking
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [originalPlan, setOriginalPlan] = useState<Record<DayOfWeek, EditableExercise[]> | null>(null);
 
     // Get today's day name
     const todayDayName = useMemo(() => {
@@ -137,7 +140,10 @@ export default function WorkoutPlansPage() {
             ]);
             setUserProfile(profile);
             setWeeklyPlan(plan);
-            setEditablePlan(createInitialEditablePlan(plan));
+            const initialPlan = createInitialEditablePlan(plan);
+            setEditablePlan(initialPlan);
+            setOriginalPlan(JSON.parse(JSON.stringify(initialPlan))); // Deep copy for comparison
+            setHasUnsavedChanges(false);
             if (!profile) {
                  setError("Profile not found. Please complete your profile first.");
                  toast({ variant: "destructive", title: "Profile Missing", description: "Cannot manage workouts without a profile." });
@@ -192,7 +198,10 @@ export default function WorkoutPlansPage() {
             };
             
             setWeeklyPlan(convertedPlan);
-            setEditablePlan(createInitialEditablePlan(convertedPlan));
+            const newPlan = createInitialEditablePlan(convertedPlan);
+            setEditablePlan(newPlan);
+            setOriginalPlan(JSON.parse(JSON.stringify(newPlan)));
+            setHasUnsavedChanges(false);
             toast({ title: "AI Plan Generated!", description: "Review and save your new weekly plan." });
         } catch (err: any) {
             console.error("[WorkoutPlansPage] AI plan generation error:", err);
@@ -261,6 +270,44 @@ export default function WorkoutPlansPage() {
              return { ...prevPlan, [day]: updatedDayPlan };
          });
      };
+
+    // Function to check if there are unsaved changes
+    const checkForUnsavedChanges = useCallback(() => {
+        if (!originalPlan) return false;
+        return JSON.stringify(editablePlan) !== JSON.stringify(originalPlan);
+    }, [editablePlan, originalPlan]);
+
+    // Update unsaved changes state whenever editablePlan changes
+    useEffect(() => {
+        setHasUnsavedChanges(checkForUnsavedChanges());
+    }, [editablePlan, checkForUnsavedChanges]);
+
+    // Prevent leaving page with unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
+    // Function to navigate to previous/next day
+    const navigateDay = useCallback((direction: 'prev' | 'next') => {
+        if (!activeDay) return;
+        const currentIndex = daysOfWeekOrder.indexOf(activeDay);
+        let newIndex;
+        if (direction === 'prev') {
+            newIndex = currentIndex === 0 ? daysOfWeekOrder.length - 1 : currentIndex - 1;
+        } else {
+            newIndex = currentIndex === daysOfWeekOrder.length - 1 ? 0 : currentIndex + 1;
+        }
+        setActiveDay(daysOfWeekOrder[newIndex]);
+    }, [activeDay]);
 
     const handleSaveEditedExercise = (exerciseToSave: EditableExercise) => {
         const { day } = editingExerciseState!;
@@ -385,7 +432,10 @@ export default function WorkoutPlansPage() {
             console.log("[WorkoutPlansPage] Saving Plan:", planToSave);
             await saveWorkoutPlan(userId, planToSave);
             setWeeklyPlan(planToSave);
-            setEditablePlan(createInitialEditablePlan(planToSave));
+            const savedPlan = createInitialEditablePlan(planToSave);
+            setEditablePlan(savedPlan);
+            setOriginalPlan(JSON.parse(JSON.stringify(savedPlan)));
+            setHasUnsavedChanges(false);
             toast({ title: "Plan Saved!", description: "Your workout plan has been updated." });
             setEditingExerciseState(null);
         } catch (err: any) {
@@ -506,51 +556,37 @@ export default function WorkoutPlansPage() {
         );
     }
 
+    // Main component render
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative overflow-hidden">
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <motion.div
-                    className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl"
-                    animate={{ 
-                        scale: [1, 1.2, 1],
-                        rotate: [0, 180, 360],
-                        opacity: [0.3, 0.5, 0.3]
-                    }}
-                    transition={{ 
-                        duration: 20,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-                <motion.div
-                    className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/10 to-primary/10 rounded-full blur-3xl"
-                    animate={{ 
-                        scale: [1.2, 1, 1.2],
-                        rotate: [360, 180, 0],
-                        opacity: [0.2, 0.4, 0.2]
-                    }}
-                    transition={{ 
-                        duration: 25,
-                        repeat: Infinity,
-                        ease: "linear"
-                    }}
-                />
-            </div>
-
-            <div className="max-w-6xl mx-auto p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 relative z-10">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+            <div className="container mx-auto px-4 py-6 max-w-6xl space-y-6">
+                {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="text-center sm:text-left"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                    <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                        Workout Plans
-                    </h1>
-                    <p className="text-muted-foreground text-sm sm:text-base mt-1">
-                        Design, customize, and track your weekly fitness journey
-                    </p>
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-primary">
+                            Workout Plans
+                        </h1>
+                        <p className="text-muted-foreground text-sm sm:text-base mt-1">
+                            Design, customize, and track your weekly fitness journey
+                        </p>
+                    </div>
+                    
+                    {/* Unsaved changes indicator */}
+                    {hasUnsavedChanges && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800"
+                        >
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-sm font-medium">Unsaved changes</span>
+                        </motion.div>
+                    )}
                 </motion.div>
 
                 {/* Action Bar */}
@@ -558,88 +594,46 @@ export default function WorkoutPlansPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.6 }}
-                    className="flex flex-col sm:grid sm:grid-cols-2 gap-3 sm:gap-4"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                 >
-                    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
-                        <Button 
-                            onClick={handleGeneratePlan} 
-                            disabled={isGeneratingPlan || isSaving || !!isGeneratingSimple} 
-                            size="lg" 
-                            className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg text-sm sm:text-base"
-                        >
-                            <AnimatePresence mode="wait">
-                                {isGeneratingPlan ? (
-                                    <motion.div
-                                        key="generating"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex items-center"
-                                    >
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        >
-                                            <Sparkles className="mr-2 h-5 w-5" />
-                                        </motion.div>
-                                        Generating...
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="generate"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex items-center"
-                                    >
-                                        <Sparkles className="mr-2 h-5 w-5" />
-                                        Generate AI Plan
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </Button>
-                    </motion.div>
+                    <Button 
+                        onClick={handleGeneratePlan} 
+                        disabled={isGeneratingPlan || isSaving || !!isGeneratingSimple} 
+                        size="lg" 
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg"
+                    >
+                        {isGeneratingPlan ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Generating...
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles className="mr-2 h-5 w-5" />
+                                Generate AI Plan
+                            </>
+                        )}
+                    </Button>
                     
-                    <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
-                        <Button 
-                            onClick={handleSaveChanges} 
-                            disabled={isSaving || isGeneratingPlan || !!isGeneratingSimple} 
-                            size="lg" 
-                            variant="outline" 
-                            className="w-full shadow-lg text-sm sm:text-base"
-                        >
-                            <AnimatePresence mode="wait">
-                                {isSaving ? (
-                                    <motion.div
-                                        key="saving"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex items-center"
-                                    >
-                                        <motion.div
-                                            animate={{ rotate: 360 }}
-                                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                        >
-                                            <Save className="mr-2 h-5 w-5" />
-                                        </motion.div>
-                                        Saving...
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="save"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.8 }}
-                                        className="flex items-center"
-                                    >
-                                        <Save className="mr-2 h-5 w-5" />
-                                        Save Changes
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </Button>
-                    </motion.div>
+                    <Button 
+                        onClick={handleSaveChanges} 
+                        disabled={!hasUnsavedChanges || isSaving || isGeneratingPlan || !!isGeneratingSimple} 
+                        size="lg" 
+                        variant={hasUnsavedChanges ? "default" : "outline"}
+                        className={cn("w-full shadow-lg", hasUnsavedChanges && "bg-green-600 hover:bg-green-700")}
+                    >
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="mr-2 h-5 w-5" />
+                                {hasUnsavedChanges ? "Save Changes" : "No Changes"}
+                            </>
+                        )}
+                    </Button>
                 </motion.div>
 
                 {/* Error Display */}
@@ -658,63 +652,44 @@ export default function WorkoutPlansPage() {
                     </motion.div>
                 )}
 
-                {/* Day Selector */}
+                {/* Enhanced Day Selector */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
-                    <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
-                        <CardContent className="p-3 sm:p-4">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
-                                <h2 className="font-semibold text-base sm:text-lg">Select Day</h2>
+                    <Card className="shadow-lg border-0 bg-gradient-to-r from-card/90 to-card/50 backdrop-blur-sm">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="font-semibold text-lg">Weekly Overview</h2>
                                 {activeDay && (
-                                    <motion.div 
-                                        className="flex flex-wrap gap-2"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: 0.6 }}
-                                    >
+                                    <div className="flex items-center gap-2 sm:gap-3">
                                         <Button
-                                            onClick={() => handleAddExerciseClick(activeDay)}
-                                            size="sm"
-                                            className="bg-primary hover:bg-primary/90 text-xs sm:text-sm flex-1 sm:flex-none"
-                                        >
-                                            <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                                            Add Exercise
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleSuggestSimpleWorkout(activeDay)}
-                                            disabled={!!isGeneratingSimple}
-                                            size="sm"
+                                            onClick={() => navigateDay('prev')}
                                             variant="outline"
-                                            className="text-xs sm:text-sm flex-1 sm:flex-none"
-                                        >
-                                            {isGeneratingSimple === activeDay ? (
-                                                <motion.div
-                                                    animate={{ rotate: 360 }}
-                                                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                                                >
-                                                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                                                </motion.div>
-                                            ) : (
-                                                <Wand2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                                            )}
-                                            AI Suggest
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleSetRestDay(activeDay)}
                                             size="sm"
-                                            variant="secondary"
-                                            className="text-xs sm:text-sm flex-1 sm:flex-none"
+                                            className="h-8 w-8 p-0"
                                         >
-                                            Set Rest Day
+                                            <ChevronLeft className="h-4 w-4" />
                                         </Button>
-                                    </motion.div>
+                                        <span className="text-sm font-medium min-w-[80px] text-center">
+                                            {activeDay}
+                                        </span>
+                                        <Button
+                                            onClick={() => navigateDay('next')}
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 )}
                             </div>
-                            
-                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 sm:gap-2">
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* Desktop Day Grid */}
+                            <div className="hidden sm:grid grid-cols-7 gap-3">
                                 {daysOfWeekOrder.map((day, index) => {
                                     const exercises = editablePlan[day] || [];
                                     const isRestDay = exercises.length === 1 && exercises[0].exercise.toLowerCase() === 'rest';
@@ -726,9 +701,9 @@ export default function WorkoutPlansPage() {
                                             key={day}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.5 + index * 0.05, duration: 0.3 }}
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
+                                            transition={{ delay: 0.1 + index * 0.05 }}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
                                         >
                                             <Button
                                                 onClick={() => {
@@ -737,25 +712,23 @@ export default function WorkoutPlansPage() {
                                                 }}
                                                 variant={isActive ? "default" : "outline"}
                                                 className={cn(
-                                                    "w-full flex flex-col items-center gap-0.5 sm:gap-1 h-auto py-2 sm:py-3 transition-all duration-200 text-xs sm:text-sm",
+                                                    "w-full h-20 flex flex-col items-center justify-center gap-1 transition-all duration-200",
                                                     isToday && "ring-2 ring-primary/50",
                                                     isActive && "bg-primary text-primary-foreground shadow-lg",
                                                     !isActive && isToday && "border-primary/50 bg-primary/5",
-                                                    !isActive && !isToday && "hover:bg-accent/50"
+                                                    isRestDay && !isActive && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                                                 )}
                                             >
-                                                <span className="font-bold text-[10px] sm:text-xs">{day.slice(0, 3)}</span>
-                                                <div className="flex items-center gap-1 text-[9px] sm:text-xs">
-                                                    {isToday && (
-                                                        <span className="bg-primary/20 text-primary px-1 py-0.5 rounded text-[8px] sm:text-[10px] font-medium">
-                                                            Today
-                                                        </span>
-                                                    )}
+                                                <span className="font-semibold text-sm">{day.slice(0, 3)}</span>
+                                                {isToday && (
+                                                    <div className="w-2 h-2 bg-primary rounded-full" />
+                                                )}
+                                                <div className="text-xs text-center">
                                                     {isRestDay ? (
                                                         <span className="text-blue-600 dark:text-blue-400 font-medium">Rest</span>
                                                     ) : (
                                                         <span className="text-muted-foreground">
-                                                            {exercises.length} ex
+                                                            {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
                                                         </span>
                                                     )}
                                                 </div>
@@ -764,115 +737,237 @@ export default function WorkoutPlansPage() {
                                     );
                                 })}
                             </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
 
-                {/* Main Content Area */}
-                {activeDay && (
-                    <motion.div
-                        key={activeDay}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="space-y-6"
-                    >
-                        {/* Exercise Form */}
-                        <AnimatePresence>
-                            {editingExerciseState?.day === activeDay && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.4 }}
+                            {/* Mobile Day Carousel */}
+                            <div className="sm:hidden">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Button
+                                        onClick={() => navigateDay('prev')}
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-10 w-10 p-0 shrink-0"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    
+                                    <div className="flex-1 overflow-x-auto">
+                                        <div className="flex gap-2 pb-1">
+                                            {daysOfWeekOrder.map((day) => {
+                                                const exercises = editablePlan[day] || [];
+                                                const isRestDay = exercises.length === 1 && exercises[0].exercise.toLowerCase() === 'rest';
+                                                const isToday = day === todayDayName;
+                                                const isActive = activeDay === day;
+
+                                                return (
+                                                    <Button
+                                                        key={day}
+                                                        onClick={() => {
+                                                            setActiveDay(day);
+                                                            setEditingExerciseState(null);
+                                                        }}
+                                                        variant={isActive ? "default" : "outline"}
+                                                        size="sm"
+                                                        className={cn(
+                                                            "flex-shrink-0 h-12 px-4 transition-all duration-200",
+                                                            isToday && "ring-2 ring-primary/50",
+                                                            isActive && "bg-primary text-primary-foreground shadow-lg",
+                                                            !isActive && isToday && "border-primary/50 bg-primary/5",
+                                                            isRestDay && !isActive && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                                                        )}
+                                                    >
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="font-medium text-xs">{day.slice(0, 3)}</span>
+                                                            <span className="text-[10px] opacity-75">
+                                                                {isRestDay ? 'Rest' : exercises.length}
+                                                            </span>
+                                                        </div>
+                                                    </Button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    
+                                    <Button
+                                        onClick={() => navigateDay('next')}
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-10 w-10 p-0 shrink-0"
+                                    >
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Quick Actions for Active Day */}
+                            {activeDay && (
+                                <motion.div 
+                                    className="space-y-4"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.3 }}
                                 >
-                                    <Card className="border-2 border-primary/50 shadow-xl bg-card/60 backdrop-blur-lg">
-                                        <CardHeader className="pb-3 sm:pb-4 p-3 sm:p-6">
-                                            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
-                                                <Edit className="h-4 w-4 sm:h-5 sm:w-5" />
-                                                {editingExerciseState.exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-3 sm:p-6 pt-0">
-                                            <AddEditExerciseForm
-                                                key={editingExerciseState.exercise.id}
-                                                exercise={editingExerciseState.exercise}
+                                    {/* Primary Actions */}
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button
+                                            onClick={() => handleAddExerciseClick(activeDay)}
+                                            size="sm"
+                                            className="flex-1 sm:flex-none"
+                                        >
+                                            <PlusCircle className="h-4 w-4 mr-2" />
+                                            Add Exercise
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleSuggestSimpleWorkout(activeDay)}
+                                            disabled={!!isGeneratingSimple}
+                                            size="sm"
+                                            variant="outline"
+                                            className="flex-1 sm:flex-none"
+                                        >
+                                            {isGeneratingSimple === activeDay ? (
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            ) : (
+                                                <Wand2 className="h-4 w-4 mr-2" />
+                                            )}
+                                            AI Suggest
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleSetRestDay(activeDay)}
+                                            size="sm"
+                                            variant="secondary"
+                                            className="flex-1 sm:flex-none"
+                                        >
+                                            Set Rest Day
+                                        </Button>
+                                    </div>
+
+                                    {/* PDF Workout Integration - Compact Design */}
+                                    <Card className="bg-gradient-to-r from-blue-50/50 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10 border-blue-200/50 dark:border-blue-800/30">
+                                        <CardContent className="p-3">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-8 h-8 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-lg flex items-center justify-center">
+                                                    <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                                                        PDF Workout Plans
+                                                    </h3>
+                                                    <p className="text-xs text-blue-700/70 dark:text-blue-300/70">
+                                                        Power, Light, Max & Xtreme routines
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <PDFWorkoutIntegration
                                                 day={activeDay}
-                                                onSave={handleSaveEditedExercise}
-                                                onCancel={handleCancelEdit}
-                                                onChange={(field, value) => handleExerciseChange(activeDay, editingExerciseState.exercise.id, field, value)}
+                                                onAddPDFWorkout={(day, pdfWorkout, replaceExisting) => 
+                                                    handleAddPDFWorkout(day, pdfWorkout, replaceExisting)
+                                                }
                                             />
                                         </CardContent>
                                     </Card>
                                 </motion.div>
                             )}
-                        </AnimatePresence>
+                        </CardContent>
+                    </Card>
+                </motion.div>
 
-                        {/* Day Content */}
-                        <Card className="bg-card/60 backdrop-blur-lg border-border/50 shadow-xl">
-                            <CardHeader className="border-b p-3 sm:p-6">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 sm:gap-3">
+                {/* Main Content Layout */}
+                <div className="space-y-6">
+                        {activeDay && (
+                            <motion.div
+                                key={activeDay}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="space-y-6"
+                            >
+                                {/* Exercise Form */}
+                                <AnimatePresence>
+                                    {editingExerciseState?.day === activeDay && (
                                         <motion.div
-                                            className={cn(
-                                                "w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm",
-                                                activeDay === todayDayName 
-                                                    ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg" 
-                                                    : "bg-primary/10 text-primary"
-                                            )}
-                                            whileHover={{ scale: 1.1 }}
-                                            transition={{ type: "spring", stiffness: 400 }}
+                                            initial={{ opacity: 0, y: -20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            transition={{ duration: 0.4 }}
                                         >
-                                            {activeDay.slice(0, 2).toUpperCase()}
-                                        </motion.div>
-                                        <div>
-                                            <CardTitle className="text-lg sm:text-xl">{activeDay}</CardTitle>
-                                            <CardDescription className="text-xs sm:text-sm">
-                                                {activeDay === todayDayName && "Today's workout"}
-                                                {activeDay !== todayDayName && "Plan your workout"}
-                                            </CardDescription>
-                                        </div>
-                                    </div>
-                                    <div className="text-xs sm:text-sm text-muted-foreground">
-                                        {editablePlan[activeDay]?.length || 0} exercises
-                                    </div>
-                                </div>
-                            </CardHeader>
-
-                            <CardContent className="p-3 sm:p-6">
-                                {/* PDF Workouts */}
-                                {pdfWorkouts[activeDay]?.length > 0 && (
-                                    <div className="mb-4 sm:mb-6">
-                                        <h3 className="font-semibold mb-2 sm:mb-3 text-xs sm:text-sm text-muted-foreground uppercase tracking-wide">PDF Workouts</h3>
-                                        <div className="space-y-2 sm:space-y-3">
-                                            {pdfWorkouts[activeDay].map((pdfItem) => (
-                                                <motion.div
-                                                    key={pdfItem.id}
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0, x: 20 }}
-                                                    transition={{ duration: 0.3 }}
-                                                >
-                                                    <PDFWorkoutCard
-                                                        pdfWorkout={pdfItem.pdfWorkout}
-                                                        onRemove={() => handleRemovePDFWorkout(activeDay, pdfItem.id)}
+                                            <Card className="border-2 border-primary/50 shadow-xl bg-card/90 backdrop-blur-lg">
+                                                <CardHeader className="pb-4">
+                                                    <CardTitle className="flex items-center gap-2">
+                                                        <Edit className="h-5 w-5" />
+                                                        {editingExerciseState.exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    <AddEditExerciseForm
+                                                        key={editingExerciseState.exercise.id}
+                                                        exercise={editingExerciseState.exercise}
+                                                        day={activeDay}
+                                                        onSave={handleSaveEditedExercise}
+                                                        onCancel={handleCancelEdit}
+                                                        onChange={(field, value) => handleExerciseChange(activeDay, editingExerciseState.exercise.id, field, value)}
                                                     />
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Day Content */}
+                                <Card className="shadow-xl border-0 bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+                                    <CardHeader className="border-b bg-gradient-to-r from-primary/5 to-primary/10">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div className="flex items-center gap-3">
+                                                <motion.div
+                                                    className={cn(
+                                                        "w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-lg",
+                                                        activeDay === todayDayName 
+                                                            ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground" 
+                                                            : "bg-primary/10 text-primary border border-primary/20"
+                                                    )}
+                                                    whileHover={{ scale: 1.05 }}
+                                                    transition={{ type: "spring", stiffness: 400 }}
+                                                >
+                                                    {activeDay.slice(0, 2).toUpperCase()}
                                                 </motion.div>
-                                            ))}
+                                                <div>
+                                                    <CardTitle className="text-xl">{activeDay}</CardTitle>
+                                                    <CardDescription>
+                                                        {activeDay === todayDayName ? "Today's workout" : "Plan your workout"}
+                                                        {editablePlan[activeDay]?.length > 0 && (
+                                                            <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
+                                                                {editablePlan[activeDay]?.length} exercise{editablePlan[activeDay]?.length !== 1 ? 's' : ''}
+                                                            </span>
+                                                        )}
+                                                    </CardDescription>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    </CardHeader>
 
-                                <div className="mb-4 sm:mb-6">
-                                    <PDFWorkoutIntegration
-                                        day={activeDay}
-                                        onAddPDFWorkout={(day, pdfWorkout, replaceExisting) => 
-                                            handleAddPDFWorkout(day, pdfWorkout, replaceExisting)
-                                        }
-                                    />
-                                </div>
+                                    <CardContent>
+                                        {/* PDF Workouts Display */}
+                                        {pdfWorkouts[activeDay]?.length > 0 && (
+                                            <div className="mb-6">
+                                                <h3 className="font-semibold mb-3 text-sm text-muted-foreground uppercase tracking-wide">PDF Workouts</h3>
+                                                <div className="space-y-3">
+                                                    {pdfWorkouts[activeDay].map((pdfItem) => (
+                                                        <motion.div
+                                                            key={pdfItem.id}
+                                                            initial={{ opacity: 0, x: -20 }}
+                                                            animate={{ opacity: 1, x: 0 }}
+                                                            exit={{ opacity: 0, x: 20 }}
+                                                            transition={{ duration: 0.3 }}
+                                                        >
+                                                            <PDFWorkoutCard
+                                                                pdfWorkout={pdfItem.pdfWorkout}
+                                                                onRemove={() => handleRemovePDFWorkout(activeDay, pdfItem.id)}
+                                                            />
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
 
-                                {/* Exercise List */}
+                                        {/* Exercise List */}
                                 <div className="space-y-3 sm:space-y-4">
                                     <AnimatePresence>
                                         {editablePlan[activeDay]?.length > 0 ? (
@@ -1028,6 +1123,7 @@ export default function WorkoutPlansPage() {
                         </p>
                     </motion.div>
                 )}
+                </div>
             </div>
         </div>
     );

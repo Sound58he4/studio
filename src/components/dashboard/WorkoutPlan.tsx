@@ -260,6 +260,13 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                                                      <Info size={12}/> {item.notes}
                                                  </p>
                                              )}
+
+                                             {/* Pre-calculated calories for non-completed exercises */}
+                                             {!isCompleted && !isRestOrWarmup && (item as any).estimatedCalories && (
+                                                 <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                                                     <Flame size={12}/> Estimated: {(item as any).estimatedCalories} kcal
+                                                 </p>
+                                             )}
                                          </div>
                                      </div>
 
@@ -416,6 +423,13 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                                                      {item.notes}
                                                  </TooltipContent>
                                             </Tooltip>
+                                        )}
+
+                                        {/* Pre-calculated calories for non-completed exercises */}
+                                        {!isCompleted && !isRestOrWarmup && (item as any).estimatedCalories && (
+                                            <p className="text-xs text-blue-600 dark:text-blue-400 pt-1 flex items-center gap-1">
+                                                <Flame size={12}/> Estimated: {(item as any).estimatedCalories} kcal
+                                            </p>
                                         )}
 
                                          {isCompleted && !isRestOrWarmup && (

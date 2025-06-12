@@ -22,7 +22,6 @@ import {
 import { calculateDailyTargets, CalculateTargetsInput, CalculateTargetsOutput } from '@/ai/flows/dashboard-update';
 import { generateWorkoutPlan, WeeklyWorkoutPlan as AIWeeklyWorkoutPlan, ExerciseDetail as AIExerciseDetail } from '@/ai/flows/generate-workout-plan';
 import { estimateCaloriesBurned, EstimateCaloriesBurnedInput } from '@/ai/flows/estimate-calories-burned';
-import { suggestCalorieAdjustment } from '@/ai/flows/suggest-calorie-adjustment';
 import type { SuggestCalorieAdjustmentInput, SuggestCalorieAdjustmentOutput } from '@/app/dashboard/types';
 
 import DashboardMainContent from './DashboardMainContent';
@@ -713,28 +712,80 @@ export function DashboardMainPage() {
     }
   }, [activePeriodTab, selectedDate, userProfile, dailyExerciseLogsState, hasLoadedInitialData, isLoadingInitialData, isClient, processLogsAndUpdateState, fetchWeeklyLogsAndProcess]);
   
+  const getRandomMotivationalTip = useCallback(() => {
+    const tips = [
+      "Stay hydrated! Water helps boost metabolism and curbs appetite.",
+      "Small consistent steps lead to big results. Keep going!",
+      "Focus on whole foods - they're more filling and nutritious.",
+      "Remember: progress, not perfection. You're doing great!",
+      "Every healthy choice you make is an investment in yourself.",
+      "Listen to your body - eat when hungry, stop when satisfied.",
+      "Protein at every meal helps maintain muscle and keeps you full.",
+      "A 10-minute walk can boost energy and improve mood.",
+      "Plan your meals ahead to stay on track with your goals.",
+      "Celebrate small wins - they add up to major changes!",
+      "Quality sleep supports weight management and recovery.",
+      "Fiber-rich foods help you feel full longer and aid digestion.",
+      "Don't skip meals - consistent eating supports metabolism.",
+      "Find physical activities you enjoy - make fitness fun!",
+      "Mindful eating helps you tune into hunger and fullness cues.",
+      "Consistency beats perfection every single time.",
+      "Your health journey is unique - compare only to yesterday's you.",
+      "Stress management is key - try deep breathing or meditation.",
+      "Add color to your plate with fruits and vegetables.",
+      "Rest days are just as important as workout days for recovery."
+    ];
+    return tips[Math.floor(Math.random() * tips.length)];
+  }, []);
+
   const fetchCalorieSuggestion = useCallback(async () => {
     if (!userId || !userProfile || !dailyTargets || activePeriodTab !== 'daily' || isFetchingSuggestionRef.current) return;
     
     isFetchingSuggestionRef.current = true; setIsLoadingSuggestion(true); setUiError(null); 
-    try {
-      const input: SuggestCalorieAdjustmentInput = {
-        userId,
-        currentCaloriesConsumed: userProfile.todayCalories ?? 0, // Use today's summary from profile
-        currentCaloriesBurned: periodTotals.caloriesBurned, // Still from processed exercise logs for today
-        targetCalories: dailyTargets.targetCalories,
-        targetActivityCalories: userProfile.useAiTargets ? userProfile.targetActivityCalories ?? 0 : userProfile.manualTargetActivityCalories ?? 0,
-        maintenanceCalories: userProfile.maintenanceCalories || dailyTargets.targetCalories, 
-        fitnessGoal: userProfile.fitnessGoal!,
-        activityLevel: userProfile.activityLevel || undefined,
+    
+    // Use hardcoded suggestion logic instead of AI
+    const currentCaloriesConsumed = userProfile.todayCalories ?? 0;
+    const currentCaloriesBurned = periodTotals.caloriesBurned;
+    const targetCalories = dailyTargets.targetCalories;
+    const netCaloriesConsumed = currentCaloriesConsumed - currentCaloriesBurned;
+    const calorieBalance = netCaloriesConsumed - targetCalories;
+    
+    let suggestion: SuggestCalorieAdjustmentOutput;
+    
+    if (Math.abs(calorieBalance) <= 50) {
+      // On track
+      suggestion = {
+        actionTitle: "Perfect Balance!",
+        actionValue: null,
+        actionUnit: null,
+        statusMessage: "You're right on track with your calorie goal today.",
+        motivationalTip: getRandomMotivationalTip()
       };
-      const suggestion = await suggestCalorieAdjustment(input);
-      setCalorieAdjustmentSuggestion(suggestion);
-    } catch (err: any) {
-      setUiError(prev => `${prev ? prev + ' ' : ''}Could not get AI action tip: ${err.message}.`);
-      setCalorieAdjustmentSuggestion(null);
-    } finally { setIsLoadingSuggestion(false); isFetchingSuggestionRef.current = false; }
-  }, [userId, userProfile, dailyTargets, periodTotals.caloriesBurned, activePeriodTab]); 
+    } else if (calorieBalance > 0) {
+      // Over target
+      suggestion = {
+        actionTitle: "Consider Lighter Options",
+        actionValue: Math.round(calorieBalance),
+        actionUnit: "kcal over target",
+        statusMessage: "You've exceeded your calorie target for today.",
+        motivationalTip: getRandomMotivationalTip()
+      };
+    } else {
+      // Under target
+      const remainingCalories = Math.abs(calorieBalance);
+      suggestion = {
+        actionTitle: "Room for More Nutrition",
+        actionValue: Math.round(remainingCalories),
+        actionUnit: "kcal remaining for target",
+        statusMessage: "You have room for more calories to reach your goal.",
+        motivationalTip: getRandomMotivationalTip()
+      };
+    }
+    
+    setCalorieAdjustmentSuggestion(suggestion);
+    setIsLoadingSuggestion(false); 
+    isFetchingSuggestionRef.current = false;
+  }, [userId, userProfile, dailyTargets, periodTotals.caloriesBurned, activePeriodTab, getRandomMotivationalTip]); 
 
   useEffect(() => {
     if (hasLoadedInitialData && !isLoadingInitialData && isClient && activePeriodTab === 'daily' && userProfile && dailyTargets) {
@@ -872,12 +923,40 @@ export function DashboardMainPage() {
     }
     setIsEstimatingCalories(exercise.exercise);
     try {
+      // Parse reps with validation to prevent unrealistic values
+      let parsedReps: number | undefined = undefined;
+      if (typeof exercise.reps === 'string' && exercise.reps.match(/^\d+(-\d+)?$/)) {
+        const repsValue = parseInt(exercise.reps.split('-')[0]);
+        // Cap reps at reasonable maximum (1-100) to prevent unrealistic calorie calculations
+        parsedReps = Math.min(Math.max(repsValue, 1), 100);
+        if (repsValue !== parsedReps) {
+          console.warn(`[Calorie Estimation] Unrealistic reps value capped: ${repsValue} -> ${parsedReps} for ${exercise.exercise}`);
+        }
+      }
+      
+      // Parse duration with validation
+      let parsedDuration: number | undefined = undefined;
+      if (typeof exercise.reps === 'string' && exercise.reps.includes('min')) {
+        const durationValue = parseInt(exercise.reps);
+        // Cap duration at reasonable maximum (1-180 minutes)
+        parsedDuration = Math.min(Math.max(durationValue, 1), 180);
+        if (durationValue !== parsedDuration) {
+          console.warn(`[Calorie Estimation] Unrealistic duration capped: ${durationValue} -> ${parsedDuration} minutes for ${exercise.exercise}`);
+        }
+      }
+      
+      // Parse sets with validation
+      const parsedSets = exercise.sets ? Math.min(Math.max(exercise.sets, 1), 20) : undefined;
+      if (exercise.sets && exercise.sets !== parsedSets) {
+        console.warn(`[Calorie Estimation] Unrealistic sets value capped: ${exercise.sets} -> ${parsedSets} for ${exercise.exercise}`);
+      }
+
       const input: EstimateCaloriesBurnedInput = { 
         exerciseName: exercise.exercise, 
         exerciseType: "strength", // Default, can be refined
-        duration: typeof exercise.reps === 'string' && exercise.reps.includes('min') ? parseInt(exercise.reps) : undefined,
-        sets: exercise.sets ?? undefined,
-        reps: typeof exercise.reps === 'string' && exercise.reps.match(/^\d+(-\d+)?$/) ? parseInt(exercise.reps.split('-')[0]) : undefined, // Take first number if range
+        duration: parsedDuration,
+        sets: parsedSets,
+        reps: parsedReps,
         userWeight: userProfile.weight 
       };
       const result = await estimateCaloriesBurned(input);
@@ -909,35 +988,59 @@ export function DashboardMainPage() {
     } else { 
       setCompletedWorkouts(prev => { const updated = { ...prev }; delete updated[exerciseName]; if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); return updated; });
       try {
+        // First delete the completed workout status
         await deleteCompletedWorkout(userId, todayDateKey, exerciseName);
+        console.log(`[Dashboard] Successfully deleted completed workout status for ${exerciseName}`);
+        
+        // Then delete the associated exercise log if it exists
         if (completedEntry?.logId) {
-          await deleteLogEntry(userId, 'exerciseLog', completedEntry.logId);
-          if (isClient && isSameDay(parseISO(completedEntry.timestamp), selectedDate)) {
-            setDailyExerciseLogsState(prev => { 
-                const updatedLogs = prev.filter(log => log.id !== completedEntry.logId); 
-                localStorage.setItem(dailyExerciseLogsCacheKey, JSON.stringify(updatedLogs));
-                // Trigger re-processing for daily tab if it's active
-                if(activePeriodTab === 'daily' && userProfile) {
-                    const todaysSummary = {
-                        id: todayDateKey, totalCalories: userProfile.todayCalories ?? 0, totalProtein: userProfile.todayProtein ?? 0,
-                        totalCarbohydrates: userProfile.todayCarbohydrates ?? 0, totalFat: userProfile.todayFat ?? 0,
-                        entryCount: userProfile.todayEntryCount ?? 0, lastUpdated: userProfile.todayLastUpdated ?? new Date().toISOString()
-                    };
-                    processLogsAndUpdateState('daily', [todaysSummary], updatedLogs);
-                }
-                return updatedLogs;
-            });
+          console.log(`[Dashboard] Attempting to delete exercise log with ID: ${completedEntry.logId}`);
+          try {
+            await deleteLogEntry(userId, 'exerciseLog', completedEntry.logId);
+            console.log(`[Dashboard] Successfully deleted exercise log for ${exerciseName}`);
+            
+            // Update local state only after successful deletion
+            if (isClient && isSameDay(parseISO(completedEntry.timestamp), selectedDate)) {
+              setDailyExerciseLogsState(prev => { 
+                  const updatedLogs = prev.filter(log => log.id !== completedEntry.logId); 
+                  localStorage.setItem(dailyExerciseLogsCacheKey, JSON.stringify(updatedLogs));
+                  // Trigger re-processing for daily tab if it's active
+                  if(activePeriodTab === 'daily' && userProfile) {
+                      const todaysSummary = {
+                          id: todayDateKey, totalCalories: userProfile.todayCalories ?? 0, totalProtein: userProfile.todayProtein ?? 0,
+                          totalCarbohydrates: userProfile.todayCarbohydrates ?? 0, totalFat: userProfile.todayFat ?? 0,
+                          entryCount: userProfile.todayEntryCount ?? 0, lastUpdated: userProfile.todayLastUpdated ?? new Date().toISOString()
+                      };
+                      processLogsAndUpdateState('daily', [todaysSummary], updatedLogs);
+                  }
+                  return updatedLogs;
+              });
+            }
+            const currentWeeklyRange = getDateRange('weekly', selectedDate);
+            if (isWithinInterval(parseISO(completedEntry.timestamp), { start: currentWeeklyRange.start, end: currentWeeklyRange.end })) {
+                setAllWeeklyExerciseLogs(prev => prev.filter(log => log.id !== completedEntry.logId));
+                if(activePeriodTab === 'weekly') fetchWeeklyLogsAndProcess(); // Re-process weekly if it's active
+            }
+          } catch (logDeleteError: any) {
+            console.warn(`[Dashboard] Failed to delete exercise log ${completedEntry.logId}: ${logDeleteError.message}. Workout status still deleted.`);
+            // Don't throw here - the workout status was successfully deleted
           }
-          const currentWeeklyRange = getDateRange('weekly', selectedDate);
-          if (isWithinInterval(parseISO(completedEntry.timestamp), { start: currentWeeklyRange.start, end: currentWeeklyRange.end })) {
-              setAllWeeklyExerciseLogs(prev => prev.filter(log => log.id !== completedEntry.logId));
-              if(activePeriodTab === 'weekly') fetchWeeklyLogsAndProcess(); // Re-process weekly if it's active
-          }
+        } else {
+          console.log(`[Dashboard] No exercise log ID found for ${exerciseName}, only workout status deleted`);
         }
+        
         toast({ title: "Workout Unchecked" });
       } catch (e: any) {
-        toast({ variant: "destructive", title: "Update Error", description: e.message });
-        if (completedEntry) setCompletedWorkouts(prev => { const updated = { ...prev, [exerciseName]: completedEntry }; if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); return updated; });
+        console.error(`[Dashboard] Error deleting workout completion for ${exerciseName}:`, e);
+        toast({ variant: "destructive", title: "Update Error", description: `Failed to delete ${exerciseName}: ${e.message}` });
+        // Restore the completed workout status since deletion failed
+        if (completedEntry) {
+          setCompletedWorkouts(prev => { 
+            const updated = { ...prev, [exerciseName]: completedEntry }; 
+            if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); 
+            return updated; 
+          });
+        }
       }
     }
   }, [userId, userProfile, toast, weeklyWorkoutPlan, todayDayName, completedWorkouts, isClient, selectedDate, getDateRange, estimateAndLogCalories, handleLogCompletedWorkout, createFirestoreServiceError, fetchWeeklyLogsAndProcess, processLogsAndUpdateState, activePeriodTab]);
@@ -1021,7 +1124,7 @@ export function DashboardMainPage() {
     );
   }
 
-  const targetActivityCaloriesToday = userProfile?.useAiTargets ? userProfile?.targetActivityCalories : userProfile?.manualTargetActivityCalories;
+  const targetActivityCaloriesToday = dailyTargets?.targetCalories ? Math.round(dailyTargets.targetCalories / 4) : null;
   const actualBurnForDisplay = activePeriodTab === 'daily' ? periodTotals.caloriesBurned : allWeeklyExerciseLogs.reduce((sum, log) => sum + (Number(log.estimatedCaloriesBurned) || 0), 0);
 
 

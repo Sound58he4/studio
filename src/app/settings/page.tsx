@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input"; // Added Input
 import { useToast } from "@/hooks/use-toast";
-import { Moon, Sun, Save, Settings as SettingsIcon, Loader2, Eye, EyeOff, UserSearch, Users, CheckCircle, XCircle, Send, Clock, UserCheck, UserX, AlertCircle, Trash2 } from 'lucide-react'; // Added Trash2 icon
+import { Moon, Sun, Save, Settings as SettingsIcon, Loader2, Eye, EyeOff, UserSearch, Users, CheckCircle, XCircle, Send, Clock, UserCheck, UserX, AlertCircle, Trash2, Palette, Type, Monitor, Smartphone, Tablet, Zap, Layout } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -31,12 +31,20 @@ import type { StoredUserProfile, ProgressViewPermission, SearchResultUser, ViewR
 
 interface AppSettings {
   theme: 'light' | 'dark';
+  accentColor: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'cyan';
+  fontSize: 'small' | 'medium' | 'large';
+  compactMode: boolean;
+  animations: boolean;
   progressViewPermission: ProgressViewPermission;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   theme: 'light',
-  progressViewPermission: 'request_only', // Default permission
+  accentColor: 'blue',
+  fontSize: 'medium',
+  compactMode: false,
+  animations: true,
+  progressViewPermission: 'request_only',
 };
 
 export default function SettingsPage() {
@@ -158,14 +166,46 @@ export default function SettingsPage() {
   }, [authLoading, userId, router, toast, loadProfileAndSettings]);
 
 
-  // Apply theme immediately
+  // Apply theme and other appearance settings immediately
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return;
-    console.log("[Settings Page] Applying theme:", settings.theme);
+    console.log("[Settings Page] Applying appearance settings:", settings);
     const root = window.document.documentElement;
+    const body = document.body;
+    
+    // Apply theme
     root.classList.remove('light', 'dark');
     root.classList.add(settings.theme);
-  }, [settings.theme, isLoading]);
+    
+    // Apply accent color
+    root.classList.remove('accent-blue', 'accent-purple', 'accent-green', 'accent-orange', 'accent-red', 'accent-cyan');
+    root.classList.add(`accent-${settings.accentColor}`);
+    
+    // Apply font size
+    body.classList.remove('text-small', 'text-medium', 'text-large');
+    body.classList.add(`text-${settings.fontSize}`);
+    
+    // Apply compact mode
+    body.classList.toggle('compact-mode', settings.compactMode);
+    
+    // Apply animations preference
+    body.classList.toggle('reduced-motion', !settings.animations);
+    
+    // Update CSS custom properties for accent color
+    const accentColors = {
+      blue: { hue: '220', sat: '70%', light: '55%' },
+      purple: { hue: '260', sat: '70%', light: '65%' },
+      green: { hue: '142', sat: '70%', light: '45%' },
+      orange: { hue: '25', sat: '85%', light: '60%' },
+      red: { hue: '0', sat: '70%', light: '55%' },
+      cyan: { hue: '190', sat: '70%', light: '50%' }
+    };
+    
+    const color = accentColors[settings.accentColor];
+    root.style.setProperty('--primary', `${color.hue} ${color.sat} ${color.light}`);
+    root.style.setProperty('--accent', `${color.hue} ${color.sat} ${color.light}`);
+    
+  }, [settings, isLoading]);
 
   const handleSettingChange = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -431,17 +471,138 @@ export default function SettingsPage() {
           <CardContent className="p-4 sm:p-6 md:p-8 space-y-8 relative z-10">
 
           {/* --- Appearance Section --- */}
-          <section className="space-y-5 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
-             <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2 mb-4 text-foreground/90"> <Sun className="h-5 w-5 text-yellow-500"/> / <Moon className="h-5 w-5 text-blue-500"/> Appearance </h3>
-             {[
-                 { id: 'light', label: 'Light Mode', description: 'Bright and clear interface.', icon: <Sun className="h-4 w-4"/> },
-                 { id: 'dark', label: 'Dark Mode', description: 'Easy on the eyes, especially at night.', icon: <Moon className="h-4 w-4"/> }
-             ].map(themeOption => (
-                 <div key={themeOption.id} className="flex items-center justify-between space-x-2 sm:space-x-4 p-2 rounded-md hover:bg-muted/50 transition-colors duration-200 cursor-pointer" onClick={() => handleSettingChange('theme', themeOption.id as AppSettings['theme'])}>
-                     <Label htmlFor={`theme-${themeOption.id}`} className="flex flex-col space-y-1 flex-grow cursor-pointer pr-2"> <span className="font-medium flex items-center gap-1.5 text-sm sm:text-base">{themeOption.icon} {themeOption.label}</span> <span className="text-xs font-normal leading-snug text-muted-foreground"> {themeOption.description} </span> </Label>
-                     <Switch id={`theme-${themeOption.id}`} checked={settings.theme === themeOption.id} onCheckedChange={(checked) => checked && handleSettingChange('theme', themeOption.id as AppSettings['theme'])} className="cursor-pointer"/>
+          <section className="space-y-6 p-4 sm:p-6 border rounded-xl shadow-sm bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-sm transition-all hover:shadow-lg duration-300 border-primary/20">
+             <div className="flex items-center gap-3 border-b border-primary/20 pb-3 mb-5">
+               <div className="p-2 rounded-lg bg-primary/10">
+                 <Palette className="h-5 w-5 text-primary"/>
+               </div>
+               <h3 className="text-lg font-semibold text-foreground/90">Appearance & Theme</h3>
+             </div>
+             
+             {/* Theme Selection */}
+             <div className="space-y-3">
+               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                 <Monitor className="h-4 w-4"/>
+                 Color Theme
+               </h4>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                 {[
+                     { id: 'light', label: 'Light', description: 'Bright and clear', icon: <Sun className="h-4 w-4"/>, gradient: 'from-yellow-50 to-blue-50' },
+                     { id: 'dark', label: 'Dark', description: 'Easy on the eyes', icon: <Moon className="h-4 w-4"/>, gradient: 'from-slate-800 to-slate-900' }
+                 ].map(themeOption => (
+                     <div key={themeOption.id} className={`relative overflow-hidden rounded-lg border-2 transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-md ${
+                       settings.theme === themeOption.id 
+                         ? 'border-primary shadow-lg shadow-primary/20 bg-primary/5' 
+                         : 'border-border/50 hover:border-primary/50'
+                     }`} onClick={() => handleSettingChange('theme', themeOption.id as AppSettings['theme'])}>
+                       <div className={`absolute inset-0 bg-gradient-to-br ${themeOption.gradient} opacity-20`}></div>
+                       <div className="relative p-4">
+                         <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-3">
+                             <div className={`p-2 rounded-md ${
+                               settings.theme === themeOption.id ? 'bg-primary/20 text-primary' : 'bg-muted/50'
+                             }`}>
+                               {themeOption.icon}
+                             </div>
+                             <div>
+                               <div className="font-medium text-sm">{themeOption.label}</div>
+                               <div className="text-xs text-muted-foreground">{themeOption.description}</div>
+                             </div>
+                           </div>
+                           {settings.theme === themeOption.id && (
+                             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                 ))}
+               </div>
+             </div>
+
+             {/* Accent Color Selection */}
+             <div className="space-y-3">
+               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                 <Palette className="h-4 w-4"/>
+                 Accent Color
+               </h4>
+               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                 {[
+                   { id: 'blue', color: 'bg-blue-500', name: 'Blue' },
+                   { id: 'purple', color: 'bg-purple-500', name: 'Purple' },
+                   { id: 'green', color: 'bg-green-500', name: 'Green' },
+                   { id: 'orange', color: 'bg-orange-500', name: 'Orange' },
+                   { id: 'red', color: 'bg-red-500', name: 'Red' },
+                   { id: 'cyan', color: 'bg-cyan-500', name: 'Cyan' }
+                 ].map(colorOption => (
+                   <div key={colorOption.id} className={`relative rounded-lg p-3 border-2 transition-all duration-300 cursor-pointer hover:scale-110 ${
+                     settings.accentColor === colorOption.id 
+                       ? 'border-foreground shadow-lg' 
+                       : 'border-border/30 hover:border-border'
+                   }`} onClick={() => handleSettingChange('accentColor', colorOption.id as AppSettings['accentColor'])}>
+                     <div className={`w-6 h-6 ${colorOption.color} rounded-full mx-auto mb-1 shadow-md`}></div>
+                     <div className="text-xs text-center font-medium">{colorOption.name}</div>
+                     {settings.accentColor === colorOption.id && (
+                       <div className="absolute top-1 right-1 w-2 h-2 bg-foreground rounded-full"></div>
+                     )}
+                   </div>
+                 ))}
+               </div>
+             </div>
+
+             {/* Typography & Layout */}
+             <div className="space-y-4">
+               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+                 <Type className="h-4 w-4"/>
+                 Typography & Layout
+               </h4>
+               
+               {/* Font Size */}
+               <div className="space-y-2">
+                 <Label className="text-xs text-muted-foreground">Font Size</Label>
+                 <div className="grid grid-cols-3 gap-2">
+                   {[
+                     { id: 'small', label: 'Small', size: 'text-sm', preview: '14px' },
+                     { id: 'medium', label: 'Medium', size: 'text-base', preview: '16px' },
+                     { id: 'large', label: 'Large', size: 'text-lg', preview: '18px' }
+                   ].map(sizeOption => (
+                     <button key={sizeOption.id} className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
+                       settings.fontSize === sizeOption.id 
+                         ? 'border-primary bg-primary/10 text-primary shadow-md' 
+                         : 'border-border/50 hover:border-primary/50'
+                     }`} onClick={() => handleSettingChange('fontSize', sizeOption.id as AppSettings['fontSize'])}>
+                       <div className={`${sizeOption.size} font-medium`}>Aa</div>
+                       <div className="text-xs mt-1">{sizeOption.label}</div>
+                       <div className="text-xs text-muted-foreground">{sizeOption.preview}</div>
+                     </button>
+                   ))}
                  </div>
-             ))}
+               </div>
+
+               {/* Toggle Options */}
+               <div className="space-y-3">
+                 <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
+                   <div className="flex items-center gap-3">
+                     <Layout className="h-4 w-4 text-muted-foreground"/>
+                     <div>
+                       <div className="text-sm font-medium">Compact Mode</div>
+                       <div className="text-xs text-muted-foreground">Reduce spacing and padding</div>
+                     </div>
+                   </div>
+                   <Switch checked={settings.compactMode} onCheckedChange={(checked) => handleSettingChange('compactMode', checked)}/>
+                 </div>
+                 
+                 <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
+                   <div className="flex items-center gap-3">
+                     <Zap className="h-4 w-4 text-muted-foreground"/>
+                     <div>
+                       <div className="text-sm font-medium">Animations</div>
+                       <div className="text-xs text-muted-foreground">Enable smooth transitions</div>
+                     </div>
+                   </div>
+                   <Switch checked={settings.animations} onCheckedChange={(checked) => handleSettingChange('animations', checked)}/>
+                 </div>
+               </div>
+             </div>
           </section>
 
            {/* --- Progress View Permissions Section --- */}

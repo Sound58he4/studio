@@ -1,410 +1,213 @@
-// src/components/dashboard/PDFWorkoutPlan.tsx
+// src/components/pdf/PDFWorkoutIntegration.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import Link from 'next/link'; 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"; 
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CalendarCheck2, CheckSquare, Square, Loader2, Flame, Youtube, Info, ChevronDown, ChevronUp, Edit, FileText, Zap, Target, Clock, Dumbbell } from 'lucide-react'; 
-import { getDay } from 'date-fns';
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { CompletedWorkouts, ExerciseDetail } from '@/app/dashboard/types';
-import { PDFWorkoutItem } from '@/app/workout-plans/page';
-import { getPowerWorkoutByDay, convertPowerWorkoutToExercises } from '@/data/workouts/power-workout-plan';
-import { getXtremeWorkoutByDay, convertXtremeWorkoutToExercises } from '@/data/workouts/xtreme-workout-plan';
-import { getLightWorkoutByDay, convertLightWorkoutToExercises } from '@/data/workouts/light-workout-plan';
-import { getMaxWorkoutByDay, convertMaxWorkoutToExercises } from '@/data/workouts/max-workout-plan';
-import WorkoutQuoteDisplay from '@/components/workout/WorkoutQuoteDisplay';
-import YouTubeWorkoutExplanation from '@/components/workout/YouTubeWorkoutExplanation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { 
+    FileText as FileTextIcon, 
+    Plus, 
+    Eye,
+    Download,
+    Calendar,
+    X,
+    ArrowRight,
+    BookOpen,
+    Dumbbell,
+    FilePlus2,
+    CheckCircle
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import PDFWorkoutViewer, { PDFWorkout, WorkoutCategory } from './PDFWorkoutViewer';
+import { DayOfWeek } from '@/app/workout-plans/page';
 
-export interface PDFWorkoutPlanProps {
-    pdfWorkouts: Record<string, PDFWorkoutItem[]>;
-    isLoading: boolean;
-    completedWorkouts: CompletedWorkouts; 
-    onToggleComplete: (exerciseName: string, currentStatus: boolean) => void; 
-    onLogWorkout: (exercise: ExerciseDetail, burnedCalories?: number, isEstimated?: boolean) => void; 
-    isEstimatingCalories?: string | null; 
-    estimateAndLogCalories: (exercise: ExerciseDetail) => Promise<void>; 
-    className?: string; 
+interface PDFWorkoutIntegrationProps {
+    day: DayOfWeek;
+    onAddPDFWorkout: (day: DayOfWeek, pdfWorkout: PDFWorkout, replaceExisting: boolean) => void;
+    className?: string;
 }
 
-const PDFWorkoutPlan: React.FC<PDFWorkoutPlanProps> = ({
-    pdfWorkouts,
-    isLoading,
-    completedWorkouts, 
-    onToggleComplete, 
-    onLogWorkout, 
-    isEstimatingCalories, 
-    estimateAndLogCalories, 
-    className, 
-}) => {
-    const todayIndexRaw = getDay(new Date()); 
-    const todayIndex = todayIndexRaw === 0 ? 6 : todayIndexRaw - 1; 
-    const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
-    const today = daysOfWeek[todayIndex];
-    
-    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-    const [exerciseToLog, setExerciseToLog] = useState<ExerciseDetail | null>(null);
-    const [caloriesBurnedInput, setCaloriesBurnedInput] = useState<string>("");
-    const [isExpanded, setIsExpanded] = useState(true); 
+const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
+    day,
+    onAddPDFWorkout,
+    className
+}) => {    const { toast } = useToast();
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedPDF, setSelectedPDF] = useState<PDFWorkout | null>(null);
+    const [replaceExisting, setReplaceExisting] = useState(true);
 
-    const safeCompletedWorkouts = useMemo(() => completedWorkouts || {}, [completedWorkouts]);
-    
-    // Get today's PDF workouts and convert to exercises
-    const todaysPDFWorkouts = useMemo(() => {
-        const todayPDFs = pdfWorkouts[today] || [];
-        const exercises: ExerciseDetail[] = [];
-          todayPDFs.forEach(pdfItem => {
-            const { category, day } = pdfItem.pdfWorkout;
-            
-            switch (category) {
-                case 'POWER':
-                    const powerWorkout = getPowerWorkoutByDay(day);
-                    if (powerWorkout) {
-                        exercises.push(...convertPowerWorkoutToExercises(powerWorkout));
-                    }
-                    break;
-                case 'XTREME WORKOUT':
-                    const xtremeWorkout = getXtremeWorkoutByDay(day);
-                    if (xtremeWorkout) {
-                        exercises.push(...convertXtremeWorkoutToExercises(xtremeWorkout));
-                    }
-                    break;
-                case 'LIGHT WORKOUT':
-                    const lightWorkout = getLightWorkoutByDay(day);
-                    if (lightWorkout) {
-                        exercises.push(...convertLightWorkoutToExercises(lightWorkout));
-                    }
-                    break;
-                case 'MAX WORKOUT':
-                    const maxWorkout = getMaxWorkoutByDay(day);
-                    if (maxWorkout) {
-                        exercises.push(...convertMaxWorkoutToExercises(maxWorkout));
-                    }
-                    break;
-            }
-        });
-        
-        return {
-            pdfItems: todayPDFs,
-            exercises
-        };
-    }, [pdfWorkouts, today]);
-
-    const handleOpenLogModal = (exercise: ExerciseDetail) => {
-        setExerciseToLog(exercise);
-        const currentLog = safeCompletedWorkouts[exercise.exercise];
-        setCaloriesBurnedInput(currentLog?.loggedCalories?.toString() ?? "");
-        setIsLogModalOpen(true);
+    const handleSelectPDF = (pdf: PDFWorkout) => {
+        setSelectedPDF(pdf);
     };
 
-    const handleConfirmLogWorkout = () => {
-        if (exerciseToLog) {
-            const burnedCalories = caloriesBurnedInput ? parseInt(caloriesBurnedInput) : undefined;
-            const validBurnedCalories = burnedCalories && !isNaN(burnedCalories) && burnedCalories > 0 ? burnedCalories : undefined;
-
-            if (validBurnedCalories === undefined) {
-                 estimateAndLogCalories(exerciseToLog);
-             } else {
-                 onLogWorkout(exerciseToLog, validBurnedCalories, false);
-             }
+    const handleAddPDFToDay = () => {
+        if (selectedPDF) {
+            onAddPDFWorkout(day, selectedPDF, replaceExisting);
+            setIsDialogOpen(false);
+            setSelectedPDF(null);
+            toast({
+                title: replaceExisting ? "PDF Workout Exercises Added" : "PDF Workout Added",
+                description: `${selectedPDF.name} has been added to ${day}${replaceExisting ? ", replacing existing exercises" : ""}`,
+            });
         }
-        setIsLogModalOpen(false);
-        setExerciseToLog(null);
-        setCaloriesBurnedInput("");
     };
 
-    const renderSkeleton = () => (
-        <CardContent className="p-4 sm:p-5 space-y-4">
-            <div className="flex justify-center items-center py-10">
-                 <Loader2 className="h-8 w-8 animate-spin text-accent"/>
-                 <p className="ml-3 text-muted-foreground animate-pulse">Loading PDF workouts...</p>
-            </div>
-        </CardContent>
-    );
-
-    const renderNoPDFWorkouts = () => (
-        <CardContent className="p-4 sm:p-5 space-y-4">
-             <div className="text-center py-10 text-muted-foreground">
-                 <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                 <p className="mb-2">No PDF workouts found for today.</p>
-                 <p className="text-sm text-muted-foreground/70">Add PDF workouts from the workout plans page.</p>
-             </div>
-        </CardContent>
-    );
-
-    const renderPDFWorkoutList = () => {
-        const { pdfItems, exercises } = todaysPDFWorkouts;
-        
-        return (
-            <CardContent className="p-0 sm:p-1 md:p-2"> 
-                <div className="space-y-4 p-2 sm:p-3">                    {/* Show workout quotes and YouTube explanations for all workout types */}
-                    {pdfItems.map(pdfItem => {
-                        const { category, day } = pdfItem.pdfWorkout;
-                        let workoutDetails = null;
-                        let iconComponent = null;
-                        let colorClass = '';
-
-                        switch (category) {
-                            case 'POWER':
-                                workoutDetails = getPowerWorkoutByDay(day);
-                                iconComponent = <Zap className="h-5 w-5 text-red-600" />;
-                                colorClass = 'text-red-700 dark:text-red-300';
-                                break;
-                            case 'XTREME WORKOUT':
-                                workoutDetails = getXtremeWorkoutByDay(day);
-                                iconComponent = <Target className="h-5 w-5 text-purple-600" />;
-                                colorClass = 'text-purple-700 dark:text-purple-300';
-                                break;
-                            case 'LIGHT WORKOUT':
-                                workoutDetails = getLightWorkoutByDay(day);
-                                iconComponent = <Clock className="h-5 w-5 text-green-600" />;
-                                colorClass = 'text-green-700 dark:text-green-300';
-                                break;
-                            case 'MAX WORKOUT':
-                                workoutDetails = getMaxWorkoutByDay(day);
-                                iconComponent = <Dumbbell className="h-5 w-5 text-orange-600" />;
-                                colorClass = 'text-orange-700 dark:text-orange-300';
-                                break;
-                        }
-
-                        if (workoutDetails) {
-                            return (
-                                <div key={pdfItem.id} className="space-y-3">
-                                    <div className="flex items-center gap-2 mb-3">
-                                        {iconComponent}
-                                        <h3 className={`font-semibold ${colorClass}`}>
-                                            {workoutDetails.name}
-                                        </h3>
-                                    </div>
-                                    
-                                    <WorkoutQuoteDisplay 
-                                        quote={workoutDetails.quote}
-                                        variant="featured"
-                                    />
-                                    
-                                    <YouTubeWorkoutExplanation
-                                        youtubeUrl={workoutDetails.youtubeExplanationUrl}
-                                        workoutName={workoutDetails.name}
-                                        description={workoutDetails.description}
-                                    />
-                                </div>
-                            );
-                        }
-                        return null;
-                    })}
-                    
-                    {/* Exercise List */}
-                    {exercises.length > 0 && (
-                        <div className="space-y-2">
-                            <h4 className="font-semibold text-sm text-foreground/80 border-b pb-2">
-                                Today's Exercises
-                            </h4>
-                            <ul className="space-y-2 sm:space-y-3"> 
-                                <TooltipProvider delayDuration={200}>
-                                {exercises.map((item, index) => {
-                                    const completedEntry = safeCompletedWorkouts[item.exercise];
-                                    const isCompleted = !!completedEntry?.completed; 
-                                    const loggedCalories = completedEntry?.loggedCalories;
-                                    const isEstimated = !!completedEntry?.isEstimated; 
-                                    const isCurrentlyEstimating = isEstimatingCalories === item.exercise;
-                                    const isRestOrWarmup = item.exercise.toLowerCase() === 'rest' || item.exercise.toLowerCase().includes('stretch') || item.exercise.toLowerCase().includes('warm-up') || item.exercise.toLowerCase().includes('cool-down');
-
-                                    return (
-                                        <li key={index} className={cn(
-                                            "flex items-start gap-2 sm:gap-3 p-2.5 sm:p-3.5 border rounded-lg transition-all duration-300 shadow-sm group relative overflow-hidden hover:shadow-md hover:border-primary/30",
-                                            "animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out", 
-                                            isCompleted ? "bg-green-100/50 dark:bg-green-900/30 border-green-300 dark:border-green-700" : "bg-card hover:bg-muted/30",
-                                            isRestOrWarmup && !isCompleted && "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800",
-                                            isRestOrWarmup && isCompleted && "bg-blue-100/70 dark:bg-blue-900/40 border-blue-300 dark:border-blue-700"
-                                        )}
-                                        style={{ animationDelay: `${index * 50}ms` }} 
-                                        >
-                                            <button
-                                                onClick={() => onToggleComplete(item.exercise, isCompleted)}
-                                                className="mt-0.5 flex-shrink-0 z-10 group focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded" 
-                                                disabled={isCurrentlyEstimating}
-                                                title={isCompleted ? "Mark as incomplete" : "Mark as complete"}
-                                            >
-                                                <div className={cn("h-5 w-5 rounded border-2 flex items-center justify-center transition-all duration-200 ease-in-out transform group-hover:scale-110", 
-                                                   isCompleted && !isRestOrWarmup && "bg-green-500 border-green-600 scale-110",
-                                                   isCompleted && isRestOrWarmup && "bg-blue-500 border-blue-600 scale-110",
-                                                   !isCompleted && "bg-background border-muted-foreground group-hover:border-primary",
-                                                   isCurrentlyEstimating && "opacity-50 cursor-not-allowed"
-                                                )}>
-                                                    {isCompleted && <CheckSquare className="h-3.5 w-3.5 text-white transition-transform duration-200 group-hover:scale-125"/>}
-                                                    {isCurrentlyEstimating && <Loader2 className="h-3 w-3 animate-spin text-primary"/>}
-                                                    {!isCompleted && !isCurrentlyEstimating && <Square className="h-3 w-3 text-transparent transition-colors group-hover:text-primary/50" />}
-                                                </div>
-                                            </button>
-
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex justify-between items-start gap-2">
-                                                    <p className={cn(
-                                                        "font-semibold text-sm sm:text-base leading-tight break-words transition-colors", 
-                                                        isCompleted && "line-through text-muted-foreground",
-                                                        isRestOrWarmup && "text-blue-800 dark:text-blue-200"
-                                                    )}>
-                                                        {item.exercise}
-                                                    </p>
-                                                    {item.youtubeLink && (
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <a href={item.youtubeLink} target="_blank" rel="noopener noreferrer" title="Watch Tutorial" className="flex-shrink-0 z-10 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 rounded-full">
-                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-600 -mt-1 -mr-1 hover:bg-red-100/50 dark:hover:bg-red-900/30 rounded-full transform hover:scale-110 transition-transform">
-                                                                        <Youtube className="h-4 w-4"/>
-                                                                    </Button>
-                                                                </a>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="top" className="text-xs p-1.5 bg-foreground text-background rounded shadow-lg">
-                                                                Watch Tutorial
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    )}
-                                                </div>
-
-                                                {(item.sets || item.reps) && (
-                                                    <p className={cn(
-                                                        "text-xs sm:text-sm text-muted-foreground mt-0.5 transition-colors", 
-                                                        isCompleted && "line-through"
-                                                    )}>
-                                                        {item.sets ? <span className="font-medium">{item.sets} sets</span> : ''}
-                                                        {item.sets && item.reps ? ' x ' : ''}
-                                                        {item.reps ? <span className="font-medium">{item.reps}</span> : ''}
-                                                        {typeof item.reps === 'string' && (item.reps.includes('min') || item.reps.includes('sec') || item.reps.includes('s')) ? '' : (item.reps ? ' reps' : '')}
-                                                    </p>
-                                                )}
-
-                                                 {item.notes && (
-                                                     <Tooltip>
-                                                         <TooltipTrigger asChild>
-                                                              <p className="text-xs text-muted-foreground italic pt-1 truncate flex items-center gap-1 cursor-default hover:text-foreground transition-colors">
-                                                                 <Info size={12}/> {item.notes}
-                                                              </p>
-                                                         </TooltipTrigger>
-                                                         <TooltipContent side="bottom" className="text-xs p-1.5 max-w-[250px] whitespace-normal bg-foreground text-background rounded shadow-lg">
-                                                             {item.notes}
-                                                         </TooltipContent>
-                                                     </Tooltip>
-                                                 )}
-
-                                                  {isCompleted && !isRestOrWarmup && (
-                                                    <div className="mt-2 flex items-center justify-between flex-wrap gap-2 animate-in fade-in duration-300 delay-100">
-                                                         {isCurrentlyEstimating ? (
-                                                            <p className="text-xs text-primary font-medium flex items-center gap-1 animate-pulse">
-                                                                <Loader2 size={12} className="animate-spin"/> Estimating calories...
-                                                            </p>
-                                                         ) : loggedCalories !== undefined ? (
-                                                            <p className={cn(
-                                                                 "text-xs font-medium flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors duration-200", 
-                                                                 isEstimated ? "text-purple-700 dark:text-purple-300 bg-purple-200/50 dark:bg-purple-800/30 border border-purple-300 dark:border-purple-700" : "text-green-700 dark:text-green-300 bg-green-200/50 dark:bg-green-800/30 border border-green-300 dark:border-green-700"
-                                                             )}>
-                                                             <Flame size={12}/> {isEstimated ? 'Est.' : 'Logged'}: {loggedCalories} kcal burned
-                                                         </p>
-                                                      ) : (
-                                                         <p className="text-xs text-muted-foreground italic bg-muted/50 px-1.5 py-0.5 rounded border border-dashed">Calories not logged</p>
-                                                      )}
-                                                     <Button variant="link" size="sm" className="h-auto p-0 text-xs text-primary hover:underline focus:outline-none focus:ring-1 focus:ring-primary rounded" onClick={() => handleOpenLogModal(item)}>
-                                                          {loggedCalories !== undefined ? 'Edit Logged Calories' : 'Log/Estimate Calories'}
-                                                      </Button>
-                                                  </div>
-                                               )}
-                                            </div>
-
-                                           <div className={cn(
-                                               "absolute inset-y-0 left-0 w-1 sm:w-1.5 transition-colors duration-300 rounded-l-md",
-                                               isCompleted ? "bg-green-400 dark:bg-green-600" : "bg-muted group-hover:bg-primary/20",
-                                               isRestOrWarmup && !isCompleted && "bg-blue-300 dark:bg-blue-700 group-hover:bg-primary/20",
-                                               isRestOrWarmup && isCompleted && "bg-blue-500 dark:bg-blue-600"
-                                           )}></div>
-                                        </li>
-                                    );
-                                 })}
-                                 </TooltipProvider>
-                            </ul>
-                        </div>
-                    )}
-                </div>
-            </CardContent>
-        );
+    const handleViewPDF = (pdf: PDFWorkout) => {
+        window.open(pdf.filePath, '_blank');
     };
 
-    return (
-        <Card className={cn(
-            "shadow-xl border border-accent/30 bg-gradient-to-br from-accent/5 via-card to-card backdrop-blur-sm overflow-hidden group transition-shadow hover:shadow-lg",
-            className 
-        )}>
-            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-3 sm:pb-4 pt-4 sm:pt-5 px-4 sm:px-5 bg-gradient-to-r from-accent/10 to-card gap-2 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}> 
-                <div className="flex-1">
-                    <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2 text-accent">
-                        <FileText className="h-4 w-4 sm:h-5 sm:w-5"/> Today's PDF Workout ({today})
-                    </CardTitle>
-                    <CardDescription className="text-xs sm:text-sm mt-1">Your selected PDF workout plan for today.</CardDescription>
-                </div>
-                <div className="flex items-center gap-2 self-start sm:self-center">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 text-accent">
-                        {isExpanded ? <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" /> : <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />}
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <div className={cn(
-                 "transition-all duration-500 ease-out overflow-hidden",
-                 isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0" 
-            )}>
-                {isLoading ? renderSkeleton()
-                : todaysPDFWorkouts.pdfItems.length === 0 ? renderNoPDFWorkouts()
-                : renderPDFWorkoutList()
+    const handleDownloadPDF = (pdf: PDFWorkout) => {
+        const link = document.createElement('a');
+        link.href = pdf.filePath;
+        link.download = `${pdf.name}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };    return (
+        <div className={cn("w-full", className)}>
+            <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                setIsDialogOpen(open);
+                if (!open) {
+                    setSelectedPDF(null);
+                    setReplaceExisting(true); // Reset to default value when dialog closes
                 }
-                 {(todaysPDFWorkouts.pdfItems.length > 0 || !isLoading) && ( 
-                    <CardFooter className="p-3 sm:p-4 bg-muted/30 border-t justify-end">
-                        <Link href="/workout-plans">
-                            <Button variant="outline" size="sm" className="shadow-sm bg-card hover:bg-accent/10 hover:border-accent group hover:scale-105 transition-transform duration-200 text-xs sm:text-sm">
-                                <Edit className="mr-1.5 h-4 w-4 text-accent"/> Edit PDF Workouts
-                            </Button>
-                        </Link>
-                    </CardFooter>
-                 )}
-            </div>
-
-            {/* Calorie Logging Modal */}
-            <AlertDialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Log Workout Calories</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {exerciseToLog ? `How many calories did you burn doing ${exerciseToLog.exercise}?` : 'Log your workout calories'}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="calories">Calories Burned</Label>
-                        <Input
-                            id="calories"
-                            type="number"
-                            placeholder="Enter calories (optional)"
-                            value={caloriesBurnedInput}
-                            onChange={(e) => setCaloriesBurnedInput(e.target.value)}
-                            className="mt-2"
+            }}>
+                <DialogTrigger asChild>
+                    <motion.div
+                        whileHover={{ scale: 1.02, y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="w-full"
+                    >
+                        <Button
+                            size="lg"
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg text-sm sm:text-base h-12 sm:h-14"
+                        >
+                            <motion.div
+                                animate={{ rotate: [0, 5, 0] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                <FilePlus2 size={20} className="mr-2 sm:mr-3" />
+                            </motion.div>
+                            <div className="flex flex-col items-start text-left">
+                                <span className="font-semibold">Browse PDF Workouts</span>
+                                <span className="text-xs opacity-90">Power • Light • Max • Xtreme</span>
+                            </div>
+                        </Button>
+                    </motion.div>
+                </DialogTrigger>                <DialogContent className="w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-3 sm:p-6">
+                    <DialogHeader className="pb-2 sm:pb-4">
+                        <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
+                            <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
+                            Choose PDF Workout for {day}
+                        </DialogTitle>                        <DialogDescription className="text-xs sm:text-sm">
+                            Select a pre-designed workout PDF to add to your {day} routine. 
+                            All workout types can replace your current exercises with the PDF content.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-auto">
+                        <PDFWorkoutViewer
+                            onSelectPDF={handleSelectPDF}
+                            className="border-0 shadow-none"
                         />
-                        <p className="text-xs text-muted-foreground mt-2">
-                            Leave blank to use AI estimation based on your profile.
-                        </p>
                     </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmLogWorkout} className="bg-primary hover:bg-primary/90">
-                           Confirm & Log Workout
-                        </AlertDialogAction>
-                   </AlertDialogFooter>
-               </AlertDialogContent>
-           </AlertDialog>
-        </Card>
+                    
+                    {/* Selection Summary */}                    <AnimatePresence>
+                        {selectedPDF && (                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4"
+                            >
+                                <Card className="bg-primary/5 border-primary/20">
+                                    <CardContent className="p-3 sm:p-4">
+                                        <div className="flex flex-col space-y-3 sm:space-y-4">
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                                <div className="flex items-center gap-2 sm:gap-3">
+                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                        <FileTextIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <h4 className="font-semibold text-sm sm:text-base truncate">{selectedPDF.name}</h4>
+                                                        <p className="text-xs sm:text-sm text-muted-foreground">
+                                                            {selectedPDF.category} • Day {selectedPDF.day}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                                            {selectedPDF.description}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleViewPDF(selectedPDF)}
+                                                        className="flex-1 sm:flex-initial text-xs"
+                                                    >
+                                                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                        <span className="hidden sm:inline">Preview</span>
+                                                        <span className="sm:hidden">View</span>
+                                                    </Button>
+                                                    
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleDownloadPDF(selectedPDF)}
+                                                        className="flex-1 sm:flex-initial text-xs"
+                                                    >
+                                                        <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                        <span className="hidden sm:inline">Download</span>
+                                                        <span className="sm:hidden">Get</span>
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-t border-primary/10 pt-3 sm:pt-4">
+                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Switch 
+                                                            id="replace-existing" 
+                                                            checked={replaceExisting} 
+                                                            onCheckedChange={setReplaceExisting}
+                                                        />
+                                                        <Label htmlFor="replace-existing" className="text-xs sm:text-sm">
+                                                            Replace existing exercises
+                                                        </Label>
+                                                    </div>                                                    <Badge className="bg-green-100 text-green-700 border-green-200 text-xs self-start">
+                                                            <CheckCircle className="h-3 w-3 mr-1" />
+                                                            Available
+                                                        </Badge>
+                                                </div>
+                                                
+                                                <Button
+                                                    onClick={handleAddPDFToDay}
+                                                    size="sm"
+                                                    className="w-full sm:w-auto text-xs sm:text-sm"
+                                                >
+                                                    <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                                    <span className="truncate">
+                                                        {replaceExisting ? "Replace with PDF Exercises" : "Add to Day"}
+                                                    </span>
+                                                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </DialogContent>
+            </Dialog>
+        </div>
     );
 };
 
-export default PDFWorkoutPlan;
+export default PDFWorkoutIntegration;

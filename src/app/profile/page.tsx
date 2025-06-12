@@ -17,6 +17,15 @@ import {
   FormLabel as ShadCnFormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -161,6 +170,11 @@ export default function ProfilePage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [initialDisplayName, setInitialDisplayName] = useState<string | undefined>(undefined);
   const [hasFetchedProfile, setHasFetchedProfile] = useState(false);
+  const [errorPopup, setErrorPopup] = useState<{ show: boolean; title: string; message: string }>({
+    show: false,
+    title: '',
+    message: ''
+  });
 
   // Weight reminder state
   const weightReminder = useWeightReminder();
@@ -355,8 +369,34 @@ export default function ProfilePage() {
     return `${displayHour}:${displayMinute} ${period}`;
   };
 
+  const showErrorPopup = (title: string, message: string) => {
+    setErrorPopup({
+      show: true,
+      title,
+      message
+    });
+  };
+
   async function onSubmit(data: ProfileFormValues) {
-    if (!userId) { toast({ variant: "destructive", title: "Error", description: "User not authenticated." }); return; }
+    if (!userId) { 
+      showErrorPopup("Authentication Error", "User not authenticated. Please log in again.");
+      return; 
+    }
+    
+    // Check for form validation errors
+    const errors = form.formState.errors;
+    if (Object.keys(errors).length > 0) {
+      const errorMessages = Object.entries(errors).map(([field, error]) => {
+        const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
+        return `${fieldName}: ${error?.message || 'Invalid value'}`;
+      });
+      
+      showErrorPopup(
+        "Form Validation Error", 
+        `Please fix the following errors:\n\n${errorMessages.join('\n')}`
+      );
+      return;
+    }
     
     setIsSaving(true); setIsProcessingAiTargets(false);
 
@@ -397,10 +437,11 @@ export default function ProfilePage() {
             const taken = await isDisplayNameTaken(data.displayName.trim());
             if (taken) {
                 form.setError("displayName", { type: "manual", message: "This display name is already taken." });
+                showErrorPopup("Display Name Error", "This display name is already taken. Please choose a different one.");
                 setIsSaving(false); return;
             }
         } catch (error) {
-            toast({ variant: "destructive", title: "Save Error", description: "Could not verify display name." });
+            showErrorPopup("Verification Error", "Could not verify display name. Please try again.");
             setIsSaving(false); return;
         }
     }
@@ -460,7 +501,7 @@ export default function ProfilePage() {
                 toast({ title: "AI Targets Calculated & Saved!", description: "Personalized targets are set." });
                 router.push('/dashboard'); 
             } catch (aiError: any) {
-                toast({ variant: "destructive", title: "AI Target Error", description: `Could not set AI targets: ${aiError.message}. Please try saving again or set manual targets.` });
+                showErrorPopup("AI Target Error", `Could not set AI targets: ${aiError.message}. Please try saving again or set manual targets.`);
             } finally {
                 setIsProcessingAiTargets(false);
             }
@@ -470,7 +511,7 @@ export default function ProfilePage() {
             router.push('/dashboard');
         }
     } catch (error: any) {
-        toast({ variant: "destructive", title: "Save Error", description: error.message || "Could not save profile." });
+        showErrorPopup("Save Error", error.message || "Could not save profile. Please try again.");
         setIsSaving(false);
         setIsProcessingAiTargets(false);
     }
@@ -498,15 +539,17 @@ export default function ProfilePage() {
  );
 
   const renderChips = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
-   <div className="flex flex-wrap gap-1.5 sm:gap-2">
+   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
      {options.map((option, index) => (
        <Button
          key={option.value}
          type="button"
          variant={field.value === option.value ? "default" : "outline"}
          className={cn(
-           "rounded-lg text-xs sm:text-sm h-9 sm:h-10 px-2 sm:px-3 md:px-4 shadow-sm transition-all transform hover:scale-105 btn",
-           field.value === option.value ? "bg-primary text-primary-foreground border-primary font-semibold" : "border-input hover:bg-accent/50 hover:border-primary/50",
+           "rounded-xl text-sm h-auto min-h-[3rem] px-4 py-3 shadow-sm transition-all justify-start text-left",
+           field.value === option.value 
+             ? "bg-primary text-primary-foreground border-primary font-semibold shadow-md" 
+             : "border-input hover:bg-primary/5 hover:border-primary/50",
            "animate-in fade-in zoom-in-95"
          )}
          style={{ animationDelay: `${index * 50}ms` }}
@@ -514,15 +557,17 @@ export default function ProfilePage() {
            form.setValue(field.name, option.value, { shouldValidate: true });
          }}
        >
-         {option.icon && React.createElement(option.icon, { className: "mr-1 sm:mr-1.5 h-3 w-3 sm:h-3.5 sm:w-3.5" })}
-         <span className="text-xs sm:text-sm">{option.label}</span>
+         <div className="flex items-center gap-2 w-full">
+           {option.icon && React.createElement(option.icon, { className: "h-4 w-4 flex-shrink-0" })}
+           <span className="text-sm font-medium leading-tight break-words">{option.label}</span>
+         </div>
        </Button>
      ))}
    </div>
  );
 
  const renderMultiSelectCheckbox = (field: any, options: { value: string; label: string; icon?: React.ElementType }[]) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
       {options.map((item, index) => (
         <FormField key={item.value} control={form.control} name={field.name} render={({ field: controllerField }) => {
             const currentValue = Array.isArray(controllerField.value) ? controllerField.value : [];
@@ -532,9 +577,9 @@ export default function ProfilePage() {
                   htmlFor={`checkbox-${field.name}-${item.value}`}
                   data-state={isChecked ? 'checked' : 'unchecked'}
                   className={cn(
-                    "flex flex-row items-center space-x-2 space-y-0 rounded-lg border p-2 sm:p-2.5 transition-all hover:bg-muted/50 cursor-pointer card-interactive",
-                    "data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:ring-1 data-[state=checked]:ring-primary/30",
-                    "animate-in fade-in zoom-in-95 min-h-[40px] sm:min-h-[44px] flex-1"
+                    "flex flex-row items-center space-x-3 space-y-0 rounded-xl border-2 p-3 transition-all hover:bg-muted/30 cursor-pointer",
+                    "data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:shadow-sm",
+                    "animate-in fade-in zoom-in-95 min-h-[52px]"
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                >
@@ -547,11 +592,11 @@ export default function ProfilePage() {
                           ? controllerField.onChange([...currentValue, item.value])
                           : controllerField.onChange(currentValue.filter((value) => value !== item.value))
                     }}
-                    className="h-4 w-4 mt-0.5 flex-shrink-0"
+                    className="h-5 w-5 flex-shrink-0"
                   />
                 </FormControl>
-                 <span className="font-normal text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 flex-grow leading-tight">
-                    {item.icon && React.createElement(item.icon, { className: "h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" })}
+                 <span className="font-medium text-sm flex items-center gap-2 flex-grow">
+                    {item.icon && React.createElement(item.icon, { className: "h-4 w-4 text-muted-foreground flex-shrink-0" })}
                     <span className="break-words">{item.label}</span>
                  </span>
                </ShadCnFormLabel>
@@ -695,257 +740,173 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 py-2 sm:py-4 md:py-8 pb-24 sm:pb-8">
-      {/* Animated Background Elements - Hidden on mobile for performance */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none hidden sm:block">
-        <motion.div
-          className="absolute top-10 sm:top-20 left-4 sm:left-10 w-20 sm:w-32 h-20 sm:h-32 bg-primary/5 rounded-full blur-2xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            x: [0, 20, 0],
-            y: [0, -10, 0],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div
-          className="absolute bottom-10 sm:bottom-20 right-4 sm:right-10 w-24 sm:w-40 h-24 sm:h-40 bg-accent/5 rounded-full blur-2xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            x: [0, -30, 0],
-            y: [0, 15, 0],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </div>
+    <div className="min-h-screen bg-background py-4 pb-24 sm:pb-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6">
+        {/* Simple Header */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Complete Your Profile</h1>
+          <p className="text-sm text-muted-foreground">Quick setup to get personalized recommendations</p>
+          
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">1</div>
+              <span className="text-xs font-medium">Basic Info</span>
+            </div>
+            <div className="w-4 h-px bg-border"></div>
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">2</div>
+              <span className="text-xs font-medium">Goals</span>
+            </div>
+            <div className="w-4 h-px bg-border"></div>
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-medium">3</div>
+              <span className="text-xs font-medium">Preferences</span>
+            </div>
+          </div>
+        </div>
 
-      <div className="relative max-w-4xl mx-auto px-2 sm:px-4 md:px-6 pb-safe">
-        <FadeInWrapper>
-          <Card className="bg-card/90 backdrop-blur-xl border-border/20 shadow-2xl hover:shadow-3xl transition-all duration-500 overflow-hidden mb-8 sm:mb-4">
-            <motion.div
-              className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10"
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            >
-              <CardHeader className="text-center p-3 sm:p-4 md:p-6 lg:p-8 relative overflow-hidden">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.6, delay: 0.2, type: "spring", bounce: 0.4 }}
-                  className="relative mx-auto mb-2 sm:mb-3 md:mb-4"
-                >
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center shadow-lg">
-                    <User className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-primary-foreground" />
-                  </div>
-                  <motion.div
-                    className="absolute inset-0 rounded-full bg-gradient-to-r from-primary to-accent"
-                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                </motion.div>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                >
-                  <CardTitle className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-1 sm:mb-2">
-                    Complete Your Profile
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed px-1 sm:px-2 md:px-0">
-                    Complete your profile for personalized AI insights and plans. Fields marked * are required.
-                  </CardDescription>
-                </motion.div>
-
-                {/* Decorative elements - Hidden on mobile for cleaner look */}
-                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 hidden sm:block">
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Star className="h-3 w-3 sm:h-4 sm:w-4 text-primary/30" />
-                  </motion.div>
-                </div>
-                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 hidden sm:block">
-                  <motion.div
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-accent/30" />
-                  </motion.div>
-                </div>
-              </CardHeader>
-            </motion.div>
-            
-            <CardContent className="p-2 sm:p-3 md:p-6 lg:p-8 font-sans relative">
+        <Card className="border shadow-sm">
+          <CardContent className="p-6">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8 md:space-y-10 lg:space-y-12">
-                  <StaggerContainer>
-                    {/* About You Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.1 }}
-                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <Info className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          About You
-                        </h2>
-                      </div>
+                <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                  const errorMessages = Object.entries(errors).map(([field, error]) => {
+                    const fieldName = field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1');
+                    return `${fieldName}: ${error?.message || 'Invalid value'}`;
+                  });
+                  
+                  showErrorPopup(
+                    "Form Validation Error", 
+                    `Please fix the following errors:\n\n${errorMessages.join('\n')}`
+                  );
+                })} className="space-y-8">
+                  {/* Step 1: Basic Info */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-3 border-b">
+                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">1</div>
+                      <h2 className="text-lg font-semibold">Basic Information</h2>
+                    </div>
 
                       <FormField control={form.control} name="displayName" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                            <User className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                            <User className="h-4 w-4 text-primary" />
                             Display Name *
                           </ShadCnFormLabel>
                           <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Input 
-                                Icon={User} 
-                                placeholder="Choose a unique display name" 
-                                {...field} 
-                                value={field.value ?? ''} 
-                                className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                         hover:border-primary/30"
-                              />
-                            </motion.div>
+                            <Input 
+                              placeholder="Choose a unique display name" 
+                              {...field} 
+                              value={field.value ?? ''} 
+                              className="h-11 text-base focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+                            />
                           </FormControl>
-                          <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
+                          <FormDescription className="text-xs text-muted-foreground">
                             Visible to others if you enable sharing. Letters, numbers, underscores only.
                           </FormDescription>
-                          <FormMessage />
+                          <FormMessage className="text-xs" />
                         </FormItem>
                       )} />
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+                      {/* Body Stats Grid - Mobile Optimized */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <FormField control={form.control} name="height" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                              <Ruler className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Ruler className="h-4 w-4 text-primary" />
                               Height (cm) *
                             </ShadCnFormLabel>
                             <FormControl>
-                              <motion.div whileFocus={{ scale: 1.02 }}>
-                                <Input 
-                                  Icon={Ruler} 
-                                  type="number" 
-                                  placeholder="e.g., 175" 
-                                  {...field} 
-                                  value={field.value ?? ''} 
-                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                           hover:border-primary/30"
-                                />
-                              </motion.div>
+                              <Input 
+                                type="number" 
+                                placeholder="175" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                className="h-11 text-base focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )} />
 
                         <FormField control={form.control} name="weight" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                              <Weight className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Weight className="h-4 w-4 text-primary" />
                               Weight (kg) *
                             </ShadCnFormLabel>
                             <FormControl>
-                              <motion.div whileFocus={{ scale: 1.02 }}>
-                                <Input 
-                                  Icon={Weight} 
-                                  type="number" 
-                                  placeholder="e.g., 70" 
-                                  {...field} 
-                                  value={field.value ?? ''} 
-                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                           hover:border-primary/30"
-                                />
-                              </motion.div>
+                              <Input 
+                                type="number" 
+                                placeholder="70" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                className="h-11 text-base focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )} />
 
                         <FormField control={form.control} name="age" render={({ field }) => (
-                          <FormItem className="sm:col-span-2 lg:col-span-1">
-                            <ShadCnFormLabel className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                          <FormItem>
+                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Calendar className="h-4 w-4 text-primary" />
                               Age (years) *
                             </ShadCnFormLabel>
                             <FormControl>
-                              <motion.div whileFocus={{ scale: 1.02 }}>
-                                <Input 
-                                  Icon={Calendar} 
-                                  type="number" 
-                                  placeholder="e.g., 25" 
-                                  {...field} 
-                                  value={field.value ?? ''} 
-                                  className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                           focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                           hover:border-primary/30"
-                                />
-                              </motion.div>
+                              <Input 
+                                type="number" 
+                                placeholder="25" 
+                                {...field} 
+                                value={field.value ?? ''} 
+                                className="h-11 text-base focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )} />
                       </div>
 
                       <FormField control={form.control} name="gender" render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Gender *</ShadCnFormLabel>
-                          {renderStyledRadioGroup(field, genderOptions)}
+                        <FormItem>
+                          <ShadCnFormLabel className="text-sm font-medium">Gender *</ShadCnFormLabel>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {genderOptions.map((option) => (
+                              <Button
+                                key={option.value}
+                                type="button"
+                                variant={field.value === option.value ? "default" : "outline"}
+                                className={cn(
+                                  "h-12 text-sm font-medium",
+                                  field.value === option.value 
+                                    ? "bg-primary text-primary-foreground border-primary" 
+                                    : "border-input hover:bg-primary/5"
+                                )}
+                                onClick={() => field.onChange(option.value)}
+                              >
+                                {option.label}
+                              </Button>
+                            ))}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )} />
-                    </motion.section>
+                    </div>
 
-                    {/* Fitness Details Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.2 }}
-                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <Activity className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          Fitness Details
-                        </h2>
+                    {/* Step 2: Goals & Activity */}
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 pb-3 border-b">
+                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">2</div>
+                        <h2 className="text-lg font-semibold">Your Goals & Activity</h2>
                       </div>
 
                       <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
-                            <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                            Primary Fitness Goal *
-                          </ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">What's your main goal? *</ShadCnFormLabel>
                           {renderChips(field, goalOptions)}
                           <FormMessage />
                         </FormItem>
@@ -953,113 +914,46 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="activityLevel" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
-                            <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                            Typical Activity Level *
-                          </ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">How active are you? *</ShadCnFormLabel>
                           {renderChips(field, activityOptions)}
-                          <FormDescription className="text-xs mt-2 sm:mt-3 font-sans text-muted-foreground leading-relaxed">
-                            {activityOptions.find(opt => opt.value === field.value)?.description}
-                          </FormDescription>
+                          {field.value && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {activityOptions.find(opt => opt.value === field.value)?.description}
+                            </p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )} />
 
                       <FormField control={form.control} name="preferFewerRestDays" render={({ field }) => (
-                        <FormItem className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/30 p-3 sm:p-4 
-                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300 sm:space-y-0">
-                          <div className="space-y-1 sm:mr-4">
-                            <ShadCnFormLabel className="text-xs sm:text-sm font-medium flex items-center gap-2">
-                              <ShieldQuestion className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                              Training Intensity
-                            </ShadCnFormLabel>
-                            <FormDescription className="text-xs font-sans leading-relaxed">
-                              Prefer fewer rest days? (Requests a more intense workout plan)
+                        <FormItem className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
+                          <div>
+                            <ShadCnFormLabel className="text-sm font-medium">Prefer intense workouts?</ShadCnFormLabel>
+                            <FormDescription className="text-xs text-muted-foreground mt-1">
+                              Fewer rest days, more challenging routines
                             </FormDescription>
                           </div>
                           <FormControl>
-                            <motion.div whileTap={{ scale: 0.95 }} className="flex justify-center sm:justify-end">
-                              <Switch 
-                                checked={field.value ?? false} 
-                                onCheckedChange={field.onChange}
-                                className="data-[state=checked]:bg-primary"
-                              />
-                            </motion.div>
+                            <Switch 
+                              checked={field.value ?? false} 
+                              onCheckedChange={field.onChange}
+                            />
                           </FormControl>
                         </FormItem>
                       )} />
-                    </motion.section>
+                    </div>
 
-                    {/* Nutrition Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.3 }}
-                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <ChefHat className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          Personalize Your Nutrition
-                        </h2>
+                    {/* Step 3: Preferences & Targets */}
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 pb-3 border-b">
+                        <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm flex items-center justify-center font-medium">3</div>
+                        <h2 className="text-lg font-semibold">Preferences & Targets</h2>
                       </div>
-                      
-                      <FormDescription className="text-xs sm:text-sm italic text-center text-muted-foreground p-2 sm:p-3 bg-muted/20 rounded-lg border border-border/20 leading-relaxed">
-                        This helps tailor meal suggestions and nutritional analysis.
-                      </FormDescription>
 
-                      <FormField control={form.control} name="localFoodStyle" render={({ field }) => (
-                        <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
-                            <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                            Regional Cuisine Preference
-                          </ShadCnFormLabel>
-                          <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Select onValueChange={field.onChange} value={field.value === "" ? "Not Specified" : field.value || "Not Specified"}>
-                                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                                       focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                       hover:border-primary/30">
-                                  <SelectValue placeholder="Select your preferred cuisine..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="Not Specified" className="text-muted-foreground italic font-sans">
-                                    Select your preferred cuisine...
-                                  </SelectItem>
-                                  <SelectGroup>
-                                    <UiSelectLabel className="text-xs font-sans">Indian Regions</UiSelectLabel>
-                                    {indianRegions.filter(r => r !== "Not Specified").map(region => 
-                                      <SelectItem key={region} value={region} className="font-sans">{region}</SelectItem>
-                                    )}
-                                  </SelectGroup>
-                                  <SelectGroup>
-                                    <UiSelectLabel className="text-xs font-sans">Other Regions</UiSelectLabel>
-                                    {otherRegions.map(region => 
-                                      <SelectItem key={region} value={region} className="font-sans">{region}</SelectItem>
-                                    )}
-                                  </SelectGroup>
-                                  <SelectItem value="other" className="font-sans">Other (Specify Below)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </motion.div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
+                      {/* Quick Dietary Preferences */}
                       <FormField control={form.control} name="dietaryStyles" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
-                            <Salad className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                            Dietary Style(s)
-                          </ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">Diet Type (Optional)</ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, dietaryStyleOptions)}
                           <FormMessage />
                         </FormItem>
@@ -1067,168 +961,144 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="allergies" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium flex items-center gap-2">
-                            <CircleHelp className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                            Allergies/Intolerances
-                          </ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">Food Allergies (Optional)</ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, allergyOptions)}
                           <FormMessage />
                         </FormItem>
                       )} />
 
-                      <FormField control={form.control} name="otherAllergies" render={({ field }) => (
-                        <FormItem>
-                          <ShadCnFormLabel className="text-xs sm:text-sm font-medium">Other Allergies</ShadCnFormLabel>
-                          <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Input 
-                                Icon={Info} 
-                                placeholder="Specify other allergies..." 
-                                {...field} 
-                                value={field.value ?? ''} 
-                                className="text-sm sm:text-base h-11 sm:h-12 font-sans transition-all duration-300
-                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                         hover:border-primary/30"
-                              />
-                            </motion.div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
-                      <FormField control={form.control} name="foodDislikes" render={({ field }) => (
-                        <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Food Dislikes (Optional)</ShadCnFormLabel>
-                          <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Textarea 
-                                Icon={Info} 
-                                placeholder="List any foods you strongly dislike (e.g., mushrooms, spicy food)" 
-                                className="resize-none text-sm sm:text-base min-h-[80px] sm:min-h-[100px] font-sans transition-all duration-300
-                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                         hover:border-primary/30" 
-                                {...field} 
-                                value={field.value ?? ''} 
-                              />
-                            </motion.div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-
+                      {/* Simplified food preferences in one field */}
                       <FormField control={form.control} name="foodPreferences" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Other Notes (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">Food Notes (Optional)</ShadCnFormLabel>
                           <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Textarea 
-                                Icon={Info} 
-                                placeholder="Any other specific needs? (e.g., No onion/garlic, prefers low-oil cooking)" 
-                                className="resize-none text-sm sm:text-base min-h-[80px] sm:min-h-[100px] font-sans transition-all duration-300
-                                         focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                         hover:border-primary/30" 
-                                {...field} 
-                                value={field.value ?? ''} 
-                              />
-                            </motion.div>
+                            <Textarea 
+                              placeholder="Any food preferences, dislikes, or special requirements..." 
+                              className="resize-none text-sm min-h-[80px]" 
+                              {...field} 
+                              value={field.value ?? ''} 
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )} />
-                    </motion.section>
 
-                    {/* Language Preference Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.4 }}
-                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-2 sm:pb-3 md:pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-1 sm:p-1.5 md:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <Languages className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-base sm:text-lg md:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          Language Preference
-                        </h2>
-                      </div>
-
+                      {/* Language Preference */}
                       <FormField control={form.control} name="translatePreference" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm sm:text-base font-medium">Report & AI Chat Language</ShadCnFormLabel>
+                          <ShadCnFormLabel className="text-sm font-medium">Language</ShadCnFormLabel>
                           <FormControl>
-                            <motion.div whileFocus={{ scale: 1.02 }}>
-                              <Select onValueChange={field.onChange} value={field.value || 'en'}>
-                                <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base font-sans transition-all duration-300
-                                                       focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                       hover:border-primary/30">
-                                  <SelectValue placeholder="Select language..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {translatePreferenceOptions.map(option => (
-                                    <SelectItem key={option.value} value={option.value} className="font-sans">
-                                      {option.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </motion.div>
+                            <Select onValueChange={field.onChange} value={field.value || 'en'}>
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Select language..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {translatePreferenceOptions.map(option => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
-                          <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
-                            Select the language for AI-generated reports and chat responses.
-                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )} />
-                    </motion.section>
+                    </div>
 
-                    {/* Target Settings Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.5 }}
-                      className="space-y-3 sm:space-y-4 md:space-y-6 p-3 sm:p-4 md:p-5 lg:p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group mb-4 sm:mb-6 md:mb-8"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 border-b border-border/30 pb-3 sm:pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-1.5 sm:p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <TargetIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-lg sm:text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          Target Settings
-                        </h2>
+                    {/* Target Settings - Simplified */}
+                    <div className="space-y-6 p-4 border border-primary/20 rounded-xl bg-primary/5">
+                      <div className="text-center">
+                        <h3 className="text-lg font-semibold mb-2">How should we set your daily targets?</h3>
+                        <p className="text-sm text-muted-foreground">Choose how to calculate your nutrition goals</p>
                       </div>
 
                       <FormField control={form.control} name="useAiTargets" render={({ field }) => (
-                        <FormItem className="flex flex-col sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border/30 p-4 
-                                           bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300 space-y-3 sm:space-y-0">
-                          <div className="space-y-1 sm:mr-4">
-                            <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                              <Sparkles className="h-4 w-4 text-yellow-500" />
-                              Use Smart Personalized Targets
-                            </ShadCnFormLabel>
-                            <FormDescription className="text-xs font-sans leading-relaxed">
-                              Let Bago automatically calculate your daily goals using BMR/TDEE formulas.
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <motion.div whileTap={{ scale: 0.95 }} className="flex justify-center sm:justify-end">
-                              <Switch 
-                                checked={field.value ?? true} 
-                                onCheckedChange={field.onChange}
-                                className="data-[state=checked]:bg-primary"
-                              />
-                            </motion.div>
-                          </FormControl>
+                        <FormItem className="space-y-4">
+                          {/* AI Targets Option */}
+                          <motion.div
+                            whileTap={{ scale: 0.98 }}
+                            className={cn(
+                              "relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300",
+                              field.value 
+                                ? "border-primary bg-primary/5 shadow-md" 
+                                : "border-border/50 hover:border-primary/30 hover:bg-primary/[0.02]"
+                            )}
+                            onClick={() => field.onChange(true)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors",
+                                field.value ? "border-primary bg-primary" : "border-muted-foreground"
+                              )}>
+                                {field.value && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                                  <ShadCnFormLabel className="text-sm sm:text-base font-semibold cursor-pointer">
+                                    Smart AI Targets (Recommended)
+                                  </ShadCnFormLabel>
+                                </div>
+                                <FormDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                  Let our AI automatically calculate your perfect daily nutrition goals based on your body stats, 
+                                  fitness goals, and activity level. This uses proven BMR/TDEE formulas for accuracy.
+                                </FormDescription>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 text-xs rounded-full">
+                                    ✓ Personalized
+                                  </span>
+                                  <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-xs rounded-full">
+                                    ✓ Science-based
+                                  </span>
+                                  <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded-full">
+                                    ✓ Auto-updated
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+
+                          {/* Manual Targets Option */}
+                          <motion.div
+                            whileTap={{ scale: 0.98 }}
+                            className={cn(
+                              "relative p-4 border-2 rounded-xl cursor-pointer transition-all duration-300",
+                              !field.value 
+                                ? "border-primary bg-primary/5 shadow-md" 
+                                : "border-border/50 hover:border-primary/30 hover:bg-primary/[0.02]"
+                            )}
+                            onClick={() => field.onChange(false)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={cn(
+                                "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors",
+                                !field.value ? "border-primary bg-primary" : "border-muted-foreground"
+                              )}>
+                                {!field.value && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Settings className="h-4 w-4 text-orange-500" />
+                                  <ShadCnFormLabel className="text-sm sm:text-base font-semibold cursor-pointer">
+                                    Manual Targets (Advanced)
+                                  </ShadCnFormLabel>
+                                </div>
+                                <FormDescription className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                                  Set your own daily nutrition targets if you have specific requirements from a nutritionist, 
+                                  dietitian, or personal experience. You'll need to enter calories, protein, carbs, and fat manually.
+                                </FormDescription>
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 text-xs rounded-full">
+                                    ⚙️ Full control
+                                  </span>
+                                  <span className="px-2 py-1 bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-200 text-xs rounded-full">
+                                    📊 Custom values
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
                         </FormItem>
                       )} />
 
@@ -1239,412 +1109,230 @@ export default function ProfilePage() {
                             animate={{ opacity: 1, height: "auto" }}
                             exit={{ opacity: 0, height: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="space-y-4 pt-4"
+                            className="space-y-4 mt-4 p-4 bg-orange-50/50 dark:bg-orange-900/10 border border-orange-200/50 dark:border-orange-800/30 rounded-xl"
                           >
-                            <p className="text-sm text-muted-foreground italic font-sans p-3 bg-muted/20 rounded-lg border border-border/20 leading-relaxed">
-                              Manually set your daily nutritional and activity targets:
+                            <div className="flex items-center gap-2 mb-3">
+                              <Settings className="h-4 w-4 text-orange-500" />
+                              <h3 className="text-sm font-semibold text-orange-800 dark:text-orange-200">
+                                Enter Your Custom Targets
+                              </h3>
+                            </div>
+                            
+                            <p className="text-xs sm:text-sm text-orange-700 dark:text-orange-300 leading-relaxed mb-4">
+                              Fill in your daily nutrition targets. All fields marked with * are required.
                             </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
+                            {/* Main Macros Grid - 2x2 on mobile, 4 columns on larger screens */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                               <FormField control={form.control} name="manualTargetCalories" render={({ field }) => (
-                                <FormItem>
-                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
-                                    <Flame className="h-3 w-3 text-primary" />
-                                    Calories (kcal) *
+                                <FormItem className="space-y-2">
+                                  <ShadCnFormLabel className="flex items-center gap-1 text-xs font-medium">
+                                    <Flame className="h-3 w-3 text-red-500" />
+                                    Calories *
                                   </ShadCnFormLabel>
                                   <FormControl>
-                                    <motion.div whileFocus={{ scale: 1.02 }}>
-                                      <Input 
-                                        Icon={Flame} 
-                                        type="number" 
-                                        placeholder="e.g., 2000" 
-                                        {...field} 
-                                        value={field.value ?? ''} 
-                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
-                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                 hover:border-primary/30"
-                                      />
-                                    </motion.div>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="2000" 
+                                      {...field} 
+                                      value={field.value ?? ''} 
+                                      className="h-10 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50"
+                                    />
                                   </FormControl>
-                                  <FormMessage />
+                                  <FormMessage className="text-xs" />
                                 </FormItem>
                               )} />
 
                               <FormField control={form.control} name="manualTargetProtein" render={({ field }) => (
-                                <FormItem>
-                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
-                                    <Dumbbell className="h-3 w-3 text-primary" />
-                                    Protein (g) *
+                                <FormItem className="space-y-2">
+                                  <ShadCnFormLabel className="flex items-center gap-1 text-xs font-medium">
+                                    <Dumbbell className="h-3 w-3 text-blue-500" />
+                                    Protein *
                                   </ShadCnFormLabel>
                                   <FormControl>
-                                    <motion.div whileFocus={{ scale: 1.02 }}>
-                                      <Input 
-                                        Icon={Dumbbell} 
-                                        type="number" 
-                                        placeholder="e.g., 150" 
-                                        {...field} 
-                                        value={field.value ?? ''} 
-                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
-                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                 hover:border-primary/30"
-                                      />
-                                    </motion.div>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="150g" 
+                                      {...field} 
+                                      value={field.value ?? ''} 
+                                      className="h-10 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50"
+                                    />
                                   </FormControl>
-                                  <FormMessage />
+                                  <FormMessage className="text-xs" />
                                 </FormItem>
                               )} />
 
                               <FormField control={form.control} name="manualTargetCarbs" render={({ field }) => (
-                                <FormItem>
-                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
-                                    <Activity className="h-3 w-3 text-primary" />
-                                    Carbs (g) *
+                                <FormItem className="space-y-2">
+                                  <ShadCnFormLabel className="flex items-center gap-1 text-xs font-medium">
+                                    <Activity className="h-3 w-3 text-green-500" />
+                                    Carbs *
                                   </ShadCnFormLabel>
                                   <FormControl>
-                                    <motion.div whileFocus={{ scale: 1.02 }}>
-                                      <Input 
-                                        Icon={Activity} 
-                                        type="number" 
-                                        placeholder="e.g., 200" 
-                                        {...field} 
-                                        value={field.value ?? ''} 
-                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
-                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                 hover:border-primary/30"
-                                      />
-                                    </motion.div>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="200g" 
+                                      {...field} 
+                                      value={field.value ?? ''} 
+                                      className="h-10 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50"
+                                    />
                                   </FormControl>
-                                  <FormMessage />
+                                  <FormMessage className="text-xs" />
                                 </FormItem>
                               )} />
 
                               <FormField control={form.control} name="manualTargetFat" render={({ field }) => (
-                                <FormItem>
-                                  <ShadCnFormLabel className="flex items-center gap-2 text-xs">
-                                    <Droplet className="h-3 w-3 text-primary" />
-                                    Fat (g) *
+                                <FormItem className="space-y-2">
+                                  <ShadCnFormLabel className="flex items-center gap-1 text-xs font-medium">
+                                    <Droplet className="h-3 w-3 text-yellow-500" />
+                                    Fat *
                                   </ShadCnFormLabel>
                                   <FormControl>
-                                    <motion.div whileFocus={{ scale: 1.02 }}>
-                                      <Input 
-                                        Icon={Droplet} 
-                                        type="number" 
-                                        placeholder="e.g., 70" 
-                                        {...field} 
-                                        value={field.value ?? ''} 
-                                        className="h-11 sm:h-10 text-base font-sans transition-all duration-300
-                                                 focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                                 hover:border-primary/30"
-                                      />
-                                    </motion.div>
+                                    <Input 
+                                      type="number" 
+                                      placeholder="70g" 
+                                      {...field} 
+                                      value={field.value ?? ''} 
+                                      className="h-10 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50"
+                                    />
                                   </FormControl>
-                                  <FormMessage />
+                                  <FormMessage className="text-xs" />
                                 </FormItem>
                               )} />
                             </div>
 
+                            {/* Activity Calories - Full width */}
                             <FormField control={form.control} name="manualTargetActivityCalories" render={({ field }) => (
-                              <FormItem>
+                              <FormItem className="space-y-2">
                                 <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium">
-                                  <Target className="h-4 w-4 text-primary" />
-                                  Manual Target Activity Calories (kcal)
+                                  <Target className="h-4 w-4 text-purple-500" />
+                                  Exercise Target (Optional)
                                 </ShadCnFormLabel>
                                 <FormControl>
-                                  <motion.div whileFocus={{ scale: 1.02 }}>
-                                    <Input 
-                                      Icon={Target} 
-                                      type="number" 
-                                      placeholder="e.g., 300" 
-                                      {...field} 
-                                      value={field.value ?? ''} 
-                                      className="h-12 sm:h-11 text-base font-sans transition-all duration-300
-                                               focus:ring-2 focus:ring-primary/20 focus:border-primary/50
-                                               hover:border-primary/30"
-                                    />
-                                  </motion.div>
+                                  <Input 
+                                    type="number" 
+                                    placeholder="e.g., 300 calories from exercise" 
+                                    {...field} 
+                                    value={field.value ?? ''} 
+                                    className="h-10 text-sm focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50"
+                                  />
                                 </FormControl>
-                                <FormDescription className="text-xs font-sans text-muted-foreground leading-relaxed">
-                                  Your desired daily calorie burn from dedicated exercise.
+                                <FormDescription className="text-xs text-orange-600 dark:text-orange-400">
+                                  How many calories you aim to burn from dedicated exercise daily
                                 </FormDescription>
-                                <FormMessage />
+                                <FormMessage className="text-xs" />
                               </FormItem>
                             )} />
+
+                            {/* Help text */}
+                            <div className="mt-4 p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200/50 dark:border-blue-800/30 rounded-lg">
+                              <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                                💡 <strong>Need help?</strong> Consult with a nutritionist or use online calculators to determine your ideal targets. 
+                                You can always switch back to AI targets later.
+                              </p>
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
-                    </motion.section>
+                    </div>
 
-                    {/* Weight Reminder Section */}
-                    <motion.section
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.4 }}
-                      className="space-y-6 p-6 border border-border/30 rounded-xl bg-card/50 backdrop-blur-sm 
-                               shadow-lg hover:shadow-xl hover:border-primary/20 transition-all duration-300
-                               hover:bg-card/70 group"
-                    >
-                      <div className="flex items-center gap-3 border-b border-border/30 pb-4">
-                        <motion.div
-                          whileHover={{ scale: 1.1, rotate: 5 }}
-                          className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/15 transition-colors duration-300"
-                        >
-                          <Bell className="h-5 w-5 text-primary" />
-                        </motion.div>
-                        <h2 className="text-xl font-semibold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                          Weight Tracking Reminders
-                        </h2>
+                    {/* Simple Weight Reminder */}
+                    <div className="p-4 border rounded-lg bg-muted/10">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
+                            <Bell className="h-4 w-4 text-primary" />
+                            Weekly Weight Reminders
+                          </ShadCnFormLabel>
+                          <FormDescription className="text-xs text-muted-foreground mt-1">
+                            Get notified every Sunday to update your weight
+                          </FormDescription>
+                        </div>
+                        <Switch 
+                          checked={reminderEnabled} 
+                          onCheckedChange={handleReminderChange}
+                          disabled={weightReminder.isLoading}
+                        />
                       </div>
 
-                      <FormDescription className="text-sm italic text-center text-muted-foreground p-3 bg-muted/20 rounded-lg border border-border/20">
-                        Get reminded weekly to update your weight for better tracking and personalized recommendations.
-                      </FormDescription>
-
-                      {!weightReminder.isSupported && (
-                        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                          <p className="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2 mb-2">
-                            <AlertCircle className="h-4 w-4" />
-                            Notifications may not be fully supported in your current environment.
-                          </p>
-                          <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                            • Make sure you're using HTTPS or localhost
-                            <br />
-                            • Install as PWA for full notification support
-                            <br />
-                            • Check browser notification permissions
-                          </p>
-                          {process.env.NODE_ENV === 'development' && (
-                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-2 font-mono">
-                              Dev mode: Try installing as PWA or check console for details
+                      {/* Simple notification info when enabled */}
+                      {reminderEnabled && (
+                        <div className="mt-4 pt-4 border-t border-border/30">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-muted-foreground">
+                              📅 Every Sunday at 10:00 AM
                             </p>
-                          )}
-                        </div>
-                      )}
-
-                      {(weightReminder.isSupported || process.env.NODE_ENV === 'development') && (
-                        <div className="space-y-4">
-                          {/* Development mode notice */}
-                          {!weightReminder.isSupported && process.env.NODE_ENV === 'development' && (
-                            <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                              <p className="text-sm text-blue-800 dark:text-blue-200 flex items-center gap-2">
-                                <Info className="h-4 w-4" />
-                                Development mode: Notification settings available for testing
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Enable/Disable Toggle */}
-                          <div className="flex flex-row items-center justify-between rounded-xl border border-border/30 p-4 
-                                         bg-muted/20 backdrop-blur-sm hover:bg-muted/30 transition-colors duration-300">
-                            <div className="space-y-1 mr-4">
-                              <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                                <Bell className="h-4 w-4 text-primary" />
-                                Weekly Weight Reminders
-                              </ShadCnFormLabel>
-                              <FormDescription className="text-xs font-sans">
-                                {weightReminder.permission === 'granted' 
-                                  ? "Get notified weekly to update your weight"
-                                  : "Permission required for notifications"
-                                }
-                              </FormDescription>
-                            </div>
-                            <motion.div whileTap={{ scale: 0.95 }}>
-                              <Switch 
-                                checked={reminderEnabled} 
-                                onCheckedChange={handleReminderChange}
-                                disabled={weightReminder.isLoading}
-                                className="data-[state=checked]:bg-primary"
-                              />
-                            </motion.div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleTestNotification}
+                              className="text-xs h-8"
+                            >
+                              <TestTube className="h-3 w-3 mr-1" />
+                              Test
+                            </Button>
                           </div>
-
-                          {/* Time and Day Settings */}
-                          <AnimatePresence mode="wait">
-                            {reminderEnabled && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="space-y-4 pt-4"
-                              >
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  {/* Day of Week */}
-                                  <div className="space-y-2">
-                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                                      <Calendar className="h-4 w-4 text-primary" />
-                                      Day of Week
-                                    </ShadCnFormLabel>
-                                    <Select
-                                      value={reminderDay}
-                                      onValueChange={(value) => {
-                                        setReminderDay(value);
-                                        setTimeout(handleReminderTimeChange, 100);
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="0">Sunday</SelectItem>
-                                        <SelectItem value="1">Monday</SelectItem>
-                                        <SelectItem value="2">Tuesday</SelectItem>
-                                        <SelectItem value="3">Wednesday</SelectItem>
-                                        <SelectItem value="4">Thursday</SelectItem>
-                                        <SelectItem value="5">Friday</SelectItem>
-                                        <SelectItem value="6">Saturday</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  {/* Hour */}
-                                  <div className="space-y-2">
-                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                                      <Clock className="h-4 w-4 text-primary" />
-                                      Hour
-                                    </ShadCnFormLabel>
-                                    <Select
-                                      value={reminderHour}
-                                      onValueChange={(value) => {
-                                        setReminderHour(value);
-                                        setTimeout(handleReminderTimeChange, 100);
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {Array.from({ length: 24 }, (_, i) => (
-                                          <SelectItem key={i} value={i.toString()}>
-                                            {formatTime(i, 0).split(':')[0] + ' ' + formatTime(i, 0).split(' ')[1]}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
-                                  {/* Minute */}
-                                  <div className="space-y-2">
-                                    <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2">
-                                      <Clock className="h-4 w-4 text-primary" />
-                                      Minute
-                                    </ShadCnFormLabel>
-                                    <Select
-                                      value={reminderMinute}
-                                      onValueChange={(value) => {
-                                        setReminderMinute(value);
-                                        setTimeout(handleReminderTimeChange, 100);
-                                      }}
-                                    >
-                                      <SelectTrigger className="h-11 transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:border-primary/50 hover:border-primary/30">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {Array.from({ length: 12 }, (_, i) => i * 5).map((minute) => (
-                                          <SelectItem key={minute} value={minute.toString()}>
-                                            {minute.toString().padStart(2, '0')}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-
-                                {/* Test Notification Button */}
-                                <div className="flex justify-center pt-2">
-                                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={handleTestNotification}
-                                      className="gap-2 transition-all duration-300 hover:border-primary/50 hover:bg-primary/5"
-                                    >
-                                      <TestTube className="h-4 w-4" />
-                                      Test Notification
-                                    </Button>
-                                  </motion.div>
-                                </div>
-
-                                <div className="text-center text-xs text-muted-foreground italic p-2 bg-muted/10 rounded-lg">
-                                  Next reminder: {getDayName(parseInt(reminderDay))} at {formatTime(parseInt(reminderHour), parseInt(reminderMinute))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </div>
                       )}
-                    </motion.section>
-                  </StaggerContainer>
+                    </div>
 
                   {/* Submit Button */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.6 }}
-                    className="pt-8 pb-4 sm:pt-8 sm:pb-2"
-                  >
-                    <CardFooter className="pt-6 pb-8 sm:pb-4 md:pb-8 justify-center px-4 sm:px-6">
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        className="w-full max-w-md"
-                      >
-                        <Button 
-                          type="submit" 
-                          size="lg" 
-                          className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 
-                                   text-primary-foreground py-4 sm:py-3 px-6 text-base font-semibold shadow-lg 
-                                   transition-all duration-300 focus:ring-2 focus:ring-primary/20 focus:ring-offset-2
-                                   disabled:opacity-50 disabled:cursor-not-allowed h-12 sm:h-11 md:h-12" 
-                          disabled={isSaving || !form.formState.isDirty || isProcessingAiTargets}
-                        >
-                          <AnimatePresence mode="wait">
-                            {(isSaving && !isProcessingAiTargets) && (
-                              <motion.div 
-                                key="saving"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center"
-                              >
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Saving Basic Info...
-                              </motion.div>
-                            )}
-                            {isProcessingAiTargets && (
-                              <motion.div 
-                                key="processing"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center"
-                              >
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Calculating AI Targets...
-                              </motion.div>
-                            )}
-                            {!isSaving && !isProcessingAiTargets && (
-                              <motion.div 
-                                key="update"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center"
-                              >
-                                <Save className="mr-2 h-5 w-5" />
-                                Update Profile
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </Button>
-                      </motion.div>
-                    </CardFooter>
-                  </motion.div>
+                  <div className="pt-8">
+                    <Button 
+                      type="submit" 
+                      size="lg" 
+                      className="w-full h-12 text-base font-semibold" 
+                      disabled={isSaving || isProcessingAiTargets}
+                    >
+                      {(isSaving && !isProcessingAiTargets) && (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Saving...
+                        </>
+                      )}
+                      {isProcessingAiTargets && (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Calculating Targets...
+                        </>
+                      )}
+                      {!isSaving && !isProcessingAiTargets && (
+                        <>
+                          <Save className="mr-2 h-5 w-5" />
+                          Complete Profile
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </form>
               </Form>
             </CardContent>
           </Card>
-        </FadeInWrapper>
-      </div>
+        </div>
+
+      {/* Error Popup Dialog */}
+      <AlertDialog open={errorPopup.show} onOpenChange={(open) => setErrorPopup(prev => ({ ...prev, show: open }))}>
+        <AlertDialogContent className="bg-card/95 backdrop-blur-xl border-destructive/20 shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              {errorPopup.title}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-foreground whitespace-pre-line">
+              {errorPopup.message}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setErrorPopup(prev => ({ ...prev, show: false }))}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

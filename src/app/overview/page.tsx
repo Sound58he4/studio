@@ -11,7 +11,7 @@ import DashboardProfileHeader from '@/components/dashboard/DashboardProfileHeade
 import { StoredUserProfile, StoredExerciseLogEntry } from '@/app/dashboard/types';
 import { getOverviewData } from '@/services/firestore/overviewService';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { Flame, Dumbbell, TrendingUp, AlertCircle, Star, Trophy, Activity, Clock, Zap } from 'lucide-react';
+import { Flame, Dumbbell, TrendingUp, AlertCircle, Star, Trophy, Activity, Clock, Zap, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FitnessTip from '@/components/dashboard/FitnessTip';
 import WaterIntakeTip from '@/components/dashboard/WaterIntakeTip';
@@ -361,7 +361,7 @@ export default function OverviewPage() {
                     </Card>
                 </motion.div>
 
-                {/* This Week's Activity */}
+                {/* Weekly Progress & Goals */}
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -371,37 +371,140 @@ export default function OverviewPage() {
                         <CardHeader>
                             <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
                                 <TrendingUp size={22} />
-                                This Week's Activity
+                                Weekly Progress
                             </CardTitle>
+                            <CardDescription>
+                                Track your consistency and goal progress
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                        <CardContent className="space-y-4">
                             {weeklyActivitySummary ? (
                                 <>
-                                    {[
-                                        { icon: Dumbbell, color: "blue", label: "Total Workouts", value: weeklyActivitySummary.totalWorkouts },
-                                        { icon: Flame, color: "orange", label: "Calories Burned", value: `${weeklyActivitySummary.totalCaloriesBurned} kcal` },
-                                        { icon: Activity, color: "green", label: "Strength Workouts", value: weeklyActivitySummary.strengthWorkouts },
-                                        { icon: Zap, color: "purple", label: "Cardio Workouts", value: weeklyActivitySummary.cardioWorkouts }
-                                    ].map((item, index) => (
-                                        <div key={item.label} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border">
-                                            <item.icon className={cn(
-                                                "h-6 w-6",
-                                                item.color === "blue" && "text-blue-500",
-                                                item.color === "orange" && "text-orange-500",
-                                                item.color === "green" && "text-green-500",
-                                                item.color === "purple" && "text-purple-500"
-                                            )} />
-                                            <div>
-                                                <p className="text-muted-foreground">{item.label}</p>
-                                                <p className="font-bold text-lg">{item.value}</p>
+                                    {/* Progress Highlights */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        {/* Weekly Goal Progress */}
+                                        <div className="p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Trophy className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                                                <span className="font-semibold text-emerald-700 dark:text-emerald-300">Weekly Goals</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Workouts</span>
+                                                    <span className="font-medium">{weeklyActivitySummary.totalWorkouts}/5</span>
+                                                </div>
+                                                <div className="w-full bg-muted/50 rounded-full h-2">
+                                                    <div 
+                                                        className="bg-gradient-to-r from-emerald-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                                                        style={{ width: `${Math.min(100, (weeklyActivitySummary.totalWorkouts / 5) * 100)}%` }}
+                                                    />
+                                                </div>
+                                                {weeklyActivitySummary.totalWorkouts >= 5 ? (
+                                                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">🎉 Weekly goal achieved!</p>
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground">{5 - weeklyActivitySummary.totalWorkouts} more to reach weekly goal</p>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+
+                                        {/* Activity Streak */}
+                                        <div className="p-4 bg-gradient-to-r from-orange-50/80 to-amber-50/80 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Flame className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                                                <span className="font-semibold text-orange-700 dark:text-orange-300">Activity Streak</span>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                                        {weeklyActivitySummary.totalWorkouts > 0 ? Math.min(weeklyActivitySummary.totalWorkouts, 7) : 0}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">days this week</span>
+                                                </div>
+                                                {weeklyActivitySummary.totalWorkouts > 0 ? (
+                                                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">Keep the momentum going! 🔥</p>
+                                                ) : (
+                                                    <p className="text-xs text-muted-foreground">Start today to build your streak</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Stats */}
+                                    <div className="border-t pt-4">
+                                        <h4 className="font-medium text-sm text-muted-foreground mb-3">Quick Stats</h4>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
+                                                <p className="text-lg font-bold text-primary">{weeklyActivitySummary.totalCaloriesBurned}</p>
+                                                <p className="text-xs text-muted-foreground">Calories burned</p>
+                                            </div>
+                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
+                                                <p className="text-lg font-bold text-blue-600">{weeklyActivitySummary.strengthWorkouts}</p>
+                                                <p className="text-xs text-muted-foreground">Strength sessions</p>
+                                            </div>
+                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
+                                                <p className="text-lg font-bold text-purple-600">{weeklyActivitySummary.cardioWorkouts}</p>
+                                                <p className="text-xs text-muted-foreground">Cardio sessions</p>
+                                            </div>
+                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
+                                                <p className="text-lg font-bold text-green-600">
+                                                    {weeklyActivitySummary.totalWorkouts > 0 ? 
+                                                        Math.round(weeklyActivitySummary.totalCaloriesBurned / weeklyActivitySummary.totalWorkouts) : 0}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">Avg per workout</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Next Actions */}
+                                    <div className="border-t pt-4">
+                                        <h4 className="font-medium text-sm text-muted-foreground mb-3">Recommended Actions</h4>
+                                        <div className="space-y-2">
+                                            {weeklyActivitySummary.totalWorkouts < 3 && (
+                                                <div className="flex items-center gap-2 text-sm p-2 bg-blue-50/50 dark:bg-blue-900/20 rounded border border-blue-200/50 dark:border-blue-800/50">
+                                                    <Dumbbell className="h-4 w-4 text-blue-600" />
+                                                    <span className="text-blue-700 dark:text-blue-300">Focus on consistency - aim for at least 3 workouts this week</span>
+                                                </div>
+                                            )}
+                                            {weeklyActivitySummary.strengthWorkouts === 0 && weeklyActivitySummary.totalWorkouts > 0 && (
+                                                <div className="flex items-center gap-2 text-sm p-2 bg-purple-50/50 dark:bg-purple-900/20 rounded border border-purple-200/50 dark:border-purple-800/50">
+                                                    <Activity className="h-4 w-4 text-purple-600" />
+                                                    <span className="text-purple-700 dark:text-purple-300">Add strength training to your routine for balanced fitness</span>
+                                                </div>
+                                            )}
+                                            {weeklyActivitySummary.totalWorkouts >= 5 && (
+                                                <div className="flex items-center gap-2 text-sm p-2 bg-green-50/50 dark:bg-green-900/20 rounded border border-green-200/50 dark:border-green-800/50">
+                                                    <Star className="h-4 w-4 text-green-600" />
+                                                    <span className="text-green-700 dark:text-green-300">Excellent work! Consider adding recovery or flexibility sessions</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </>
                             ) : (
-                                <p className="text-muted-foreground italic col-span-full text-center py-4">
-                                    No workout data for this week yet.
-                                </p>
+                                <div className="text-center py-8">
+                                    <Activity className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                                    <h3 className="font-medium text-muted-foreground mb-2">No activity logged this week</h3>
+                                    <p className="text-sm text-muted-foreground mb-4">Start your fitness journey by logging your first workout!</p>
+                                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                                        <Button 
+                                            size="sm" 
+                                            onClick={() => router.push('/log')}
+                                            className="gap-2"
+                                        >
+                                            <Dumbbell className="h-4 w-4" />
+                                            Log Workout
+                                        </Button>
+                                        <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            onClick={() => router.push('/workout-plans')}
+                                            className="gap-2"
+                                        >
+                                            <ClipboardList className="h-4 w-4" />
+                                            View Plans
+                                        </Button>
+                                    </div>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
