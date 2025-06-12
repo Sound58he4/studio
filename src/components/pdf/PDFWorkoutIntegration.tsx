@@ -37,7 +37,8 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
     day,
     onAddPDFWorkout,
     className
-}) => {    const { toast } = useToast();
+}) => {
+    const { toast } = useToast();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedPDF, setSelectedPDF] = useState<PDFWorkout | null>(null);
     const [replaceExisting, setReplaceExisting] = useState(true);
@@ -75,26 +76,33 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                 setIsDialogOpen(open);
                 if (!open) {
                     setSelectedPDF(null);
-                    setReplaceExisting(true); // Reset to default value when dialog closes
+                    setReplaceExisting(true);
                 }
             }}>
                 <DialogTrigger asChild>
                     <Button
-                        variant="outline"
+                        variant="default"
                         size="sm"
-                        className="w-full text-xs shadow-sm bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-100 hover:border-blue-300 group"
+                        className="w-full text-sm font-semibold shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white border-0 transform hover:scale-105 transition-all duration-200 hover:shadow-xl relative overflow-hidden group"
                     >
-                        <FilePlus2 size={14} className="mr-2 text-blue-600 dark:text-blue-400 transition-colors" />
-                        Add PDF Workout
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 ease-out" />
+                        <FilePlus2 size={16} className="mr-2 text-white drop-shadow-sm" />
+                        <span className="relative z-10">Add Premium PDF Workout</span>
+                        <div className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded-full font-normal">
+                            Max • Xtreme • Power • Light
+                        </div>
                     </Button>
-                </DialogTrigger>                <DialogContent className="w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-3 sm:p-6">
+                </DialogTrigger>
+
+                <DialogContent className="w-[95vw] max-w-6xl h-[90vh] max-h-[90vh] overflow-hidden flex flex-col p-3 sm:p-6">
                     <DialogHeader className="pb-2 sm:pb-4">
                         <DialogTitle className="flex items-center gap-2 text-sm sm:text-base">
                             <BookOpen className="h-4 w-4 sm:h-5 sm:w-5" />
-                            Choose PDF Workout for {day}
-                        </DialogTitle>                        <DialogDescription className="text-xs sm:text-sm">
-                            Select a pre-designed workout PDF to add to your {day} routine. 
-                            All workout types can replace your current exercises with the PDF content.
+                            Choose Premium PDF Workout for {day}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs sm:text-sm">
+                            Select from our premium workout plans: <strong>Max</strong> (Maximum intensity), <strong>Xtreme</strong> (Extreme challenges), <strong>Power</strong> (Strength focused), or <strong>Light</strong> (Beginner friendly).
+                            All plans can replace your current exercises with professional PDF content.
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -105,23 +113,29 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                         />
                     </div>
                     
-                    {/* Selection Summary */}                    <AnimatePresence>
-                        {selectedPDF && (                            <motion.div
+                    <AnimatePresence>
+                        {selectedPDF && (
+                            <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                                 className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4"
                             >
-                                <Card className="bg-primary/5 border-primary/20">
+                                <Card className="bg-gradient-to-br from-primary/5 to-purple/5 border-primary/20 shadow-md">
                                     <CardContent className="p-3 sm:p-4">
                                         <div className="flex flex-col space-y-3 sm:space-y-4">
                                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                                 <div className="flex items-center gap-2 sm:gap-3">
-                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                                                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-purple/20 rounded-lg flex items-center justify-center shadow-inner">
                                                         <FileTextIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <h4 className="font-semibold text-sm sm:text-base truncate">{selectedPDF.name}</h4>
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <h4 className="font-semibold text-sm sm:text-base truncate">{selectedPDF.name}</h4>
+                                                            <Badge className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-xs font-semibold px-2 py-0.5">
+                                                                PREMIUM
+                                                            </Badge>
+                                                        </div>
                                                         <p className="text-xs sm:text-sm text-muted-foreground">
                                                             {selectedPDF.category} • Day {selectedPDF.day}
                                                         </p>
@@ -136,7 +150,7 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleViewPDF(selectedPDF)}
-                                                        className="flex-1 sm:flex-initial text-xs"
+                                                        className="flex-1 sm:flex-initial text-xs hover:bg-blue-50 hover:border-blue-300"
                                                     >
                                                         <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                         <span className="hidden sm:inline">Preview</span>
@@ -147,7 +161,7 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => handleDownloadPDF(selectedPDF)}
-                                                        className="flex-1 sm:flex-initial text-xs"
+                                                        className="flex-1 sm:flex-initial text-xs hover:bg-green-50 hover:border-green-300"
                                                     >
                                                         <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                         <span className="hidden sm:inline">Download</span>
@@ -167,20 +181,21 @@ const PDFWorkoutIntegration: React.FC<PDFWorkoutIntegrationProps> = ({
                                                         <Label htmlFor="replace-existing" className="text-xs sm:text-sm">
                                                             Replace existing exercises
                                                         </Label>
-                                                    </div>                                                    <Badge className="bg-green-100 text-green-700 border-green-200 text-xs self-start">
-                                                            <CheckCircle className="h-3 w-3 mr-1" />
-                                                            Available
-                                                        </Badge>
+                                                    </div>
+                                                    <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 text-xs self-start shadow-sm">
+                                                        <CheckCircle className="h-3 w-3 mr-1" />
+                                                        Available
+                                                    </Badge>
                                                 </div>
                                                 
                                                 <Button
                                                     onClick={handleAddPDFToDay}
                                                     size="sm"
-                                                    className="w-full sm:w-auto text-xs sm:text-sm"
+                                                    className="w-full sm:w-auto text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                                                 >
                                                     <Dumbbell className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                                     <span className="truncate">
-                                                        {replaceExisting ? "Replace with PDF Exercises" : "Add to Day"}
+                                                        {replaceExisting ? "Replace with Premium Plan" : "Add Premium Plan"}
                                                     </span>
                                                     <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
                                                 </Button>

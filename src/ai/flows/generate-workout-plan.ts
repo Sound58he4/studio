@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generates a personalized 7-day gym workout plan based on user profile.
@@ -48,7 +47,8 @@ const ExerciseDetailSchema = z.object({
     notes: z.string().optional().describe("Optional notes like tempo, rest time, or alternatives."),
     // Remove .url() validation for compatibility with Gemini's structured output format limitations.
     // The prompt still requests a URL format. Validation happens post-generation.
-    youtubeLink: z.string().nullable().describe("A YouTube search URL for an exercise tutorial (e.g., https://www.youtube.com/results?search_query=bench+press+tutorial). Should be null for Rest.")
+    youtubeLink: z.string().nullable().describe("A YouTube search URL for an exercise tutorial (e.g., https://www.youtube.com/results?search_query=bench+press+tutorial). Should be null for Rest."),
+    caloriesBurned: z.number().nullable().describe("Estimated calories burned for the exercise. Null for Rest.")
 });
 export type ExerciseDetail = z.infer<typeof ExerciseDetailSchema>;
 
@@ -66,13 +66,70 @@ const GenerateWorkoutPlanOutputSchema = z.object({
 // Use the correct output type name
 export type WeeklyWorkoutPlan = z.infer<typeof GenerateWorkoutPlanOutputSchema>;
 
+// Add validation function for exercise data
+const validateExerciseData = (exercise: any): ExerciseDetail => {
+    // Normalize reps field - set failure to default 12
+    let normalizedReps = exercise.reps;
+    if (typeof normalizedReps === 'string' && normalizedReps.toLowerCase().includes('failure')) {
+        normalizedReps = '12';
+    }
+    
+    // Validate and cap calorie burn to reasonable range
+    let caloriesBurned = exercise.caloriesBurned || 0;
+    
+    // Check if it's a stretch exercise (lower calorie burn)
+    const isStretchExercise = exercise.exercise && (
+        exercise.exercise.toLowerCase().includes('stretch') ||
+        exercise.exercise.toLowerCase().includes('warm-up') ||
+        exercise.exercise.toLowerCase().includes('cool-down') ||
+        exercise.exercise.toLowerCase().includes('flexibility') ||
+        exercise.exercise.toLowerCase().includes('yoga')
+    );
+    
+    if (typeof caloriesBurned === 'number') {
+        if (isStretchExercise) {
+            // Cap stretches between 2-4 kcal
+            caloriesBurned = Math.max(2, Math.min(4, caloriesBurned));
+        } else {
+            // Cap regular exercises between 6-30 kcal
+            caloriesBurned = Math.max(6, Math.min(30, caloriesBurned));
+        }
+    } else {
+        // Default values based on exercise type
+        caloriesBurned = isStretchExercise ? 3 : 15;
+    }
+    
+    return {
+        exercise: exercise.exercise || 'Unknown Exercise',
+        sets: exercise.sets || 3,
+        reps: normalizedReps,
+        notes: exercise.notes || '',
+        youtubeLink: exercise.youtubeLink || null,
+        caloriesBurned: caloriesBurned
+    };
+};
+
 // Exported wrapper function
 export async function generateWorkoutPlan(input: GenerateWorkoutPlanInput): Promise<WeeklyWorkoutPlan> {
   // Basic validation can remain here or be moved inside the flow
   if (!input.weight || !input.age || !input.activityLevel || !input.fitnessGoal) {
       throw new Error("Weight, age, activity level, and fitness goal are required to generate a workout plan.");
   }
-  return generateWorkoutPlanFlow(input);
+  
+  const result = await generateWorkoutPlanFlow(input);
+  
+  // Apply validation to all exercises in the plan
+  const validatedPlan: WeeklyWorkoutPlan = {
+      Monday: (result.Monday || []).map(validateExerciseData),
+      Tuesday: (result.Tuesday || []).map(validateExerciseData),
+      Wednesday: (result.Wednesday || []).map(validateExerciseData),
+      Thursday: (result.Thursday || []).map(validateExerciseData),
+      Friday: (result.Friday || []).map(validateExerciseData),
+      Saturday: (result.Saturday || []).map(validateExerciseData),
+      Sunday: (result.Sunday || []).map(validateExerciseData)
+  };
+
+  return validatedPlan;
 }
 
 // Provided exercise list (can be refined)
@@ -129,9 +186,9 @@ const EXERCISE_LIST_REFERENCE = `
 // Define the Genkit prompt
 const generateWorkoutPlanPrompt = ai.definePrompt({
   name: 'generateWorkoutPlanPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Ensure correct model is used
+  model: 'googleai/gemini-2.5-flash-preview-04-17',
   input: { schema: GenerateWorkoutPlanInputSchema },
-  output: { schema: GenerateWorkoutPlanOutputSchema }, // Use the corrected output schema
+  output: { schema: GenerateWorkoutPlanOutputSchema },
   prompt: `You are an expert fitness coach AI specializing in creating personalized, effective, and safe weekly **gym-based** workout plans.
 
 **Task:** Generate a structured and challenging 7-day workout plan (Monday to Sunday) tailored to the user's profile below. **Prioritize creating workout days over rest days unless rest is essential for recovery based on the user's profile and goals.**
@@ -157,9 +214,14 @@ const generateWorkoutPlanPrompt = ai.definePrompt({
     *   **muscle_building/weight_gain:** Focus on progressive overload, higher volume, moderate-to-high intensity, rep ranges 6-15. Ensure sufficient protein & slight caloric surplus implied.
     *   **weight_loss/toning:** Include a mix of strength (to preserve muscle, 3-4 days/wk) and cardio (2-3 days/wk), potentially higher reps (12-20) or circuits. Imply caloric deficit.
     *   **recomposition:** Balance strength training (3-5 days/wk) and moderate cardio (1-2 days/wk). Focus on hitting protein goals.
-5.  **YouTube Links:** For each *specific* exercise (e.g., 'Bench Press', 'Running', NOT 'Rest', 'Warm-up', 'Cool-down'), generate a valid YouTube search URL in the format: \`https://www.youtube.com/results?search_query=[exercise+name]+tutorial\`. Replace spaces in the exercise name with '+'. For 'Rest', 'Warm-up', 'Cool-down' etc., the link MUST be null.
-6.  **Notes:** Add brief, helpful notes where appropriate (e.g., 'Focus on form', 'Warm-up: 5 min light cardio', 'Cool-down: 10 min stretching', 'Rest 60-90s between sets').
-7.  **Output Format:** Return ONLY the valid JSON object strictly matching the output schema. The main object must have keys "Monday" through "Sunday". Each key's value must be an array of exercise objects, each containing 'exercise' (must be specific), 'sets' (nullable number), 'reps' (nullable string), 'notes' (optional string), and 'youtubeLink' (string URL or null). **Ensure every day has at least one entry.** If a day is determined to be a rest day based on the profile analysis, the array should contain ONLY ONE entry like: \`[{ "exercise": "Rest", "sets": null, "reps": null, "notes": "Active recovery recommended (light walk/stretching)", "youtubeLink": null }]\`. **Do NOT return empty arrays for any day.**
+5.  **Calorie Estimation:** For each exercise, provide realistic calorie burn estimates:
+    *   **Stretches/Flexibility/Warm-ups/Cool-downs:** 2-4 kcal only (very low intensity)
+    *   **Regular exercises (strength, cardio):** 6-30 kcal per exercise
+    *   **Rest days:** null calories
+    Base estimates on exercise type, intensity and duration. Never exceed these ranges.
+6.  **YouTube Links:** For each *specific* exercise (e.g., 'Bench Press', 'Running', NOT 'Rest', 'Warm-up', 'Cool-down'), generate a valid YouTube search URL in the format: \`https://www.youtube.com/results?search_query=[exercise+name]+tutorial\`. Replace spaces in the exercise name with '+'. For 'Rest', 'Warm-up', 'Cool-down' etc., the link MUST be null.
+7.  **Notes:** Add brief, helpful notes where appropriate (e.g., 'Focus on form', 'Warm-up: 5 min light cardio', 'Cool-down: 10 min stretching', 'Rest 60-90s between sets').
+8.  **Output Format:** Return ONLY the valid JSON object strictly matching the output schema. The main object must have keys "Monday" through "Sunday". Each key's value must be an array of exercise objects, each containing 'exercise' (must be specific), 'sets' (nullable number), 'reps' (nullable string), 'notes' (optional string), 'youtubeLink' (string URL or null), and 'caloriesBurned' (number following the ranges above). **Ensure every day has at least one entry.** If a day is determined to be a rest day based on the profile analysis, the array should contain ONLY ONE entry like: \`[{ "exercise": "Rest", "sets": null, "reps": null, "notes": "Active recovery recommended (light walk/stretching)", "youtubeLink": null, "caloriesBurned": null }]\`. **Do NOT return empty arrays for any day.**
 
 **Reference Exercise List (Use as inspiration, feel free to add others):**
 ${EXERCISE_LIST_REFERENCE}
@@ -277,4 +339,3 @@ const generateWorkoutPlanFlow = ai.defineFlow<
 );
 
 
-    

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Generates a simple, home-friendly workout plan for rest or light activity days.
@@ -21,7 +20,8 @@ const ExerciseDetailSchema = z.object({
     sets: z.number().int().min(0).nullable().describe("Number of sets (null for duration focus)."),
     reps: z.string().nullable().describe("Rep range (e.g., '10-15', 'AMRAP') or duration (e.g., '20 min'). Null for Rest."),
     notes: z.string().optional().describe("Optional notes like form tips or modifications."),
-    youtubeLink: z.string().nullable().describe("A YouTube search URL (https://www.youtube.com/results?search_query=...). Null if not applicable.")
+    youtubeLink: z.string().nullable().describe("A YouTube search URL (https://www.youtube.com/results?search_query=...). Null if not applicable."),
+    caloriesBurned: z.number().nullable().describe("Estimated calories burned for the exercise. Null for Rest.")
 });
 
 // Input schema: User's goal and general activity level
@@ -39,7 +39,12 @@ export type SimpleWorkoutOutput = z.infer<typeof SimpleWorkoutOutputSchema>;
 
 // Exported wrapper function
 export async function generateSimpleWorkout(input: SimpleWorkoutInput): Promise<SimpleWorkoutOutput> {
-  return generateSimpleWorkoutFlow(input);
+  const result = await generateSimpleWorkoutFlow(input);
+  
+  // Apply validation to all exercises
+  const validatedExercises = result.exercises.map(validateSimpleExercise);
+  
+  return { exercises: validatedExercises };
 }
 
 // Define the Genkit prompt
@@ -79,6 +84,49 @@ Generate the simple workout JSON now based *strictly* on the user profile and in
 `,
 });
 
+// Add validation function for simple workout exercises
+const validateSimpleExercise = (exercise: any) => {
+    // Normalize reps field - set failure to default 12
+    let normalizedReps = exercise.reps;
+    if (typeof normalizedReps === 'string' && normalizedReps.toLowerCase().includes('failure')) {
+        normalizedReps = '12';
+    }
+    
+    // Check if it's a stretch exercise (lower calorie burn)
+    const isStretchExercise = exercise.exercise && (
+        exercise.exercise.toLowerCase().includes('stretch') ||
+        exercise.exercise.toLowerCase().includes('warm-up') ||
+        exercise.exercise.toLowerCase().includes('cool-down') ||
+        exercise.exercise.toLowerCase().includes('flexibility') ||
+        exercise.exercise.toLowerCase().includes('yoga') ||
+        exercise.exercise.toLowerCase().includes('foam rolling')
+    );
+    
+    // Validate and cap calorie burn to reasonable range
+    let caloriesBurned = exercise.caloriesBurned || 0;
+    if (typeof caloriesBurned === 'number') {
+        if (isStretchExercise) {
+            // Cap stretches between 2-4 kcal
+            caloriesBurned = Math.max(2, Math.min(4, caloriesBurned));
+        } else {
+            // Cap regular exercises between 6-30 kcal
+            caloriesBurned = Math.max(6, Math.min(30, caloriesBurned));
+        }
+    } else {
+        // Default values based on exercise type
+        caloriesBurned = isStretchExercise ? 3 : 12;
+    }
+    
+    return {
+        exercise: exercise.exercise || 'Unknown Exercise',
+        sets: exercise.sets || 2,
+        reps: normalizedReps,
+        notes: exercise.notes || '',
+        youtubeLink: exercise.youtubeLink || null,
+        caloriesBurned: caloriesBurned
+    };
+};
+
 // Define the Genkit flow
 const generateSimpleWorkoutFlow = ai.defineFlow<
   typeof SimpleWorkoutInputSchema,
@@ -104,7 +152,8 @@ const generateSimpleWorkoutFlow = ai.defineFlow<
         sets: ex.sets ? Math.max(0, Math.round(ex.sets)) : null,
         reps: ex.reps ? String(ex.reps).trim() : null,
         notes: ex.notes?.trim() || undefined,
-        youtubeLink: ex.youtubeLink?.trim() || null
+        youtubeLink: ex.youtubeLink?.trim() || null,
+        caloriesBurned: null // Will be set by validation function
     }));
 
     return { exercises: validatedExercises };

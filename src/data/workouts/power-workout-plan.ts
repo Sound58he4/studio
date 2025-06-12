@@ -424,7 +424,7 @@ export const LIGHT_WORKOUT_PLAN: WorkoutDay[] = [
       {
         exercise: "Wall Sit",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Back against wall, thighs parallel to floor",
         youtubeLink: "https://www.youtube.com/results?search_query=wall+sit+tutorial",
         weight: 0,
@@ -1109,7 +1109,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Trap Bar Shrugs",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Lift straight up, hold at top briefly",
         youtubeLink: "https://www.youtube.com/results?search_query=trap+bar+shrug+tutorial",
         weight: null,
@@ -1135,7 +1135,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Incline Dumbbell Curls",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Seated on incline bench, full range of motion",
         youtubeLink: "https://www.youtube.com/results?search_query=incline+dumbbell+curl+tutorial",
         weight: null,
@@ -1148,7 +1148,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Preacher Curls",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Full range of motion, control the negative",
         youtubeLink: "https://www.youtube.com/results?search_query=preacher+curl+tutorial",
         weight: null,
@@ -1360,7 +1360,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Close Grip Pushups",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Hand placement shoulder-width or narrower",
         youtubeLink: "https://www.youtube.com/results?search_query=close+grip+pushup+tutorial",
         weight: 0,
@@ -1438,7 +1438,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Plank",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Keep body straight, engage core",
         youtubeLink: "https://www.youtube.com/results?search_query=plank+tutorial",
         weight: 0,
@@ -1525,7 +1525,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Trap Bar Shrugs",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Lift straight up, hold at top briefly",
         youtubeLink: "https://www.youtube.com/results?search_query=trap+bar+shrug+tutorial",
         weight: null,
@@ -1551,7 +1551,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Incline Dumbbell Curls",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Seated on incline bench, full range of motion",
         youtubeLink: "https://www.youtube.com/results?search_query=incline+dumbbell+curl+tutorial",
         weight: null,
@@ -1564,7 +1564,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Preacher Curls",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Full range of motion, control the negative",
         youtubeLink: "https://www.youtube.com/results?search_query=preacher+curl+tutorial",
         weight: null,
@@ -1776,7 +1776,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Close Grip Pushups",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Hand placement shoulder-width or narrower",
         youtubeLink: "https://www.youtube.com/results?search_query=close+grip+pushup+tutorial",
         weight: 0,
@@ -1854,7 +1854,7 @@ export const POWER_WORKOUT_PLAN: WorkoutDay[] = [  {
       {
         exercise: "Plank",
         sets: 3,
-        reps: "Failure",
+        reps: 12,
         notes: "Keep body straight, engage core",
         youtubeLink: "https://www.youtube.com/results?search_query=plank+tutorial",
         weight: 0,

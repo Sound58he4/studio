@@ -186,15 +186,15 @@ export default function WorkoutPlansPage() {
             console.log("[WorkoutPlansPage] Generating AI Plan with input:", planInput);
             const aiPlan = await generateWorkoutPlan(planInput);
             
-            // Convert AI plan to dashboard format
+            // Convert AI plan to dashboard format with validation
             const convertedPlan: WeeklyWorkoutPlan = {
-                Monday: aiPlan.Monday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Tuesday: aiPlan.Tuesday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Wednesday: aiPlan.Wednesday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Thursday: aiPlan.Thursday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Friday: aiPlan.Friday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Saturday: aiPlan.Saturday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
-                Sunday: aiPlan.Sunday.map(ex => ({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Monday: aiPlan.Monday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Tuesday: aiPlan.Tuesday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Wednesday: aiPlan.Wednesday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Thursday: aiPlan.Thursday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Friday: aiPlan.Friday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Saturday: aiPlan.Saturday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
+                Sunday: aiPlan.Sunday.map(ex => validateExerciseInput({ ...ex, youtubeLink: ex.youtubeLink ?? undefined })),
             };
             
             setWeeklyPlan(convertedPlan);
@@ -220,10 +220,14 @@ export default function WorkoutPlansPage() {
              const simpleInput: SimpleWorkoutInput = { fitnessGoal: userProfile.fitnessGoal, activityLevel: userProfile.activityLevel };
              const simpleWorkoutOutput: SimpleWorkoutOutput = await generateSimpleWorkout(simpleInput);
 
-             const newEditableExercises: EditableExercise[] = simpleWorkoutOutput.exercises.map(ex => ({
-                 ...ex, id: generateUniqueId(day), isNew: true,
-                 youtubeLink: typeof ex.youtubeLink === 'string' ? ex.youtubeLink : null
-             }));
+             const newEditableExercises: EditableExercise[] = simpleWorkoutOutput.exercises.map(ex => {
+                 const validatedEx = validateExerciseInput(ex);
+                 return {
+                     ...validatedEx,
+                     id: generateUniqueId(day),
+                     youtubeLink: typeof ex.youtubeLink === 'string' ? ex.youtubeLink : null
+                 };
+             });
 
              setEditablePlan(prev => ({ ...prev, [day]: newEditableExercises }));
              toast({ title: "Simple Workout Suggested", description: `Added exercises for ${day}. Remember to save!` });
@@ -1128,3 +1132,26 @@ export default function WorkoutPlansPage() {
         </div>
     );
 }
+
+// Add exercise validation helper
+const validateExerciseInput = (exercise: ExerciseDetail): EditableExercise => {
+    // Normalize reps display
+    let displayReps = exercise.reps;
+    if (typeof displayReps === 'string' && displayReps.toLowerCase().includes('failure')) {
+        displayReps = 'To failure';
+    }
+    
+    // Ensure calorie burn is within reasonable range
+    let caloriesBurned = exercise.caloriesBurned || 15;
+    if (typeof caloriesBurned === 'number') {
+        caloriesBurned = Math.max(6, Math.min(30, caloriesBurned));
+    }
+    
+    return {
+        ...exercise,
+        reps: displayReps,
+        caloriesBurned: caloriesBurned,
+        id: generateUniqueId('temp'), // Will be replaced with proper ID
+        isNew: true
+    };
+};

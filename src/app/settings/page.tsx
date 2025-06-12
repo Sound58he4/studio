@@ -470,140 +470,35 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="p-4 sm:p-6 md:p-8 space-y-8 relative z-10">
 
-          {/* --- Appearance Section --- */}
-          <section className="space-y-6 p-4 sm:p-6 border rounded-xl shadow-sm bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-sm transition-all hover:shadow-lg duration-300 border-primary/20">
-             <div className="flex items-center gap-3 border-b border-primary/20 pb-3 mb-5">
-               <div className="p-2 rounded-lg bg-primary/10">
-                 <Palette className="h-5 w-5 text-primary"/>
-               </div>
-               <h3 className="text-lg font-semibold text-foreground/90">Appearance & Theme</h3>
-             </div>
+          {/* --- Simplified Theme Section --- */}
+          <section className="space-y-5 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
+             <h3 className="text-lg font-semibold flex items-center gap-2 border-b pb-2 mb-4 text-foreground/90">
+               <Palette className="h-5 w-5 text-blue-500"/>
+               Appearance
+             </h3>
              
-             {/* Theme Selection */}
-             <div className="space-y-3">
-               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
-                 <Monitor className="h-4 w-4"/>
-                 Color Theme
-               </h4>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                 {[
-                     { id: 'light', label: 'Light', description: 'Bright and clear', icon: <Sun className="h-4 w-4"/>, gradient: 'from-yellow-50 to-blue-50' },
-                     { id: 'dark', label: 'Dark', description: 'Easy on the eyes', icon: <Moon className="h-4 w-4"/>, gradient: 'from-slate-800 to-slate-900' }
-                 ].map(themeOption => (
-                     <div key={themeOption.id} className={`relative overflow-hidden rounded-lg border-2 transition-all duration-300 cursor-pointer hover:scale-105 hover:shadow-md ${
-                       settings.theme === themeOption.id 
-                         ? 'border-primary shadow-lg shadow-primary/20 bg-primary/5' 
-                         : 'border-border/50 hover:border-primary/50'
-                     }`} onClick={() => handleSettingChange('theme', themeOption.id as AppSettings['theme'])}>
-                       <div className={`absolute inset-0 bg-gradient-to-br ${themeOption.gradient} opacity-20`}></div>
-                       <div className="relative p-4">
-                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-3">
-                             <div className={`p-2 rounded-md ${
-                               settings.theme === themeOption.id ? 'bg-primary/20 text-primary' : 'bg-muted/50'
-                             }`}>
-                               {themeOption.icon}
-                             </div>
-                             <div>
-                               <div className="font-medium text-sm">{themeOption.label}</div>
-                               <div className="text-xs text-muted-foreground">{themeOption.description}</div>
-                             </div>
-                           </div>
-                           {settings.theme === themeOption.id && (
-                             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                           )}
-                         </div>
-                       </div>
-                     </div>
-                 ))}
-               </div>
+             {/* Theme Toggle Switch */}
+             <div className="flex items-center justify-between space-x-2 sm:space-x-4 p-2 rounded-md hover:bg-muted/50 transition-colors duration-200 cursor-pointer" onClick={() => handleSettingChange('theme', settings.theme === 'light' ? 'dark' : 'light')}>
+               <Label htmlFor="theme-toggle" className="flex flex-col space-y-1 flex-grow cursor-pointer pr-2">
+                 <span className="font-medium flex items-center gap-1.5 text-sm sm:text-base">
+                   {settings.theme === 'light' ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}
+                   {settings.theme === 'light' ? 'Light Theme' : 'Dark Theme'}
+                 </span>
+                 <span className="text-xs font-normal leading-snug text-muted-foreground">
+                   {settings.theme === 'light' 
+                     ? "Bright and clear interface for daytime use"
+                     : "Easy on the eyes for low-light environments"
+                   }
+                 </span>
+               </Label>
+               <Switch 
+                 id="theme-toggle" 
+                 checked={settings.theme === 'dark'} 
+                 onCheckedChange={(checked) => handleSettingChange('theme', checked ? 'dark' : 'light')}
+                 className="cursor-pointer"
+               />
              </div>
-
-             {/* Accent Color Selection */}
-             <div className="space-y-3">
-               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
-                 <Palette className="h-4 w-4"/>
-                 Accent Color
-               </h4>
-               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                 {[
-                   { id: 'blue', color: 'bg-blue-500', name: 'Blue' },
-                   { id: 'purple', color: 'bg-purple-500', name: 'Purple' },
-                   { id: 'green', color: 'bg-green-500', name: 'Green' },
-                   { id: 'orange', color: 'bg-orange-500', name: 'Orange' },
-                   { id: 'red', color: 'bg-red-500', name: 'Red' },
-                   { id: 'cyan', color: 'bg-cyan-500', name: 'Cyan' }
-                 ].map(colorOption => (
-                   <div key={colorOption.id} className={`relative rounded-lg p-3 border-2 transition-all duration-300 cursor-pointer hover:scale-110 ${
-                     settings.accentColor === colorOption.id 
-                       ? 'border-foreground shadow-lg' 
-                       : 'border-border/30 hover:border-border'
-                   }`} onClick={() => handleSettingChange('accentColor', colorOption.id as AppSettings['accentColor'])}>
-                     <div className={`w-6 h-6 ${colorOption.color} rounded-full mx-auto mb-1 shadow-md`}></div>
-                     <div className="text-xs text-center font-medium">{colorOption.name}</div>
-                     {settings.accentColor === colorOption.id && (
-                       <div className="absolute top-1 right-1 w-2 h-2 bg-foreground rounded-full"></div>
-                     )}
-                   </div>
-                 ))}
-               </div>
-             </div>
-
-             {/* Typography & Layout */}
-             <div className="space-y-4">
-               <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
-                 <Type className="h-4 w-4"/>
-                 Typography & Layout
-               </h4>
-               
-               {/* Font Size */}
-               <div className="space-y-2">
-                 <Label className="text-xs text-muted-foreground">Font Size</Label>
-                 <div className="grid grid-cols-3 gap-2">
-                   {[
-                     { id: 'small', label: 'Small', size: 'text-sm', preview: '14px' },
-                     { id: 'medium', label: 'Medium', size: 'text-base', preview: '16px' },
-                     { id: 'large', label: 'Large', size: 'text-lg', preview: '18px' }
-                   ].map(sizeOption => (
-                     <button key={sizeOption.id} className={`p-3 rounded-lg border transition-all duration-200 hover:scale-105 active:scale-95 ${
-                       settings.fontSize === sizeOption.id 
-                         ? 'border-primary bg-primary/10 text-primary shadow-md' 
-                         : 'border-border/50 hover:border-primary/50'
-                     }`} onClick={() => handleSettingChange('fontSize', sizeOption.id as AppSettings['fontSize'])}>
-                       <div className={`${sizeOption.size} font-medium`}>Aa</div>
-                       <div className="text-xs mt-1">{sizeOption.label}</div>
-                       <div className="text-xs text-muted-foreground">{sizeOption.preview}</div>
-                     </button>
-                   ))}
-                 </div>
-               </div>
-
-               {/* Toggle Options */}
-               <div className="space-y-3">
-                 <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                   <div className="flex items-center gap-3">
-                     <Layout className="h-4 w-4 text-muted-foreground"/>
-                     <div>
-                       <div className="text-sm font-medium">Compact Mode</div>
-                       <div className="text-xs text-muted-foreground">Reduce spacing and padding</div>
-                     </div>
-                   </div>
-                   <Switch checked={settings.compactMode} onCheckedChange={(checked) => handleSettingChange('compactMode', checked)}/>
-                 </div>
-                 
-                 <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:border-primary/50 transition-colors">
-                   <div className="flex items-center gap-3">
-                     <Zap className="h-4 w-4 text-muted-foreground"/>
-                     <div>
-                       <div className="text-sm font-medium">Animations</div>
-                       <div className="text-xs text-muted-foreground">Enable smooth transitions</div>
-                     </div>
-                   </div>
-                   <Switch checked={settings.animations} onCheckedChange={(checked) => handleSettingChange('animations', checked)}/>
-                 </div>
-               </div>
-             </div>
-          </section>
+           </section>
 
            {/* --- Progress View Permissions Section --- */}
            <section className="space-y-5 p-4 sm:p-5 border rounded-lg shadow-sm bg-card/50 transition-shadow hover:shadow-md duration-300">
