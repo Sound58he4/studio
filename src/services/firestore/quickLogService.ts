@@ -14,26 +14,21 @@ const QUICK_LOG_ITEMS_COLLECTION = 'quickLogItems';
 
 // --- Standard Quick Log Items ---
 
-export async function addQuickLogItem(userId: string, itemData: Omit<FirestoreQuickLogData, 'createdAt'>): Promise<string> {
-  if (!userId) throw createFirestoreServiceError("User ID is required.", "invalid-argument");
-  if (!itemData.foodName || itemData.calories === undefined || itemData.protein === undefined || itemData.carbohydrates === undefined || itemData.fat === undefined) {
-    throw createFirestoreServiceError("Food name and all nutritional values are required.", "invalid-argument");
-  }
-  console.log(`[QuickLog Service] Adding new item to ${QUICK_LOG_ITEMS_COLLECTION} for user: ${userId}`, itemData.foodName);
+export const addQuickLogItem = async (userId: string, itemData: Omit<FirestoreQuickLogData, 'createdAt'>): Promise<string> => {
   try {
-    const quickLogRef = collection(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION);
-    const dataWithTimestamp: FirestoreQuickLogData = {
-        ...itemData,
-        createdAt: serverTimestamp() as Timestamp
-    };
-    const docRef = await addDoc(quickLogRef, dataWithTimestamp);
-    console.log(`[QuickLog Service] Item added with ID: ${docRef.id} to ${QUICK_LOG_ITEMS_COLLECTION}.`);
+    const docRef = await addDoc(collection(db, QUICK_LOG_ITEMS_COLLECTION), {
+      ...itemData,
+      userId,
+      createdAt: serverTimestamp(),
+    });
+    
+    console.log(`[QuickLogService] Quick log item added with ID: ${docRef.id}`);
     return docRef.id;
   } catch (error) {
-    console.error(`[QuickLog Service] Error adding item to ${QUICK_LOG_ITEMS_COLLECTION}:`, error);
-    throw createFirestoreServiceError("Failed to add quick log item.", "add-failed");
+    console.error('[QuickLogService] Error adding quick log item:', error);
+    throw error;
   }
-}
+};
 
 export async function getQuickLogItems(userId: string): Promise<StoredQuickLogItem[]> {
   if (!userId) throw createFirestoreServiceError("User ID is required.", "invalid-argument");
@@ -64,30 +59,26 @@ export async function getQuickLogItems(userId: string): Promise<StoredQuickLogIt
   }
 }
 
-export async function deleteQuickLogItem(userId: string, itemId: string): Promise<void> {
-  if (!userId || !itemId) throw createFirestoreServiceError("User ID and Item ID are required.", "invalid-argument");
-  console.log(`[QuickLog Service] Deleting item ID: ${itemId} from ${QUICK_LOG_ITEMS_COLLECTION} for user: ${userId}`);
+export const deleteQuickLogItem = async (userId: string, itemId: string): Promise<void> => {
   try {
-    const itemDocRef = doc(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION, itemId);
-    await deleteDoc(itemDocRef);
-    console.log(`[QuickLog Service] Item deleted successfully from ${QUICK_LOG_ITEMS_COLLECTION}.`);
+    const itemRef = doc(db, QUICK_LOG_ITEMS_COLLECTION, itemId);
+    await deleteDoc(itemRef);
+    console.log(`[QuickLogService] Quick log item deleted: ${itemId}`);
   } catch (error) {
-    console.error(`[QuickLog Service] Error deleting item from ${QUICK_LOG_ITEMS_COLLECTION}:`, error);
-    throw createFirestoreServiceError("Failed to delete quick log item.", "delete-failed");
+    console.error('[QuickLogService] Error deleting quick log item:', error);
+    throw error;
   }
-}
+};
 
-export async function updateQuickLogItem(userId: string, itemId: string, data: Partial<Omit<FirestoreQuickLogData, 'createdAt'>>): Promise<void> {
-  if (!userId || !itemId) throw createFirestoreServiceError("User ID and Item ID are required.", "invalid-argument");
-  console.log(`[QuickLog Service] Updating item ID: ${itemId} in ${QUICK_LOG_ITEMS_COLLECTION} for user: ${userId}`);
+export const updateQuickLogItem = async (userId: string, itemId: string, updates: Partial<Omit<FirestoreQuickLogData, 'createdAt' | 'userId'>>): Promise<void> => {
   try {
-    const itemDocRef = doc(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION, itemId);
-    await updateDoc(itemDocRef, data);
-    console.log(`[QuickLog Service] Item updated successfully in ${QUICK_LOG_ITEMS_COLLECTION}.`);
+    const itemRef = doc(db, QUICK_LOG_ITEMS_COLLECTION, itemId);
+    await updateDoc(itemRef, updates);
+    console.log(`[QuickLogService] Quick log item updated: ${itemId}`);
   } catch (error) {
-    console.error(`[QuickLog Service] Error updating item in ${QUICK_LOG_ITEMS_COLLECTION}:`, error);
-    throw createFirestoreServiceError("Failed to update quick log item.", "update-failed");
+    console.error('[QuickLogService] Error updating quick log item:', error);
+    throw error;
   }
-}
+};
 
 // --- Removed Personal Intake Presets Functions ---

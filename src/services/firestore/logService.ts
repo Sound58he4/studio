@@ -54,88 +54,21 @@ export async function getFoodLogs(userId: string, startDate: Date, endDate: Date
     }
 }
 
-export async function addFoodLog(userId: string, logData: FirestoreFoodLogData): Promise<string> {
-    if (!userId) throw createFirestoreServiceError("User ID is required to add food log.", "invalid-argument");
-    console.log(`[Log Service] Adding food log for user: ${userId}`, logData);
-
-    const logTimestamp = (logData.timestamp instanceof Date) ? logData.timestamp : parseISO(logData.timestamp as string || new Date().toISOString());
-    const logDateStr = format(logTimestamp, 'yyyy-MM-dd');
-    const isCurrentDayLog = dateFnsIsToday(logTimestamp);
-
-    const individualLogRef = doc(collection(db, 'users', userId, 'foodLog'));
-    const dailySummaryRef = doc(db, 'users', userId, 'dailyNutritionSummaries', logDateStr);
-    const userProfileRef = doc(db, 'users', userId);
-
-    const calories = Number(logData.calories ?? 0);
-    const protein = Number(logData.protein ?? 0);
-    const carbohydrates = Number(logData.carbohydrates ?? 0);
-    const fat = Number(logData.fat ?? 0);
-
-    try {
-        const newLogId = await runTransaction(db, async (transaction) => {
-            // --- READ PHASE ---
-            const dailySummarySnap = await transaction.get(dailySummaryRef);
-            let userProfileSnap = null;
-            if (isCurrentDayLog) {
-                userProfileSnap = await transaction.get(userProfileRef);
-            }
-
-            // --- WRITE PHASE ---
-            const dataToSave: Omit<FirestoreFoodLogData, 'timestamp'> & { timestamp: string } = {
-                foodItem: logData.foodItem, calories, protein, carbohydrates, fat,
-                timestamp: logTimestamp.toISOString(),
-                logMethod: logData.logMethod ?? 'manual',
-                ...(logData.identifiedFoodName && { identifiedFoodName: logData.identifiedFoodName }),
-                ...(logData.originalDescription && { originalDescription: logData.originalDescription })
-            };
-            transaction.set(individualLogRef, dataToSave);
-
-            const summaryIncrementData = {
-                totalCalories: increment(calories),
-                totalProtein: increment(protein),
-                totalCarbohydrates: increment(carbohydrates),
-                totalFat: increment(fat),
-                entryCount: increment(1),
-                lastUpdated: serverTimestamp()
-            };
-
-            if (dailySummarySnap.exists()) {
-                transaction.update(dailySummaryRef, summaryIncrementData);
-            } else {
-                // If creating, set initial values directly from the log
-                transaction.set(dailySummaryRef, {
-                    totalCalories: calories,
-                    totalProtein: protein,
-                    totalCarbohydrates: carbohydrates,
-                    totalFat: fat,
-                    entryCount: 1,
-                    lastUpdated: serverTimestamp()
-                });
-            }
-
-            if (isCurrentDayLog) {
-                 if (userProfileSnap && userProfileSnap.exists()) {
-                    transaction.update(userProfileRef, {
-                        todayCalories: increment(calories),
-                        todayProtein: increment(protein),
-                        todayCarbohydrates: increment(carbohydrates),
-                        todayFat: increment(fat),
-                        todayEntryCount: increment(1),
-                        todayLastUpdated: serverTimestamp()
-                    });
-                 } else {
-                     console.warn(`[Log Service] User profile ${userId} not found during addFoodLog transaction. Today's stats on profile not updated.`);
-                 }
-            }
-            return individualLogRef.id;
-        });
-        console.log(`[Log Service] Food log added with ID: ${newLogId} and summaries updated.`);
-        return newLogId;
-    } catch (error:any) {
-        console.error("[Log Service] Error in addFoodLog transaction:", error);
-        throw createFirestoreServiceError(`Failed to add food log and update summaries. Reason: ${error.message}`, "transaction-failed");
-    }
-}
+export const addFoodLog = async (userId: string, logData: FirestoreFoodLogData): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, 'users', userId, 'foodLog'), {
+      ...logData,
+      userId,
+      createdAt: serverTimestamp(),
+    });
+    
+    console.log(`[LogService] Food log added with ID: ${docRef.id}`);
+    return docRef.id;
+  } catch (error) {
+    console.error('[LogService] Error adding food log:', error);
+    throw error;
+  }
+};
 
 export async function getExerciseLogs(userId: string, startDate: Date, endDate: Date): Promise<StoredExerciseLogEntry[]> {
     if (!userId) throw createFirestoreServiceError("User ID is required to fetch exercise logs.", "invalid-argument");

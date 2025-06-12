@@ -173,7 +173,18 @@ const optimizedFoodLoggingFlow = ai.defineFlow<
 
 // Exported wrapper function
 export async function optimizedFoodLogging(input: OptimizedFoodLoggingInput): Promise<OptimizedFoodLoggingOutput> {
-  return optimizedFoodLoggingFlow(input);
+  if (!input.foodDescription?.trim()) {
+    throw new Error("Food description is required for nutrition analysis.");
+  }
+  
+  try {
+    const result = await optimizedFoodLoggingFlow(input);
+    console.log("[OptimizedFoodLogging] Successfully processed food description:", input.foodDescription);
+    return result;
+  } catch (error: any) {
+    console.error("[OptimizedFoodLogging] Error processing food description:", error);
+    throw new Error(`Failed to analyze food: ${error.message}`);
+  }
 }
 
 // Batch processing helper

@@ -185,16 +185,46 @@ class FoodLogCacheManager {
   }
 
   // AI nutrition estimates cache - use a different method to avoid date confusion
-  cacheAIEstimate(foodDescription: string, nutrition: any): void {
-    const sanitizedDescription = foodDescription.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
-    const key = `${CACHE_CONFIG.PREFIX}ai-estimate-global-${sanitizedDescription}`;
-    this.setCache(key, nutrition, CACHE_CONFIG.AI_ESTIMATES);
+  async cacheAIEstimate(foodDescription: string, result: CachedAIResult): Promise<void> {
+    try {
+      const key = this.generateCacheKey(foodDescription);
+      const cacheEntry: CacheEntry<CachedAIResult> = {
+        data: result,
+        timestamp: Date.now(),
+        expiresAt: Date.now() + this.AI_CACHE_DURATION
+      };
+      
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, JSON.stringify(cacheEntry));
+        console.log(`[FoodLogCache] Cached AI estimate for: ${foodDescription}`);
+      }
+    } catch (error) {
+      console.error('[FoodLogCache] Error caching AI estimate:', error);
+    }
   }
 
-  getCachedAIEstimate(foodDescription: string): any | null {
-    const sanitizedDescription = foodDescription.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
-    const key = `${CACHE_CONFIG.PREFIX}ai-estimate-global-${sanitizedDescription}`;
-    return this.getCache(key);
+  async getCachedAIEstimate(foodDescription: string): Promise<CachedAIResult | null> {
+    try {
+      const key = this.generateCacheKey(foodDescription);
+      
+      if (typeof window === 'undefined') return null;
+      
+      const cached = localStorage.getItem(key);
+      if (!cached) return null;
+      
+      const entry: CacheEntry<CachedAIResult> = JSON.parse(cached);
+      
+      if (Date.now() > entry.expiresAt) {
+        localStorage.removeItem(key);
+        return null;
+      }
+      
+      console.log(`[FoodLogCache] Cache hit for: ${foodDescription}`);
+      return entry.data;
+    } catch (error) {
+      console.error('[FoodLogCache] Error getting cached AI estimate:', error);
+      return null;
+    }
   }
 
   // Bulk operations for performance
@@ -310,7 +340,7 @@ class FoodLogCacheManager {
   // Clear all cache
   clearAll(): void {
     this.cache = {};
-    if (this.isClient) {
+    if (typeof window !== 'undefined') {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
         if (key && key.startsWith(CACHE_CONFIG.PREFIX)) {

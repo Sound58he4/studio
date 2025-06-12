@@ -24,7 +24,6 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isToday, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
-import { useAnalytics } from '@/hooks/useAnalytics';
 
 type FormState = Omit<FirestoreQuickLogData, 'createdAt' | 'timestamp' | 'logMethod' | 'originalDescription'> & {
     id?: string;
@@ -46,7 +45,6 @@ const LOCAL_STORAGE_DAILY_FOOD_LOGS_PREFIX = 'bago-daily-food-logs-';
 export default function QuickLogPage() {
   const { toast } = useToast();
   const { userId, loading: authLoading } = useAuth();
-  const analytics = useAnalytics();
   const [items, setItems] = useState<StoredQuickLogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -163,7 +161,6 @@ export default function QuickLogPage() {
   const handleFoodNameBlur = async () => {
     if (formState.foodName.trim() && !editingItemId && showForm) {
       setIsEstimatingNutrition(true);
-      analytics.trackFeatureClick('ai_nutrition_estimation', 'quick_log_form');
       
       try {
         // Check cache first
@@ -208,8 +205,6 @@ export default function QuickLogPage() {
         }));
         if (isClient) toast({ title: "Nutrition Estimated", description: "AI suggested values for your item.", variant: "default" });
       } catch (err: any) {
-        analytics.trackAIUsage('nutrition_estimation', false);
-        analytics.trackError(err, 'nutrition_estimation');
         if (isClient) toast({ variant: "destructive", title: "AI Error", description: `Could not estimate nutrition: ${err.message}` });
       } finally {
         setIsEstimatingNutrition(false);
@@ -287,10 +282,6 @@ export default function QuickLogPage() {
     const dailyLogsCacheKey = getDailyFoodLogCacheKey();
 
     try {
-      // Track the quick log action
-      analytics.trackFoodLog('quick_log', item.foodName, item.calories);
-      analytics.trackFeatureClick('quick_log_item_used', 'quick_log_list');
-      
       const logData: FirestoreFoodLogData = {
         foodItem: item.foodName, calories: item.calories, protein: item.protein,
         carbohydrates: item.carbohydrates, fat: item.fat, timestamp: new Date().toISOString(),
@@ -314,7 +305,6 @@ export default function QuickLogPage() {
       setLoggedTodayMap(prev => ({ ...prev, [item.id]: true }));
       if (isClient) toast({ title: `${item.foodName} Logged!`, description: "Added to your daily intake." });
     } catch (error: any) {
-      analytics.trackError(error, 'quick_log_submission');
       if (isClient) toast({ variant: "destructive", title: "Logging Error", description: `Could not log item: ${error.message}` });
     } finally {
       setIsSubmitting(false);
