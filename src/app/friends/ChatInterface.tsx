@@ -273,7 +273,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
     }, [friend]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-card overflow-hidden relative" data-chat-container>
+        <div className="flex flex-col h-full w-full bg-clayGlass backdrop-blur-sm overflow-hidden relative shadow-clay rounded-2xl" data-chat-container>
             {friend ? (
                 <>
                     <div className="flex-1 min-h-0 overflow-hidden">
@@ -316,7 +316,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     </AnimatePresence>
 
                     {isAISelected && showSuggestions && (
-                        <div className="flex-shrink-0 bg-card border-t">
+                        <div className="flex-shrink-0 bg-clayGlass backdrop-blur-sm border-t border-clay-300/30">
                             <AISuggestionBar 
                                 onSuggestionClick={(prompt) => {
                                     setNewMessage(prompt); 
@@ -329,20 +329,20 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     )}
                     
                     {isAISelected && !showSuggestions && (
-                        <div className="px-2 py-1 border-t bg-muted/50 flex justify-center flex-shrink-0">
+                        <div className="px-2 py-1 border-t bg-clayGlass backdrop-blur-sm border-clay-300/30 flex justify-center flex-shrink-0 shadow-clay">
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowSuggestions(true)}
-                                className="text-xs px-3 py-1 h-6 rounded-md"
+                                className="text-xs px-3 py-1 h-6 rounded-xl bg-clayGlass backdrop-blur-sm border-0 shadow-clay hover:shadow-clayStrong text-gray-700 hover:text-blue-600 transition-all duration-300 hover:scale-105"
                             >
                                 Show AI Suggestions
                             </Button>
                         </div>
                     )}
                     
-                    <div className="flex-shrink-0 bg-card border-t">
+                    <div className="flex-shrink-0 bg-clayGlass backdrop-blur-sm border-t border-clay-300/30">
                         <MessageInput
                             ref={messageInputRef} 
                             newMessage={newMessage}
@@ -354,7 +354,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     </div>
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic p-4 text-center bg-muted/20">
+                <div className="flex flex-col items-center justify-center h-full text-gray-600 italic p-4 text-center bg-clayGlass/20 backdrop-blur-sm rounded-2xl shadow-clay">
                      <Loader2 size={32} className="mb-3 opacity-40 animate-spin"/>
                     <span className="text-sm">Loading chat...</span>
                 </div>

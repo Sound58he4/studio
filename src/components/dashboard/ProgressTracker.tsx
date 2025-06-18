@@ -25,13 +25,12 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     icon,
     color = 'blue', // Default color if not specified
     isAverage = false
-}) => {
-    const targetValue = target ?? 0;
+}) => {    const targetValue = Number(target) || 0;
     // If isAverage is true, the 'value' is daily average, so for weekly target comparison, multiply by 7.
     // Otherwise, use value as is (assumed to be total for the period matching the target).
     const valueForPercent = isAverage && targetValue > 0 && (label.toLowerCase().includes("weekly")) 
-        ? value * 7 
-        : value; 
+        ? (Number(value) || 0) * 7 
+        : (Number(value) || 0); 
     
     const progressPercent = (targetValue > 0) ? Math.max(0, Math.min(100, Math.round((valueForPercent / targetValue) * 100))) : 0;
     const displayTarget = targetValue > 0 ? ` / ${targetValue.toFixed(0)}${unit}` : ` ${unit}`;
@@ -56,7 +55,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         return gradientClass;
     };
 
-    const displayValueText = value.toFixed(unit === 'g' || isAverage ? 1 : 0);
+    const displayValueText = (Number(value) || 0).toFixed(unit === 'g' || isAverage ? 1 : 0);
 
     return (
         <div className={cn(

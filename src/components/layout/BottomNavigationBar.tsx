@@ -1,9 +1,9 @@
 // src/components/layout/BottomNavigationBar.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,25 @@ import {
   User,
   ChevronRight,
   Grid3X3,
-  MoreHorizontal
+  MoreHorizontal,
+  Home,
+  BarChart3,
+  MessageCircle,
+  Plus,
+  Apple,
+  Activity,
+  Target,
+  Users,
+  History as HistoryIcon,
+  Settings
 } from 'lucide-react';
+import { MenuItem } from '@/types/navigation';
+
+interface MainNavItem {
+  title: string;
+  icon: React.ComponentType<any>;
+  route: string;
+}
 
 interface NavLink {
   href: string;
@@ -36,198 +53,210 @@ interface BottomNavigationBarProps {
   setIsSheetOpen: (open: boolean) => void;
 }
 
+// Main navigation items
+const mainNavItems: MainNavItem[] = [
+  {
+    title: "Dashboard",
+    icon: Home,
+    route: "/dashboard"
+  },
+  {
+    title: "Overview", 
+    icon: BarChart3,
+    route: "/overview"
+  },
+  {
+    title: "AI Assistant",
+    icon: MessageCircle,
+    route: "/ai-assistant"
+  },
+  {
+    title: "Quick Log",
+    icon: Plus,
+    route: "/quick-log"
+  }
+];
+
+// All other items go into the "More" menu
+const moreMenuItems: MenuItem[] = [
+  {
+    title: "Log Meal",
+    icon: Apple,
+    route: "/log"
+  },
+  {
+    title: "Workouts",
+    icon: Activity,
+    route: "/workout-plans"
+  },
+  {
+    title: "Points",
+    icon: Target,
+    route: "/points"
+  },
+  {
+    title: "Friends",
+    icon: Users,
+    route: "/friends"
+  },
+  {
+    title: "Profile",
+    icon: User,
+    route: "/profile"
+  },
+  {
+    title: "History",
+    icon: HistoryIcon,
+    route: "/history"
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    route: "/settings"
+  }
+];
+
 const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   navLinks,
   handleLogout,
   isSheetOpen,
   setIsSheetOpen
 }) => {
-  const pathname = usePathname();
-  
-  // Primary navigation items (most used) - reduced to 4 items
-  const primaryNavItems = [
-    navLinks.find(link => link.href === '/dashboard'),
-    navLinks.find(link => link.href === '/overview'),
-    navLinks.find(link => link.href === '/ai-assistant'),
-    navLinks.find(link => link.href === '/quick-log'),
-  ].filter(Boolean) as NavLink[];
+  const pathname = usePathname();  const router = useRouter();
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  // Secondary navigation items (for the sheet)
-  const secondaryNavItems = navLinks.filter(link => 
-    !primaryNavItems.some(primary => primary.href === link.href)
-  );
+  const [lightTheme, setLightTheme] = useState(true);
 
-  const isActive = (href: string) => pathname === href;
+  useEffect(() => {
+    setIsClient(true);
+    const handleStorageChange = () => {
+      // Keep light theme only as requested
+      setLightTheme(true);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const isDark = false; // Always light theme
+
+  // Memoize the current path to prevent unnecessary re-renders
+  const currentPath = useMemo(() => pathname, [pathname]);
 
   return (
-    <div className="w-full">
-      {/* Ultra Compact Primary Navigation */}
-      <div className="flex items-center justify-around px-0.5 py-1">
-        {primaryNavItems.map((item, index) => (
-          <motion.div
-            key={item.href}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.05 }}
-            className="flex-1"
-          >
-            <Link href={item.href} className="block">
-              <motion.div
-                className={cn(
-                  "relative flex flex-col items-center gap-0.5 p-1 rounded-md transition-all duration-200",
-                  isActive(item.href)
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-                whileTap={{ scale: 0.95 }}
-              >
-                {/* Compact active indicator */}
-                <AnimatePresence>
-                  {isActive(item.href) && (
-                    <motion.div
-                      className="absolute -top-0.5 left-1/2 transform -translate-x-1/2 w-3 h-0.5 bg-primary rounded-full"
-                      initial={{ opacity: 0, scale: 0.5 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.5 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-                </AnimatePresence>
-
-                <motion.div
-                  animate={isActive(item.href) ? { scale: 1.05 } : { scale: 1 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <item.icon size={16} />
-                </motion.div>
-                
-                <span 
-                  className={cn(
-                    "text-[9px] font-medium transition-opacity duration-150 leading-tight",
-                    isActive(item.href) ? "opacity-100" : "opacity-60"
-                  )}
-                >
-                  {item.label}
+    <>
+      <nav
+        className={`
+          fixed bottom-0 left-0 right-0
+          z-50
+          backdrop-blur-md border-t
+          md:hidden
+          shadow-[0_-4px_20px_0_rgba(0,0,0,0.08)]
+          transition-all duration-500
+          ${isDark 
+            ? 'bg-gray-900/95 border-purple-500/20 shadow-[0_-4px_20px_0_rgba(147,51,234,0.1)]' 
+            : 'bg-white/95 border-gray-200/50'
+          }
+        `}
+        aria-label="Main navigation"
+      >
+        <div className="flex justify-between items-center px-2 py-2">
+          {mainNavItems.map((item) => {
+            const isActive = currentPath === item.route;
+            return (
+              <button
+                key={item.route}
+                onClick={() => router.push(item.route)}
+                aria-current={isActive ? "page" : undefined}
+                className={`
+                  mobile-nav-item
+                  touch-target
+                  transition-all duration-200 ease-out
+                  hover:scale-105 active:scale-95
+                  flex flex-col items-center justify-center px-1 py-2 min-w-[60px] max-w-[70px] rounded-lg
+                  ${isActive 
+                    ? isDark 
+                      ? 'text-purple-400 bg-purple-500/20 font-semibold shadow-lg border border-purple-400/30' 
+                      : 'text-blue-600 bg-clayBlue font-semibold shadow-clayInset'
+                    : isDark 
+                      ? 'text-gray-300 hover:text-purple-300 hover:bg-gray-800/60' 
+                      : 'text-gray-600 hover:text-blue-500 hover:bg-clay-100/60'
+                  }
+                `}              >
+                {React.createElement(item.icon, {
+                  size: 22,
+                  className: `mb-1 transition-transform duration-150 ${
+                    isActive ? 'scale-110' : ''
+                  }`,
+                  strokeWidth: 2
+                })}
+                <span className="text-[11px] font-medium truncate leading-tight text-center select-none">
+                  {item.title}
                 </span>
-
-                {/* Compact background for active item */}
-                <AnimatePresence>
-                  {isActive(item.href) && (
-                    <motion.div
-                      className="absolute inset-0 bg-primary/10 rounded-md -z-10"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.2 }}
-                    />
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </Link>
-          </motion.div>
-        ))}
-
-        {/* Compact More Menu Trigger */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex-1"
-        >
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <motion.button
-                className="w-full flex flex-col items-center gap-0.5 p-1 rounded-md text-muted-foreground hover:text-foreground transition-all duration-200"
-                whileTap={{ scale: 0.95 }}
-              >
-                <Menu size={16} />
-                <span className="text-[9px] font-medium opacity-60 leading-tight">More</span>
-              </motion.button>
-            </SheetTrigger>
-            
-            <SheetContent 
-              side="bottom" 
-              className="h-[65vh] rounded-t-lg border-t bg-background/95 backdrop-blur-xl border-border shadow-2xl"
-            >
-              <SheetHeader className="pb-2">
-                <SheetTitle className="text-left text-base font-semibold text-foreground">
-                  Menu
-                </SheetTitle>
-              </SheetHeader>
-              
-              <div className="space-y-0.5 max-h-[50vh] overflow-y-auto">
-                {secondaryNavItems.map((item, index) => (
-                  <motion.div
-                    key={item.href}
-                    initial={{ opacity: 0, x: -15 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                  >
-                    <Link 
-                      href={item.href} 
-                      onClick={() => setIsSheetOpen(false)}
-                      className="block"
-                    >
-                      <motion.div
-                        className={cn(
-                          "flex items-center gap-2.5 p-2.5 rounded-md transition-all duration-150 border",
-                          isActive(item.href)
-                            ? "bg-primary/15 text-primary border-primary/30"
-                            : "hover:bg-muted/70 text-foreground border-transparent hover:border-border"
-                        )}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className={cn(
-                          "p-1 rounded-sm",
-                          isActive(item.href)
-                            ? "bg-primary/25 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        )}>
-                          <item.icon size={14} />
-                        </div>
-                        
-                        <span className="font-medium text-sm">{item.label}</span>
-                        
-                        {isActive(item.href) && (
-                          <motion.div
-                            className="w-1 h-1 bg-primary rounded-full ml-auto"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.15 }}
-                          />
-                        )}
-                      </motion.div>
-                    </Link>
-                  </motion.div>
-                ))}
-                
-                {/* Compact Logout Button */}
-                <motion.div
-                  initial={{ opacity: 0, x: -15 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: secondaryNavItems.length * 0.03 + 0.05 }}
-                  className="pt-2 border-t border-border mt-2"
+              </button>
+            );
+          })}
+          {/* More button */}
+          <button
+            onClick={() => setShowMobileMenu(true)}
+            className={`
+              mobile-nav-item
+              touch-target
+              transition-all duration-200 ease-out
+              hover:scale-105 active:scale-95
+              flex flex-col items-center justify-center px-1 py-2 min-w-[60px] max-w-[70px] rounded-lg
+              ${isDark 
+                ? 'text-gray-300 hover:text-purple-300 hover:bg-gray-800/60' 
+                : 'text-gray-600 hover:text-blue-500 hover:bg-clay-100/60'
+              }
+            `}
+            aria-label="More"
+          >
+            <MoreHorizontal 
+              size={22} 
+              className={`mb-1 transition-transform duration-150 ${
+                showMobileMenu ? 'rotate-90' : ''
+              }`} 
+              strokeWidth={2} 
+            />
+            <span className="text-[11px] font-medium">More</span>
+          </button>
+        </div>      </nav>      {/* Mobile 'More' Menu */}
+      {isClient && showMobileMenu && (
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobileMenu(false)}>
+          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-lg p-4">
+            <h3 className="text-lg font-semibold mb-4">Menu</h3>
+            {moreMenuItems.map((item) => {
+              const IconComponent = item.icon;
+              return (
+                <button
+                  key={item.route}
+                  onClick={() => {
+                    router.push(item.route);
+                    setShowMobileMenu(false);
+                  }}
+                  className="flex items-center space-x-3 w-full p-3 hover:bg-gray-100 rounded"
                 >
-                  <motion.button
-                    onClick={() => {
-                      setIsSheetOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2.5 rounded-md text-destructive hover:bg-destructive/15 transition-all duration-150 border border-transparent hover:border-destructive/30"
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="p-1 rounded-sm bg-destructive/25 text-destructive">
-                      <LogOut size={14} />
-                    </div>
-                    <span className="font-medium text-sm">Logout</span>
-                  </motion.button>
-                </motion.div>
-              </div>
-            </SheetContent>
-          </Sheet>
-        </motion.div>
-      </div>
-    </div>
+                  <IconComponent size={20} />
+                  <span>{item.title}</span>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => {
+                handleLogout();
+                setShowMobileMenu(false);
+              }}
+              className="flex items-center space-x-3 w-full p-3 hover:bg-gray-100 rounded text-red-600"
+            >
+              <LogOut size={20} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

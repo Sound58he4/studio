@@ -28,39 +28,47 @@ const ReportContentArea: React.FC<ReportContentAreaProps> = ({
     reportContentRef,
     fetchAndGenerateForTab,
     selectedDate,
-    userProfile, // Destructure userProfile
+    userProfile,
 }) => {
-    // NOTE: This component expects to be rendered inside a <Tabs> component in the parent.
     return (
-        <div ref={reportContentRef} className="p-4 md:p-6 bg-background min-h-[400px]"> {/* Add min-height */}
-             {/* Render content for the active tab using TabsContent */}
+        <div ref={reportContentRef} className="min-h-[400px]">
              <TabsContent value={activeTab} className="mt-0">
                 {isLoading ? (
                     <div className="flex justify-center items-center py-10 h-full">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary"/>
-                        <p className="ml-3 text-muted-foreground">Generating {activeTab} report...</p>
+                        <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-6 shadow-clayInset">
+                            <div className="flex items-center">
+                                <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-3"/>
+                                <p className="text-gray-700 font-medium">Generating {activeTab} report...</p>
+                            </div>
+                        </div>
                     </div>
                 ) : error ? (
-                    <div className="text-center py-10 text-destructive flex flex-col items-center gap-2 h-full justify-center">
-                        <AlertCircle className="h-6 w-6"/>
-                        <p className="max-w-md">{error}</p>
-                         {/* Pass activeTab and profile to the retry function */}
-                        <Button variant="outline" size="sm" onClick={() => fetchAndGenerateForTab(activeTab, selectedDate, userProfile)}>
-                            <RefreshCw className="mr-2 h-4 w-4"/>Retry
-                        </Button>
+                    <div className="text-center py-10 flex flex-col items-center gap-4 h-full justify-center">
+                        <div className="bg-red-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-clayInset max-w-md">
+                            <AlertCircle className="h-6 w-6 text-red-600 mx-auto mb-3"/>
+                            <p className="text-red-700 mb-4">{error}</p>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => fetchAndGenerateForTab(activeTab, selectedDate, userProfile)}
+                                className="bg-white/60 backdrop-blur-sm border-0 shadow-clayInset hover:bg-white/80 rounded-2xl"
+                            >
+                                <RefreshCw className="mr-2 h-4 w-4"/>Retry
+                            </Button>
+                        </div>
                     </div>
                 ) : report ? (
                     <ReportDisplay report={report} />
                 ) : (
-                    <div className="text-center py-10 text-muted-foreground italic h-full flex items-center justify-center">
-                        <div> {/* Wrapper div for better centering */}
-                           <p>No data available to generate a report for this period.</p>
-                           <p className="text-xs mt-1">Log meals and workouts to see your progress.</p>
+                    <div className="text-center py-10 h-full flex items-center justify-center">
+                        <div className="bg-blue-50/80 backdrop-blur-sm rounded-2xl p-6 shadow-clayInset max-w-md">
+                            <p className="text-gray-700 font-medium mb-2">No data available to generate a report for this period.</p>
+                            <p className="text-gray-600 text-sm">Log meals and workouts to see your progress.</p>
                         </div>
                     </div>
                 )}
              </TabsContent>
-             {/* Render empty TabsContent for other tabs to ensure Tabs component works correctly */}
+             {/* Empty TabsContent for other tabs */}
              {activeTab !== 'daily' && <TabsContent value="daily" className="mt-0"></TabsContent>}
              {activeTab !== 'weekly' && <TabsContent value="weekly" className="mt-0"></TabsContent>}
              {activeTab !== 'monthly' && <TabsContent value="monthly" className="mt-0"></TabsContent>}

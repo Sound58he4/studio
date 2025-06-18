@@ -142,40 +142,73 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
 
 
     return (
-        <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                <div>
-                    <CardTitle className="text-xl md:text-2xl font-bold text-primary flex items-center gap-2">
-                        <FileText className="h-6 w-6" /> Your Progress Report
-                    </CardTitle>
-                    <CardDescription className="text-sm md:text-base mt-1">
-                        Review your performance and get AI-powered insights.
-                    </CardDescription>
+        <>
+            {/* Date Navigation */}
+            <div className="mb-6 bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl p-4">
+                <div className="flex items-center justify-between">
+                    <button 
+                        onClick={() => navigateDate('prev')}
+                        className="bg-white/40 backdrop-blur-sm shadow-clayInset hover:bg-white/60 rounded-2xl p-2 transition-all duration-300 hover:scale-105"
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className={cn(
+                                    "w-[240px] justify-center text-left font-normal bg-white/60 backdrop-blur-sm border-0 shadow-clayInset hover:bg-white/80 rounded-2xl transition-all duration-300",
+                                    !selectedDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {selectedDate ? getFormattedDateRange(activeTab, selectedDate) : "Pick a date"}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-clayGlass backdrop-blur-sm border-0 shadow-clay rounded-3xl" align="center">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={handleDateChange}
+                                initialFocus
+                                className="pointer-events-auto"
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    <button 
+                        onClick={() => navigateDate('next')}
+                        className="bg-white/40 backdrop-blur-sm shadow-clayInset hover:bg-white/60 rounded-2xl p-2 transition-all duration-300 hover:scale-105"
+                    >
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
                 </div>
-                <Button onClick={handleDownloadPDF} size="sm" disabled={isDownloading || isLoading || !report} className="w-full sm:w-auto shadow-sm">
-                    {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>} {isDownloading ? "Downloading..." : "Download PDF"}
+            </div>
+
+            {/* Download Button */}
+            <div className="mb-6 flex justify-end">
+                <Button 
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloading || isLoading || !report}
+                    className="bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl shadow-clay transition-all duration-300 hover:shadow-clayStrong hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                >
+                    {isDownloading ? (
+                        <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                        </>
+                    )}
                 </Button>
             </div>
-            {/* Date Navigation */}
-            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-muted/50 p-2 rounded-md border shadow-inner">
-                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateDate('prev')} aria-label="Previous Period"> <ChevronLeft className="h-4 w-4" /> </Button>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant={"outline"} className={cn("w-[200px] sm:w-[280px] justify-start text-left font-normal h-8 sm:h-9 text-xs sm:text-sm", !selectedDate && "text-muted-foreground")}>
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {getFormattedDateRange(activeTab, selectedDate)}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={selectedDate} onSelect={handleDateChange} initialFocus />
-                    </PopoverContent>
-                </Popover>
-                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateDate('next')} aria-label="Next Period"> <ChevronRight className="h-4 w-4" /> </Button>
-            </div>
-        </CardHeader>
+        </>
     );
 };
 
 export default ReportHeader;
 
-    

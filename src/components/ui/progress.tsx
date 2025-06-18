@@ -15,8 +15,14 @@ const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
   ProgressProps // Use the extended props type
 >(({ className, value, indicatorClassName, ...props }, ref) => {
-    // Ensure value is within 0-100 range for percentage
-    const progressPercentage = value !== undefined ? Math.max(0, Math.min(100, value)) : 0;
+    // Ensure value is within 0-100 range for percentage and handle invalid values
+    const safeValue = Number(value) || 0;
+    const progressPercentage = Math.max(0, Math.min(100, safeValue));
+
+    // Debug logging for invalid values
+    if (isNaN(safeValue) || !isFinite(safeValue)) {
+        console.warn('[Progress] Invalid value passed to Progress component:', value);
+    }
 
     return (
         <ProgressPrimitive.Root

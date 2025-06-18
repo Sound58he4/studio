@@ -19,12 +19,11 @@ import type { UserFriend, StoredFoodLogEntry, StoredExerciseLogEntry, WeeklyWork
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, isToday, isYesterday, formatDistanceToNow, subDays } from 'date-fns';
 import ProgressRing from '@/components/ui/ProgressRing';
 import { Progress } from '@/components/ui/progress';
-// ChatHeader is now handled by the parent FriendsPage
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ProgressViewerProps {
     friend: UserFriend | null;
     currentUserId: string | null;
-    // onClose is handled by parent through ChatHeader
 }
 
 const formatLabel = (value?: string) => value?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Not Set';
@@ -142,130 +141,351 @@ const ProgressViewer: React.FC<ProgressViewerProps> = ({ friend, currentUserId }
         return 'N/A';
     }, [friend?.since]);
 
-    const renderLoading = () => ( <div className="flex justify-center items-center h-60"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> );
-    const renderError = () => ( <div className="p-6 text-center"><AlertCircle className="mx-auto h-10 w-10 text-destructive mb-2" /><p className="text-destructive font-semibold">Error Loading Progress</p><p className="text-sm text-muted-foreground mt-1">{error || "Could not load friend's progress data."}</p></div> );
+    const renderLoading = () => ( 
+        <motion.div 
+            className="flex justify-center items-center h-60"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+        >
+            <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            >
+                <Loader2 className="h-8 w-8 text-blue-600" />
+            </motion.div>
+        </motion.div> 
+    );
+    
+    const renderError = () => ( 
+        <motion.div 
+            className="p-6 text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+        >
+            <AlertCircle className="mx-auto h-10 w-10 text-red-600 mb-2" />
+            <p className="text-red-600 font-semibold">Error Loading Progress</p>
+            <p className="text-sm text-gray-600 mt-1">{error || "Could not load friend's progress data."}</p>
+        </motion.div> 
+    );
 
     const renderDailySummarySection = () => (
-        <div className="p-4 sm:p-5 border rounded-lg bg-card/50 shadow-sm animate-in fade-in duration-500">
-            <h3 className="text-lg font-semibold text-primary flex items-center justify-between mb-3">
+        <motion.div 
+            className="p-4 sm:p-5 border rounded-3xl bg-clayGlass backdrop-blur-sm shadow-clay border-0"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+        >
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center justify-between mb-3">
                 <span>{activeTab === 'today' ? "Today's Summary" : activeTab === 'yesterday' ? "Yesterday's Summary" : "Weekly Summary"}</span>
             </h3>
-            <p className="text-xs text-muted-foreground mb-4">Progress against targets</p>
+            <p className="text-xs text-gray-600 mb-4">Progress against targets</p>
             <div className="space-y-5">
-                <div className="flex flex-col items-center gap-2">
-                    <ProgressRing value={dailySummaryData.consumed.calories} max={dailySummaryData.targets.calories} size={110} strokeWidth={10} color="hsl(var(--primary))" label="Calories" unit="kcal" className="transition-transform duration-300 hover:scale-105" />
-                    <p className="text-xs text-muted-foreground font-medium"> {dailySummaryData.consumed.calories.toFixed(0)} / {dailySummaryData.targets.calories > 0 ? dailySummaryData.targets.calories.toFixed(0) : '-'} kcal </p>
-                </div>
-                <div className="space-y-4 pt-4 border-t mt-4">
+                <motion.div 
+                    className="flex flex-col items-center gap-2"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
+                >
+                    <ProgressRing 
+                        value={dailySummaryData.consumed.calories} 
+                        max={dailySummaryData.targets.calories} 
+                        size={110} 
+                        strokeWidth={10} 
+                        color="hsl(var(--primary))" 
+                        label="Calories" 
+                        unit="kcal" 
+                        className="transition-transform duration-300 hover:scale-105" 
+                    />
+                    <p className="text-xs text-gray-600 font-medium"> 
+                        {dailySummaryData.consumed.calories.toFixed(0)} / {dailySummaryData.targets.calories > 0 ? dailySummaryData.targets.calories.toFixed(0) : '-'} kcal 
+                    </p>
+                </motion.div>
+                <motion.div 
+                    className="space-y-4 pt-4 border-t mt-4"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.3 }}
+                >
                     <MacroProgressBar label="Protein" value={dailySummaryData.consumed.protein} target={dailySummaryData.targets.protein} unit="g" color="red" />
                     <MacroProgressBar label="Carbs" value={dailySummaryData.consumed.carbs} target={dailySummaryData.targets.carbs} unit="g" color="yellow" />
                     <MacroProgressBar label="Fat" value={dailySummaryData.consumed.fat} target={dailySummaryData.targets.fat} unit="g" color="green" />
-                </div>
-                <div className="text-center text-sm pt-4 border-t mt-4"> <p className="font-medium text-orange-600 dark:text-orange-400 flex items-center justify-center gap-1.5"> <Flame size={16}/> {dailySummaryData.burned} kcal Burned </p> </div>
+                </motion.div>
+                <motion.div 
+                    className="text-center text-sm pt-4 border-t mt-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6, duration: 0.3 }}
+                > 
+                    <p className="font-medium text-orange-600 flex items-center justify-center gap-1.5"> 
+                        <Flame size={16}/> {dailySummaryData.burned} kcal Burned 
+                    </p> 
+                </motion.div>
             </div>
-        </div>
+        </motion.div>
     );
 
     const renderWorkoutStatusSection = () => (
-        <div className="p-4 sm:p-5 border rounded-lg bg-card/50 shadow-sm animate-in fade-in duration-500 delay-100">
-            <h3 className="text-base font-semibold flex items-center gap-1.5 text-accent mb-3"> <Dumbbell size={16}/> {activeTab === 'today' ? "Today's Workout" : activeTab === 'yesterday' ? "Yesterday's Workout" : "Workout Plan"} </h3>
+        <motion.div 
+            className="p-4 sm:p-5 border rounded-3xl bg-clayGlass backdrop-blur-sm shadow-clay border-0"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+        >
+            <h3 className="text-base font-semibold flex items-center gap-1.5 text-gray-800 mb-3"> 
+                <Dumbbell size={16}/> {activeTab === 'today' ? "Today's Workout" : activeTab === 'yesterday' ? "Yesterday's Workout" : "Workout Plan"} 
+            </h3>
             <div className="text-sm max-h-60 overflow-y-auto">
                 {todaysPlanExercises.length > 0 && todaysPlanExercises[0].exercise.toLowerCase() === 'rest' ? (
-                    <p className="text-blue-600 dark:text-blue-400 italic flex items-center gap-1.5"><CalendarDays size={14}/> Rest Day</p>
+                    <motion.p 
+                        className="text-blue-600 italic flex items-center gap-1.5"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        <CalendarDays size={14}/> Rest Day
+                    </motion.p>
                 ) : todaysPlanExercises.length > 0 ? (
-                    <ul className="space-y-3 text-foreground/90">
-                        {todaysPlanExercises.map((ex, i) => (
-                            <li key={i} className="flex items-center justify-between gap-2 group border-b border-dashed pb-2 last:border-b-0">
-                                 <div className="flex items-center gap-2"> <WorkoutStatusIcon status={getWorkoutStatus()} /> <span className="font-medium">{ex.exercise}</span> </div>
-                                 <span className="text-muted-foreground text-xs whitespace-nowrap"> {(ex.sets || ex.reps) && `(${ex.sets ? `${ex.sets}x` : ''}${ex.reps || ''}${typeof ex.reps !== 'string' || !ex.reps.includes('min') ? ' reps' : ''})`} </span>
-                            </li>
-                        ))}
+                    <ul className="space-y-3 text-gray-800">
+                        <AnimatePresence>
+                            {todaysPlanExercises.map((ex, i) => (
+                                <motion.li 
+                                    key={i} 
+                                    className="flex items-center justify-between gap-2 group border-b border-dashed pb-2 last:border-b-0"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 + i * 0.1, duration: 0.3 }}
+                                >
+                                     <div className="flex items-center gap-2"> 
+                                         <WorkoutStatusIcon status={getWorkoutStatus()} /> 
+                                         <span className="font-medium">{ex.exercise}</span> 
+                                     </div>
+                                     <span className="text-gray-600 text-xs whitespace-nowrap"> 
+                                         {(ex.sets || ex.reps) && `(${ex.sets ? `${ex.sets}x` : ''}${ex.reps || ''}${typeof ex.reps !== 'string' || !ex.reps.includes('min') ? ' reps' : ''})`} 
+                                     </span>
+                                </motion.li>
+                            ))}
+                        </AnimatePresence>
                     </ul>
-                ) : ( <p className="text-muted-foreground italic text-center py-3">No plan set for this day.</p> )}
+                ) : ( 
+                    <motion.p 
+                        className="text-gray-600 italic text-center py-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                    >
+                        No plan set for this day.
+                    </motion.p> 
+                )}
             </div>
-        </div>
+        </motion.div>
     );
 
     const renderActivityLogSection = () => {
         const dateKey = format(displayDate, 'yyyy-MM-dd');
         const logs = friendLogs[dateKey] || { food: [], exercise: [] };
         return (
-           <div className="p-0 border rounded-lg bg-card/50 shadow-sm animate-in fade-in duration-500 delay-200 overflow-hidden">
+           <motion.div 
+               className="p-0 border rounded-3xl bg-clayGlass backdrop-blur-sm shadow-clay border-0 overflow-hidden"
+               initial={{ opacity: 0, y: 20 }}
+               animate={{ opacity: 1, y: 0 }}
+               transition={{ duration: 0.5, delay: 0.2 }}
+           >
                 <Tabs defaultValue="nutrition" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 h-11 rounded-t-lg rounded-b-none bg-muted/60">
-                        <TabsTrigger value="nutrition" className="text-sm flex items-center gap-1"><Utensils size={14} /> Nutrition</TabsTrigger>
-                        <TabsTrigger value="exercise" className="text-sm flex items-center gap-1"><Dumbbell size={14} /> Exercise</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 h-11 rounded-t-3xl rounded-b-none bg-white/60 backdrop-blur-sm border-0 shadow-clayInset">
+                        <TabsTrigger value="nutrition" className="text-sm flex items-center gap-1 text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-2xl">
+                            <Utensils size={14} /> Nutrition
+                        </TabsTrigger>
+                        <TabsTrigger value="exercise" className="text-sm flex items-center gap-1 text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-2xl">
+                            <Dumbbell size={14} /> Exercise
+                        </TabsTrigger>
                     </TabsList>
                     <TabsContent value="nutrition" className="px-3 sm:px-4 pb-4 mt-0 max-h-60 overflow-y-auto">
-                        {logs.food.length > 0 ? logs.food.map(log => (
-                            <div key={`food-${log.id}`} className="text-sm p-2 border-b border-dashed last:border-none flex justify-between items-center hover:bg-muted/30 rounded gap-2">
-                                <span className="font-medium text-foreground/90 truncate flex-grow">{log.foodItem}</span>
-                                <span className="text-muted-foreground flex-shrink-0 whitespace-nowrap text-xs">{format(parseISO(log.timestamp), 'p')} - {log.calories.toFixed(0)} kcal</span>
-                            </div>
-                        )) : <p className="text-muted-foreground italic text-center py-6 text-sm">No food logged.</p>}
+                        <AnimatePresence>
+                            {logs.food.length > 0 ? logs.food.map((log, index) => (
+                                <motion.div 
+                                    key={`food-${log.id}`} 
+                                    className="text-sm p-2 border-b border-dashed last:border-none flex justify-between items-center hover:bg-gray-50/50 rounded gap-2 transition-colors duration-200"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                                >
+                                    <span className="font-medium text-gray-800 truncate flex-grow">{log.foodItem}</span>
+                                    <span className="text-gray-600 flex-shrink-0 whitespace-nowrap text-xs">
+                                        {format(parseISO(log.timestamp), 'p')} - {log.calories.toFixed(0)} kcal
+                                    </span>
+                                </motion.div>
+                            )) : (
+                                <motion.p 
+                                    className="text-gray-600 italic text-center py-6 text-sm"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    No food logged.
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
                     </TabsContent>
                     <TabsContent value="exercise" className="px-3 sm:px-4 pb-4 mt-0 max-h-60 overflow-y-auto">
-                        {logs.exercise.length > 0 ? logs.exercise.map(log => (
-                            <div key={`ex-${log.id}`} className="text-sm p-2 border-b border-dashed last:border-none flex justify-between items-center hover:bg-muted/30 rounded gap-2">
-                                <span className="font-medium text-foreground/90 truncate flex-grow">{log.exerciseName}</span>
-                                <span className="text-muted-foreground flex-shrink-0 whitespace-nowrap text-xs">{format(parseISO(log.timestamp), 'p')}{log.estimatedCaloriesBurned ? ` - ${log.estimatedCaloriesBurned.toFixed(0)} kcal` : ''}</span>
-                            </div>
-                        )) : <p className="text-muted-foreground italic text-center py-6 text-sm">No exercise logged.</p>}
+                        <AnimatePresence>
+                            {logs.exercise.length > 0 ? logs.exercise.map((log, index) => (
+                                <motion.div 
+                                    key={`ex-${log.id}`} 
+                                    className="text-sm p-2 border-b border-dashed last:border-none flex justify-between items-center hover:bg-gray-50/50 rounded gap-2 transition-colors duration-200"
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                                >
+                                    <span className="font-medium text-gray-800 truncate flex-grow">{log.exerciseName}</span>
+                                    <span className="text-gray-600 flex-shrink-0 whitespace-nowrap text-xs">
+                                        {format(parseISO(log.timestamp), 'p')}{log.estimatedCaloriesBurned ? ` - ${log.estimatedCaloriesBurned.toFixed(0)} kcal` : ''}
+                                    </span>
+                                </motion.div>
+                            )) : (
+                                <motion.p 
+                                    className="text-gray-600 italic text-center py-6 text-sm"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                >
+                                    No exercise logged.
+                                </motion.p>
+                            )}
+                        </AnimatePresence>
                     </TabsContent>
                 </Tabs>
-           </div>
+           </motion.div>
         );
     };
 
-    // ChatHeader is now rendered by the parent FriendsPage
     return (
-        <div className="flex flex-col h-full bg-background">
+        <motion.div 
+            className="flex flex-col h-full bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
             {friend && !friend.isAI ? (
                 <>
-                    {/* Friend's Goal/Status Sub-header (Optional, if ChatHeader isn't enough) */}
-                    <div className="p-3 border-b bg-muted/40 text-xs text-center md:text-left">
-                        <span className="font-medium">Goal:</span> {formatLabel(friendProfile?.fitnessGoal)}
-                        <span className="mx-2 text-border">|</span>
-                        <span className="font-medium">Friend since:</span> {friendSince}
-                    </div>
+                    {/* Friend's Goal/Status Sub-header */}
+                    <motion.div 
+                        className="p-3 border-b bg-clayGlass backdrop-blur-sm text-xs text-center md:text-left shadow-clay border-0"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <span className="font-medium text-gray-800">Goal:</span> {formatLabel(friendProfile?.fitnessGoal)}
+                        <span className="mx-2 text-gray-400">|</span>
+                        <span className="font-medium text-gray-800">Friend since:</span> {friendSince}
+                    </motion.div>
 
-                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-shrink-0 border-b">
-                        <TabsList className="grid w-full grid-cols-3 h-10 bg-muted/60 rounded-none">
-                             <TabsTrigger value="today" className="text-xs"><CalendarDays size={14} className="mr-1"/> Today</TabsTrigger>
-                             <TabsTrigger value="yesterday" className="text-xs"><HistoryIcon size={14} className="mr-1"/> Yesterday</TabsTrigger>
-                             <TabsTrigger value="weekly" className="text-xs"><Calendar size={14} className="mr-1"/> This Week</TabsTrigger>
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="flex-shrink-0 border-b border-0">
+                        <TabsList className="grid w-full grid-cols-3 h-10 bg-clayGlass backdrop-blur-sm shadow-clay border-0 rounded-none">
+                             <TabsTrigger value="today" className="text-xs text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-xl">
+                                 <CalendarDays size={14} className="mr-1"/> Today
+                             </TabsTrigger>
+                             <TabsTrigger value="yesterday" className="text-xs text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-xl">
+                                 <HistoryIcon size={14} className="mr-1"/> Yesterday
+                             </TabsTrigger>
+                             <TabsTrigger value="weekly" className="text-xs text-gray-700 hover:text-blue-600 transition-colors duration-300 rounded-xl">
+                                 <Calendar size={14} className="mr-1"/> This Week
+                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    <ScrollArea className="flex-grow bg-gradient-to-b from-background to-muted/10">
+                    <ScrollArea className="flex-1 bg-transparent">
                          <div className="p-3 sm:p-4 space-y-5">
-                             {isLoading && renderLoading()} {error && renderError()}
+                             {isLoading && renderLoading()} 
+                             {error && renderError()}
                              {!isLoading && !error && friendProfile && (
                                  <>
-                                     { (activeTab === 'today' || activeTab === 'yesterday') && ( <> {renderDailySummarySection()} {renderWorkoutStatusSection()} {renderActivityLogSection()} </> )}
-                                     {activeTab === 'weekly' && ( <div className="p-4 border rounded-lg bg-card/50 shadow-sm"><h3 className="text-lg font-semibold">Weekly View (Coming Soon)</h3><p className="text-muted-foreground">Detailed weekly summary and trends will be here.</p></div> )}
+                                     { (activeTab === 'today' || activeTab === 'yesterday') && ( 
+                                         <> 
+                                             {renderDailySummarySection()} 
+                                             {renderWorkoutStatusSection()} 
+                                             {renderActivityLogSection()} 
+                                         </> 
+                                     )}
+                                     {activeTab === 'weekly' && ( 
+                                         <motion.div 
+                                             className="p-4 border rounded-3xl bg-clayGlass backdrop-blur-sm shadow-clay border-0"
+                                             initial={{ opacity: 0, y: 20 }}
+                                             animate={{ opacity: 1, y: 0 }}
+                                             transition={{ duration: 0.5 }}
+                                         >
+                                             <h3 className="text-lg font-semibold text-gray-800">Weekly View (Coming Soon)</h3>
+                                             <p className="text-gray-600">Detailed weekly summary and trends will be here.</p>
+                                         </motion.div> 
+                                     )}
                                  </>
                              )}
-                              {!isLoading && !error && !friendProfile && ( <p className="text-muted-foreground text-center py-6">Could not load friend's profile details to show progress.</p> )}
+                              {!isLoading && !error && !friendProfile && ( 
+                                  <motion.p 
+                                      className="text-gray-600 text-center py-6"
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ delay: 0.3 }}
+                                  >
+                                      Could not load friend's profile details to show progress.
+                                  </motion.p> 
+                              )}
                          </div>
                     </ScrollArea>
                 </>
             ) : (
-                // This fallback should ideally not be reached if parent manages selection
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic p-6 text-center bg-muted/20">
-                     <Eye size={48} className="mb-4 opacity-40"/>
+                <motion.div 
+                    className="flex flex-col items-center justify-center h-full text-gray-600 italic p-6 text-center bg-clayGlass/40 backdrop-blur-sm rounded-3xl shadow-clay m-4"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                >
+                     <motion.div
+                         animate={{ rotate: 360 }}
+                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                     >
+                         <Eye size={48} className="mb-4 opacity-40"/>
+                     </motion.div>
                     Loading progress view...
-                </div>
+                </motion.div>
             )}
-        </div>
+        </motion.div>
     );
 };
 
-interface MacroProgressBarProps { label: string; value: number; target: number; unit: string; color: 'red' | 'yellow' | 'green' | 'blue' | 'purple'; }
+interface MacroProgressBarProps { 
+    label: string; 
+    value: number; 
+    target: number; 
+    unit: string; 
+    color: 'red' | 'yellow' | 'green' | 'blue' | 'purple'; 
+}
+
 const MacroProgressBar: React.FC<MacroProgressBarProps> = ({ label, value, target, unit, color }) => {
     const progressPercent = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
-    const colorClasses = { red: { text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500' }, yellow: { text: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-500' }, green: { text: 'text-green-600 dark:text-green-400', bg: 'bg-green-500' }, blue: { text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-500' }, purple: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500' }, };
+    const colorClasses = { 
+        red: { text: 'text-red-600', bg: 'bg-red-500' }, 
+        yellow: { text: 'text-yellow-600', bg: 'bg-yellow-500' }, 
+        green: { text: 'text-green-600', bg: 'bg-green-500' }, 
+        blue: { text: 'text-blue-600', bg: 'bg-blue-500' }, 
+        purple: { text: 'text-purple-600', bg: 'bg-purple-500' }, 
+    };
     const currentColors = colorClasses[color];
-    return ( <div className="text-xs sm:text-sm"> <div className="flex justify-between items-baseline mb-1"> <span className={cn("font-medium", currentColors.text)}>{label}</span> <span className="text-muted-foreground font-mono">{value.toFixed(1)} / {target > 0 ? target.toFixed(1) : '-'}{unit}</span> </div> <Progress value={progressPercent} indicatorClassName={cn(currentColors.bg)} className="h-1.5 sm:h-2" /> </div> );
+    
+    return ( 
+        <motion.div 
+            className="text-xs sm:text-sm"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+        > 
+            <div className="flex justify-between items-baseline mb-1"> 
+                <span className={cn("font-medium", currentColors.text)}>{label}</span> 
+                <span className="text-gray-600 font-mono">{value.toFixed(1)} / {target > 0 ? target.toFixed(1) : '-'}{unit}</span> 
+            </div> 
+            <Progress value={progressPercent} indicatorClassName={cn(currentColors.bg)} className="h-1.5 sm:h-2" /> 
+        </motion.div> 
+    );
 };
 
 export default ProgressViewer;

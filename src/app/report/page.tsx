@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from "@/components/ui/card";
 import { Tabs } from "@/components/ui/tabs";
+import { FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
 import { getUserProfile, getFoodLogs, getExerciseLogs } from '@/services/firestore';
@@ -245,67 +246,90 @@ export default function ReportPage() {
 
     console.log(`[Report Page] Rendering main report view for key: ${currentPeriodKey}. isLoadingLogs: ${currentPeriodData.isLoadingLogs}, isLoadingReport: ${currentPeriodData.isLoadingReport}`);
     return (
-        <motion.div 
-            className="max-w-4xl mx-auto my-4 md:my-8 px-4"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-            <motion.div
-                className="relative overflow-hidden rounded-lg"
-                whileHover={{ scale: 1.002 }}
-                transition={{ duration: 0.2 }}
-            >
-                <Card className="shadow-xl border border-border/20 overflow-hidden bg-card/95 backdrop-blur-sm">
-                    <motion.div
-                        className="absolute inset-0 opacity-20 pointer-events-none"
-                        animate={{ 
-                            background: [
-                                "radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 60%)",
-                                "radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 60%)",
-                                "radial-gradient(circle at 50% 10%, rgba(34, 197, 94, 0.1) 0%, transparent 60%)"
-                            ]
-                        }}
-                        transition={{ 
-                            duration: 12,
-                            repeat: Infinity,
-                            ease: "linear"
-                        }}
-                    />
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+        <div className="min-h-screen bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200 animate-fade-in pb-20 md:pb-0">
+            <div className="p-6">
+                <div className="max-w-6xl mx-auto">
+                    {/* Header */}
+                    <motion.div 
+                        className="mb-6 animate-slide-down"
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative z-10"
+                        transition={{ duration: 0.6 }}
                     >
-                        <ReportHeader
-                            selectedDate={selectedDate}
-                    activeTab={activeTab}
-                    setSelectedDate={setSelectedDate}
-                    isDownloading={isDownloading}
-                    setIsDownloading={setIsDownloading}
-                    isLoading={currentPeriodData.isLoadingLogs || currentPeriodData.isLoadingReport}
-                    report={currentPeriodData.report}
-                    reportContentRef={reportContentRef}
-                    getDateRange={getDateRange}
-                        />
-                        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReportType)} className="w-full">
-                            <ReportTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-                            <ReportContentArea
-                                activeTab={activeTab}
-                                isLoading={currentPeriodData.isLoadingLogs || currentPeriodData.isLoadingReport}
-                                error={currentPeriodData.error}
-                                report={currentPeriodData.report}
-                                reportContentRef={reportContentRef}
-                                fetchAndGenerateForTab={fetchReportData}
-                                selectedDate={selectedDate}
-                                userProfile={userProfile} // Pass userProfile here
-                            />
-                        </Tabs>
+                        <div className="bg-clayGlass backdrop-blur-sm rounded-3xl shadow-clay border-0 p-6 transition-all duration-500">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center mb-2">
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-clayInset mr-3 animate-scale-in">
+                                            <FileText className="w-6 h-6 text-white" />
+                                        </div>
+                                        <h1 className="text-3xl font-bold text-gray-800">Your Progress Report</h1>
+                                    </div>
+                                    <p className="text-gray-600">Review your performance and get AI-powered insights.</p>
+                                </div>
+                            </div>
+                        </div>
                     </motion.div>
-                </Card>
-            </motion.div>
-        </motion.div>
+
+                    {/* Main Card Container */}
+                    <motion.div
+                        className="bg-clayGlass backdrop-blur-sm rounded-3xl shadow-clay border-0 animate-scale-in"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                        <div className="relative overflow-hidden">
+                            <motion.div
+                                className="absolute inset-0 opacity-20 pointer-events-none"
+                                animate={{ 
+                                    background: [
+                                        "radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.1) 0%, transparent 60%)",
+                                        "radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 60%)",
+                                        "radial-gradient(circle at 50% 10%, rgba(34, 197, 94, 0.1) 0%, transparent 60%)"
+                                    ]
+                                }}
+                                transition={{ 
+                                    duration: 12,
+                                    repeat: Infinity,
+                                    ease: "linear"
+                                }}
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.4, duration: 0.5 }}
+                                className="relative z-10 p-6"
+                            >
+                                <ReportHeader
+                                    selectedDate={selectedDate}
+                                    activeTab={activeTab}
+                                    setSelectedDate={setSelectedDate}
+                                    isDownloading={isDownloading}
+                                    setIsDownloading={setIsDownloading}
+                                    isLoading={currentPeriodData.isLoadingLogs || currentPeriodData.isLoadingReport}
+                                    report={currentPeriodData.report}
+                                    reportContentRef={reportContentRef}
+                                    getDateRange={getDateRange}
+                                />
+                                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReportType)} className="w-full">
+                                    <ReportTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <ReportContentArea
+                                        activeTab={activeTab}
+                                        isLoading={currentPeriodData.isLoadingLogs || currentPeriodData.isLoadingReport}
+                                        error={currentPeriodData.error}
+                                        report={currentPeriodData.report}
+                                        reportContentRef={reportContentRef}
+                                        fetchAndGenerateForTab={fetchReportData}
+                                        selectedDate={selectedDate}
+                                        userProfile={userProfile}
+                                    />
+                                </Tabs>
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
+        </div>
     );
 }
 

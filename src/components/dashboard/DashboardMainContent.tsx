@@ -24,9 +24,8 @@ interface DashboardMainContentProps {
     error: string | null;
     userProfile: StoredUserProfile | null;
     dailyTargets: CalculateTargetsOutput | null;
-    periodTotals: PeriodTotals;
-    activePeriodTab: 'daily' | 'weekly';
-    setActivePeriodTab: (tab: 'daily' | 'weekly') => void;
+    periodTotals: PeriodTotals;    activePeriodTab: 'daily' | 'weekly' | 'ai-targets';
+    setActivePeriodTab: (tab: 'daily' | 'weekly' | 'ai-targets') => void;
     handleRecalculateAiTargets: () => void;
     isCalculatingTargets: boolean;
     isLoadingTotals: boolean;

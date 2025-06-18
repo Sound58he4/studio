@@ -224,18 +224,16 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       });
     }
   }, [isClient, router]);
-
   return (
     <div 
       className={cn(
-        "min-h-screen flex flex-col",
+        "min-h-screen flex flex-col bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200",
         !themeApplied ? 'opacity-0' : 'opacity-100'
       )}
-    >
-      {/* Top Navigation - Desktop Only */}
+    >      {/* Top Navigation - Desktop Only */}
       {shouldShowTopNav && (
         <header 
-          className="bg-card/90 text-card-foreground shadow-md sticky top-0 z-50 border-b backdrop-blur-lg hidden md:block"
+          className="bg-clayGlass backdrop-blur-lg border-b border-white/20 sticky top-0 z-50 shadow-clay animate-slide-down hidden md:block"
         >
           <div className={cn(
             "container mx-auto flex justify-between items-center max-w-7xl gap-4",
@@ -328,12 +326,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       
       <Toaster />
       <RoutePreloader />
-      
-      {/* Bottom Navigation - Mobile Only */}
+        {/* Bottom Navigation - Mobile Only */}
       {shouldShowBottomNav && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
           <div
-            className="bg-background/95 backdrop-blur-xl border-t border-border shadow-lg py-2"
+            className="bg-clayGlass backdrop-blur-xl border-t border-white/50 shadow-clayStrong py-2"
             style={{
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
             }}

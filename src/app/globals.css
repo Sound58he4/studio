@@ -95,6 +95,24 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    /* Hide scrollbars globally */
+    overflow-x: hidden;
+  }
+
+  /* Hide scrollbars for all elements */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer and Edge */
+  }
+
+  /* Hide scrollbars for webkit browsers (Chrome, Safari, Edge) */
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Ensure content is still scrollable */
+  html, body {
+    overflow-y: auto;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -117,24 +135,6 @@
     transform: translateY(-1px);
   }
 
-  /* Custom scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-muted/50;
-    border-radius: 10px;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-primary/60;
-    border-radius: 10px;
-    transition: background-color 0.3s ease;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary/80;
-  }
-
   /* Selection styling */
   ::selection {
     @apply bg-primary/20 text-primary;
@@ -145,6 +145,129 @@
     @apply outline-none ring-2 ring-primary/50 ring-offset-2 ring-offset-background;
     outline-offset: 2px;
   }
+}
+
+/*--------------------*/
+/* Clay Design System */
+/*--------------------*/
+@layer utilities {
+  /* Base animations - consistent across all pages */
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+  .animate-slide-up {
+    animation: slide-up 0.4s cubic-bezier(0.33,1,0.68,1);
+  }
+  .animate-slide-down {
+    animation: slide-down 0.4s cubic-bezier(0.33,1,0.68,1);
+  }
+  .animate-scale-in {
+    animation: scale-in 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .animate-stagger-in {
+    animation: fade-in 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  /* Unified component classes */
+  .page-container {
+    @apply min-h-screen pb-20 md:pb-0;
+  }
+  
+  .page-content {
+    @apply max-w-6xl mx-auto px-4 py-6 md:px-6 md:py-8;
+  }
+  
+  .page-header {
+    @apply text-center mb-8 animate-slide-up;
+  }
+  
+  .page-title {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold mb-4;
+  }
+  
+  .page-subtitle {
+    @apply text-base md:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed;
+  }
+
+  /* Card system */
+  .card-container {
+    @apply grid gap-4 md:gap-6;
+  }
+  
+  .card-interactive {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer;
+  }
+  
+  .card-content {
+    @apply p-4 md:p-6;
+  }
+
+  /* Button system */
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 md:px-6 md:py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+
+  /* Mobile-first responsive utilities */
+  .mobile-optimized {
+    @apply text-sm md:text-base;
+  }
+  
+  .mobile-spacing {
+    @apply space-y-4 md:space-y-6;
+  }
+  
+  .mobile-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Enhanced scrollbar hiding - covers all scenarios */
+  .scrollbar-hide { 
+    -ms-overflow-style: none; 
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none; 
+  }
+
+  /* Global scrollbar hiding for any overflow */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Consistent keyframes for all animations */
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(20px);}
+  100% { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes slide-up {
+  0% { opacity: 0; transform: translateY(30px);}
+  100% { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes slide-down {
+  0% { opacity: 0; transform: translateY(-20px);}
+  100% { opacity: 1; transform: translateY(0);}
+}
+
+@keyframes scale-in {
+  0% { opacity: 0; transform: scale(0.95);}
+  100% { opacity: 1; transform: scale(1);}
 }
 
 @layer components {
@@ -322,6 +445,35 @@
   }
 }
 
+/*---------------------------*/
+/* Professional Color System */
+/*---------------------------*/
+.fitness-gradient-bg {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 40%, #f1f5f9 100%);
+}
+
+.ai-gradient-bg {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 40%, #f8fafc 100%);
+}
+
+/* Focus states for accessibility */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2;
+}
+
+/* Mobile navigation specific styling */
+.mobile-nav-item {
+  @apply flex flex-col items-center justify-center px-1 py-2 min-w-[60px] max-w-[70px] rounded-lg transition-all duration-200 focus-ring;
+}
+
+.mobile-nav-active {
+  @apply text-blue-600 bg-blue-50 font-semibold shadow-sm;
+}
+
+.mobile-nav-inactive {
+  @apply text-gray-600 hover:text-blue-500 hover:bg-gray-50;
+}
+
 /* Water wave animation using transform and opacity for the card itself */
 .animate-water-wave {
   animation: water-wave-effect 3s infinite ease-in-out; /* Uses keyframe from tailwind.config.ts */
@@ -330,137 +482,23 @@
 .animate-subtle-pulse { /* Added to ensure the class is usable */
     animation: subtle-pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
-/* Enhanced keyframe animations */
-@keyframes flicker-glow {
-  0%, 100% {
-    text-shadow: 0 0 3px hsl(var(--primary-foreground)/0.5),
-                 0 0 8px #FFD700,
-                 0 0 12px #FFD700,
-                 0 0 20px #FFA500,
-                 0 0 30px #FF8C00;
-    opacity: 1;
-  }
-  50% {
-    text-shadow: 0 0 4px hsl(var(--primary-foreground)/0.6),
-                 0 0 10px #FFEA00,
-                 0 0 15px #FFEA00,
-                 0 0 25px #FFBF00,
-                 0 0 35px #FFA500;
-    opacity: 0.9;
-  }
-}
 
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-    box-shadow: 0 0 30px hsl(var(--primary) / 0.6);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes slide-in-bottom {
-  0% {
-    transform: translateY(100px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes bounce-in {
-  0% {
-    transform: scale(0.3);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  70% {
-    transform: scale(0.9);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-2px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(2px);
-  }
-}
-
-/* Performance optimization for animations */
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-slide-in-bottom {
-  animation: slide-in-bottom 0.6s ease-out forwards;
-}
-
-.animate-bounce-in {
-  animation: bounce-in 0.8s ease-out forwards;
-}
-
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* Smooth scrolling utilities */
-.scroll-smooth {
-  scroll-behavior: smooth;
-}
-
-/* Enhanced scrollbar classes for better UX */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.scrollbar-thumb-accent\/30::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--accent) / 0.3);
-  border-radius: 10px;
-  transition: all 0.3s ease;
-}
-
-.scrollbar-thumb-accent\/50:hover::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--accent) / 0.5);
-}
-
-.scrollbar-track-transparent::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-/* Firefox scrollbar styling */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--accent) / 0.3) transparent;
-}
-
-/* Scroll margin for better focus behavior */
-.scroll-mt-4 {
-  scroll-margin-top: 1rem;
+/* Mobile Menu Overlay - Ensure it appears above all other elements and covers entire screen */
+.mobile-menu-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important; /* Dynamic viewport height for mobile browsers */
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  z-index: 9999 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
 }

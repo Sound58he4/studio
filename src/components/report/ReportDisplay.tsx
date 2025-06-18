@@ -14,10 +14,13 @@ interface ReportDisplayProps {
 }
 
 const SectionCard: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode; className?: string }> = ({ title, icon: Icon, children, className }) => (
-    <Card className={cn("shadow-md border border-border/30 bg-card/70 overflow-hidden transition-shadow hover:shadow-lg", className)}>
-        <CardHeader className="pb-3 pt-4 px-4 sm:px-5 bg-muted/30 border-b">
-            <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-2 text-foreground/90">
-                <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" /> {title}
+    <Card className={cn("bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl transition-all duration-300 hover:shadow-clay", className)}>
+        <CardHeader className="pb-3 pt-4 px-4 sm:px-5">
+            <CardTitle className="text-base sm:text-lg font-semibold flex items-center gap-3 text-gray-800">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-clayInset">
+                    <Icon className="h-5 w-5 text-white" />
+                </div>
+                {title}
             </CardTitle>
         </CardHeader>
         <CardContent className="p-4 sm:p-5 text-sm">
@@ -47,79 +50,142 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report }) => {
     }
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* 1. Overall Summary */}
-            <Card className="shadow-lg border-primary/20 bg-gradient-to-br from-primary/5 to-card">
+        <div className="space-y-6 animate-fade-in">
+            {/* Daily Report Header */}
+            <Card className="mb-6 bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl">
                 <CardHeader>
-                    <CardTitle className="text-xl sm:text-2xl text-primary">{report.reportTitle}</CardTitle>
-                    <CardDescription className="text-sm sm:text-base">{report.overallSummary}</CardDescription>
+                    <CardTitle className="text-blue-600 text-xl sm:text-2xl">{report.reportTitle}</CardTitle>
                 </CardHeader>
+                <CardContent>
+                    <p className="text-gray-700 leading-relaxed">{report.overallSummary}</p>
+                </CardContent>
             </Card>
 
-            {/* 2. Macronutrient Consumption */}
-            <SectionCard title="Macronutrient Analysis" icon={Utensils}>
+            {/* Macronutrient Analysis */}
+            <SectionCard title="Macronutrient Analysis" icon={TrendingUp} className="bg-white/40">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                     <MacronutrientChart data={calorieData} title="Avg. Daily Calories" targetKey="target" valueKey="consumed" unit="kcal" />
                     <MacronutrientChart data={macroData} title="Avg. Daily Macros" targetKey="target" valueKey="consumed" unit="g" showLabels/>
                 </div>
-                 <Separator className="my-4" />
-                 <p className="text-xs italic text-muted-foreground mt-3">{report.macronutrientConsumption.feedback}</p>
+                <p className="text-sm text-gray-600 mt-4">{report.macronutrientConsumption.feedback}</p>
             </SectionCard>
 
-            {/* 3. Food Variety & Healthiness */}
-            <SectionCard title="Food Choices" icon={Utensils}>
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <div>
-                         <h4 className="font-medium text-green-600 dark:text-green-400 mb-2 flex items-center gap-1"><ThumbsUp size={16}/> Healthy Choices</h4>
-                         {report.foodVarietyAndHealthiness.healthiestFoods.length > 0 ? (
-                             <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                                 {report.foodVarietyAndHealthiness.healthiestFoods.map((food, i) => <li key={`h-${i}`}>{food}</li>)}
-                             </ul>
-                         ) : <p className="text-muted-foreground text-xs italic">No specific healthy items identified.</p>}
-                     </div>
-                     <div>
-                         <h4 className="font-medium text-red-600 dark:text-red-400 mb-2 flex items-center gap-1"><ThumbsDown size={16}/> Areas to Watch</h4>
-                          {report.foodVarietyAndHealthiness.lessHealthyFoods.length > 0 ? (
-                             <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                                 {report.foodVarietyAndHealthiness.lessHealthyFoods.map((food, i) => <li key={`lh-${i}`}>{food}</li>)}
-                             </ul>
-                         ) : <p className="text-muted-foreground text-xs italic">No specific less healthy items identified.</p>}
-                     </div>
-                 </div>
-                 <Separator className="my-4" />
-                 <p className="text-xs italic text-muted-foreground mt-3">{report.foodVarietyAndHealthiness.feedback}</p>
+            {/* Food Choices */}
+            <SectionCard title="Food Choices" icon={Target} className="bg-white/40">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-green-50/80 backdrop-blur-sm rounded-2xl p-4 shadow-clayInset">
+                        <div className="flex items-center mb-3">
+                            <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                            <h3 className="font-semibold text-green-600">Healthy Choices</h3>
+                        </div>
+                        {report.foodVarietyAndHealthiness.healthiestFoods.length > 0 ? (
+                            <ul className="space-y-1">
+                                {report.foodVarietyAndHealthiness.healthiestFoods.map((food, i) => (
+                                    <li key={`h-${i}`} className="text-gray-700 flex items-center">
+                                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                        {food}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-gray-600 text-sm italic">No specific healthy items identified.</p>
+                        )}
+                    </div>
+                    <div className="bg-red-50/80 backdrop-blur-sm rounded-2xl p-4 shadow-clayInset">
+                        <div className="flex items-center mb-3">
+                            <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
+                            <h3 className="font-semibold text-red-600">Areas to Watch</h3>
+                        </div>
+                        {report.foodVarietyAndHealthiness.lessHealthyFoods.length > 0 ? (
+                            <ul className="space-y-1">
+                                {report.foodVarietyAndHealthiness.lessHealthyFoods.map((food, i) => (
+                                    <li key={`lh-${i}`} className="text-gray-700 flex items-center">
+                                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                        {food}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-gray-600 text-sm italic">No specific less healthy items identified.</p>
+                        )}
+                    </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-4">{report.foodVarietyAndHealthiness.feedback}</p>
             </SectionCard>
 
-            {/* 4. Progress Highlights */}
-            <SectionCard title="Progress Highlights" icon={CheckCircle}>
-                 <div className="flex items-center gap-3 mb-3">
-                     {renderTrendIcon()}
-                     <p className="font-medium capitalize">{report.progressHighlights.trend} Trend</p>
-                 </div>
-                 <ul className="list-disc list-inside space-y-1 pl-1 text-foreground/90">
-                    {report.progressHighlights.points.map((point, i) => <li key={`p-${i}`}>{point}</li>)}
-                </ul>
+            {/* Progress Highlights */}
+            <SectionCard title="Progress Highlights" icon={CheckCircle} className="bg-white/40">
+                <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <div className="flex items-center mb-2">
+                        {renderTrendIcon()}
+                        <span className="font-medium text-blue-800 ml-2 capitalize">{report.progressHighlights.trend} Trend</span>
+                    </div>
+                    <ul className="space-y-2">
+                        {report.progressHighlights.points.map((point, i) => (
+                            <li key={`p-${i}`} className="text-blue-700 flex items-start">
+                                <span className="w-1.5 h-1.5 bg-blue-600 rounded-full mr-2 mt-2"></span>
+                                {point}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             </SectionCard>
 
-            {/* 5. Personalized Feedback & Improvements */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <SectionCard title="Bago's Feedback" icon={BrainCircuit}>
-                     <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                         {report.personalizedFeedback.map((feedback, i) => <li key={`f-${i}`}>{feedback}</li>)}
-                     </ul>
-                 </SectionCard>
-                 <SectionCard title="Key Improvement Areas" icon={ListChecks}>
-                     <ul className="list-disc list-inside space-y-1 text-foreground/90">
-                         {report.keyImprovementAreas.map((area, i) => <li key={`imp-${i}`}>{area}</li>)}
-                     </ul>
-                 </SectionCard>
+            {/* Feedback and Improvement Areas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <Card className="bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-gray-800 text-lg">
+                            <span className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center mr-2">
+                                <span className="text-purple-600 font-bold text-sm">B</span>
+                            </span>
+                            Bago's Feedback
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {report.personalizedFeedback.map((feedback, i) => (
+                                <li key={`f-${i}`} className="text-gray-700 flex items-start">
+                                    <span className="w-1.5 h-1.5 bg-purple-600 rounded-full mr-2 mt-2"></span>
+                                    {feedback}
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
+
+                <Card className="bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl">
+                    <CardHeader>
+                        <CardTitle className="flex items-center text-gray-800 text-lg">
+                            <TrendingUp className="w-5 h-5 mr-2 text-orange-600" />
+                            Key Improvement Areas
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <ul className="space-y-3">
+                            {report.keyImprovementAreas.map((area, i) => (
+                                <li key={`imp-${i}`} className="text-gray-700 flex items-start">
+                                    <span className="w-1.5 h-1.5 bg-orange-600 rounded-full mr-2 mt-2"></span>
+                                    {area}
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                </Card>
             </div>
 
-             {/* 6. Goal Timeline Estimate */}
-             <SectionCard title="Goal Outlook" icon={Clock} className="bg-gradient-to-r from-accent/5 to-card">
-                 <p className="italic text-muted-foreground">{report.goalTimelineEstimate}</p>
-             </SectionCard>
-
+            {/* Goal Outlook */}
+            <Card className="bg-white/40 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl">
+                <CardHeader>
+                    <CardTitle className="flex items-center text-gray-800">
+                        <Target className="w-5 h-5 mr-2 text-green-600" />
+                        Goal Outlook
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-gray-600 italic">{report.goalTimelineEstimate}</p>
+                </CardContent>
+            </Card>
         </div>
     );
 };

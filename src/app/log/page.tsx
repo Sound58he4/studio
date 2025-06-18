@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton"; 
-import { Camera, Mic, Type, Loader2, CheckCircle, AlertCircle, Upload, Trash2, Send, PlusCircle, ListRestart, Utensils, Pause, Play, Sparkles, BrainCircuit, Info, Scale } from "lucide-react"; 
+import { Camera, Mic, Type, Loader2, CheckCircle, AlertCircle, Upload, Trash2, Send, PlusCircle, ListRestart, Utensils, Pause, Play, Sparkles, BrainCircuit, Info, Scale, FileText, ChefHat, Brain, Target, Zap, ImageIcon, Volume2, Waves } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import { foodImageRecognition, FoodImageRecognitionInput, FoodImageRecognitionOutput } from '@/ai/flows/food-image-recognition';
 import { voiceFoodLogging, VoiceFoodLoggingInput, VoiceFoodLoggingOutput } from '@/ai/flows/voice-food-logging';
@@ -24,7 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
 import { useAuth } from '@/context/AuthContext'; 
 import { addFoodLog } from '@/services/firestore'; 
-import type { FirestoreFoodLogData } from '@/app/dashboard/types'; 
+import type { FirestoreFoodLogData } from '@/app/dashboard/types';
 
 interface ProcessedFoodResult extends Nutrition {
   id: string;
@@ -36,7 +36,8 @@ interface ProcessedFoodResult extends Nutrition {
 
 export default function LogFoodPage() {
   const { toast } = useToast();
-  const { user, userId, loading: authLoading } = useAuth();
+  const { user, userId, loading: authLoading } = useAuth();  // Always use light theme (clay design)
+  const lightTheme = true;
   const [activeTab, setActiveTab] = useState("manual");
   const [isLoading, setIsLoading] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
@@ -55,10 +56,10 @@ export default function LogFoodPage() {
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);  const [recordingTime, setRecordingTime] = useState(0);  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Always use light theme (clay design)
+  
   const resetInputState = useCallback((tabToKeep?: string) => {
       setError(null);
       setIsLoading(false);
@@ -82,13 +83,13 @@ export default function LogFoodPage() {
           }
            setRecordingTime(0);
       }
-      if (tabToKeep !== 'manual') {
+      if (tabToKeep !== 'text') {
           setManualInput("");
       }
   }, []);
 
   useEffect(() => {
-      if (activeTab !== 'manual') {
+      if (activeTab !== 'text') {
         setAiSuggestions([]);
         setSuggestionError(null);
         setIsSuggesting(false);
@@ -555,310 +556,505 @@ export default function LogFoodPage() {
    }
    if (!userId && !authLoading) {
         return <div className="text-center p-10">Please log in to access this page.</div>;
-   }
-
-  return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="min-h-screen w-full px-2 sm:px-4 py-2 sm:py-4 md:py-8"
-    >
-      {/* Animated background gradient */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 0.2 }}
-        className="fixed inset-0 bg-gradient-to-br from-green-500/5 via-blue-500/5 to-purple-500/5 pointer-events-none -z-10" 
-      />
-      
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <Card className="shadow-xl border border-border/20 bg-card/95 backdrop-blur-sm relative overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-3 sm:p-4 md:p-6">
-              <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary flex items-center gap-2">
-                 <Utensils className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7"/> 
-                 <span className="leading-tight">Log Your Meal</span>
-              </CardTitle>
-              <CardDescription className="text-sm sm:text-base mt-1 text-muted-foreground">
-                Add meals using text, image, or voice. Review AI estimations before confirming.
-              </CardDescription>
-            </CardHeader>
+   }  return (
+    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200">
+      <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6">
+        
+        {/* Header */}
+        <div className="mb-6 md:mb-8">
+          <div className="backdrop-blur-sm rounded-3xl shadow-clay border p-4 sm:p-6 md:p-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
+            {/* Decorative elements */}            <div className="absolute top-2 right-2 md:top-4 md:right-4 w-12 h-12 md:w-20 md:h-20 rounded-full blur-xl bg-clayBlue/30"></div>
+            <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 w-10 h-10 md:w-16 md:h-16 rounded-full blur-xl bg-clayPurple/30"></div>
             
-            <CardContent className="p-3 sm:p-4 md:p-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-4 sm:mb-6 bg-muted/80 h-10 sm:h-12 shadow-inner">
-                  <TabsTrigger value="manual" className="flex items-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-xs sm:text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 rounded-l-md">
-                    <Type className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5"/>
-                    <span className="hidden xs:inline">Text</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="image" className="flex items-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-xs sm:text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200">
-                    <Camera className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5"/>
-                    <span className="hidden xs:inline">Image</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-xs sm:text-sm md:text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all duration-200 rounded-r-md">
-                    <Mic className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5"/>
-                    <span className="hidden xs:inline">Voice</span>
-                  </TabsTrigger>
-                </TabsList>
+            <div className="relative z-10">
+              <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-3 md:mb-4">                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                  <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                </div>
+                <div className="text-center">                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-800">
+                    Log Your Meal
+                  </h1>
+                  <div className="flex items-center justify-center space-x-2 mt-1 md:mt-2">
+                    <Brain className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+                    <span className="font-semibold text-xs md:text-sm text-purple-600">AI-Powered Nutrition</span>
+                  </div>
+                </div>
+              </div>              <p className="text-center max-w-2xl mx-auto leading-relaxed text-sm sm:text-base md:text-lg px-2 text-gray-600">
+                Transform your nutrition tracking with intelligent meal logging. Use text descriptions, photos, or voice commands.
+              </p>
+              
+              {/* Stats Pills */}
+              <div className="flex justify-center space-x-2 md:space-x-3 mt-4 md:mt-6">                <div className="backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 shadow-lg border bg-clayGlass shadow-clay">
+                  <span className="text-xs md:text-sm font-semibold text-gray-700">🎯 Smart Detection</span>
+                </div>
+                <div className="backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 shadow-lg border bg-clayGlass shadow-clay">
+                  <span className="text-xs md:text-sm font-semibold text-gray-700">⚡ Instant Analysis</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                <TabsContent value="manual" className="space-y-3 sm:space-y-4 animate-in fade-in duration-300">
-                    <Label htmlFor="manual-food" className="text-sm sm:text-base font-medium block mb-1">Describe Your Meal</Label>
-                    <Textarea 
-                      id="manual-food" 
-                      placeholder="E.g., 'Large bowl of oatmeal with berries and nuts', 'Chicken curry with rice'" 
-                      value={manualInput} 
-                      onChange={(e) => setManualInput(e.target.value)} 
-                      className="min-h-[100px] sm:min-h-[120px] resize-y text-sm sm:text-base p-2 sm:p-3 shadow-sm focus:ring-2 focus:ring-primary/50 border-input bg-background/90 transition-shadow hover:shadow-md" 
-                      disabled={isLoading} 
-                      rows={3} 
+        {/* Tab Navigation */}        <div className="backdrop-blur-sm rounded-2xl shadow-clay border overflow-hidden mb-6 md:mb-8 transition-all duration-500 bg-clayGlass">
+          <div className="flex relative p-2">
+            {/* Active Tab Indicator */}            <div 
+              className={`absolute top-2 bottom-2 rounded-xl shadow-clayInset transition-all duration-500 ease-in-out bg-gradient-to-r from-purple-500 to-purple-600 ${
+                activeTab === 'manual' ? 'left-2 w-[calc(33.33%-0.5rem)]' :
+                activeTab === 'image' ? 'left-[33.33%] w-[calc(33.33%-0.5rem)]' :
+                'left-[66.66%] w-[calc(33.33%-0.5rem)]'
+              }`}
+            ></div>
+            
+            <button
+              onClick={() => setActiveTab('manual')}
+              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
+                activeTab === 'manual' 
+                  ? 'text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <FileText className="w-4 h-4 md:w-6 md:h-6" />
+              <span className="text-xs sm:text-sm md:text-lg">Text</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('image')}
+              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
+                activeTab === 'image' 
+                  ? 'text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Camera className="w-4 h-4 md:w-6 md:h-6" />
+              <span className="text-xs sm:text-sm md:text-lg">Photo</span>
+            </button>            <button
+              onClick={() => setActiveTab('voice')}
+              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
+                activeTab === 'voice' 
+                  ? 'text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <Mic className="w-4 h-4 md:w-6 md:h-6" />
+              <span className="text-xs sm:text-sm md:text-lg">Voice</span>
+            </button>
+          </div>
+        </div>        {/* Content Area */}        <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 sm:p-6 md:p-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
+          {/* Background elements */}
+          <div className="absolute top-0 right-0 w-20 h-20 md:w-32 md:h-32 rounded-full blur-2xl md:blur-3xl bg-clayBlue/20"></div>
+          <div className="absolute bottom-0 left-0 w-16 h-16 md:w-24 md:h-24 rounded-full blur-2xl md:blur-3xl bg-clayPurple/20"></div>
+          
+          <div className="relative z-10">            {/* Manual Tab Content */}
+            {activeTab === 'manual' && (
+              <div className="space-y-6 md:space-y-8">
+                <div>                  <div className="flex items-center space-x-3 mb-4 md:mb-6">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                      <FileText className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Describe Your Meal</h3>
+                  </div>
+                    <div className="backdrop-blur-sm rounded-2xl shadow-lg border p-4 md:p-6 transition-all duration-300 bg-clayGlass shadow-clayInset">
+                    <Textarea
+                      value={manualInput}
+                      onChange={(e) => setManualInput(e.target.value)}
+                      placeholder="Try describing: '2 scrambled eggs with whole wheat toast and avocado', 'Large grilled chicken Caesar salad', 'Homemade beef stir-fry with brown rice'..."
+                      className="w-full min-h-[120px] md:min-h-[140px] resize-none bg-transparent border-0 shadow-none text-sm sm:text-base md:text-lg focus:ring-0 focus:outline-none text-gray-800 placeholder:text-gray-500"
+                      disabled={isLoading}
                     />
-                     <div className="space-y-3 pt-2 sm:pt-3">
-                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                             <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                                <BrainCircuit size={16} className="text-primary"/> 
-                                <span>AI Suggestions</span>
-                                {isSuggesting && <Loader2 size={14} className="animate-spin text-primary ml-1"/>}
-                             </Label>
-                             <Button
-                                 type="button"
-                                 variant="secondary"
-                                 onClick={fetchSuggestions}
-                                 disabled={isSuggesting || !userId}
-                                 className={cn(
-                                   "text-sm h-9 px-4 font-medium transition-all duration-200",
-                                   "relative overflow-hidden group shadow hover:shadow-md",
-                                   "border border-primary/20 hover:border-primary/40",
-                                   "w-full sm:w-auto rounded-md",
-                                   isSuggesting ? "bg-primary/10" : "bg-gradient-to-r from-primary/10 via-background to-primary/5"
-                                 )}
-                             >
-                                 <span className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                                 <BrainCircuit size={16} className="mr-2 text-primary" /> 
-                                 <span className="relative z-10">{isSuggesting ? "Getting Suggestions..." : "Get AI Suggestions"}</span>
-                                 {isSuggesting && <Loader2 size={16} className="ml-2 animate-spin text-primary" />}
-                             </Button>
-                         </div>
-                          {isSuggesting ? (
-                             <div className="flex flex-wrap gap-2 animate-pulse">
-                                 {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />)}
-                             </div>
-                          ) : suggestionError ? (
-                              <p className="text-xs text-destructive">{suggestionError}</p>
-                          ) : aiSuggestions.length > 0 ? (
-                             <TooltipProvider delayDuration={100}>
-                                <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                                    {aiSuggestions.slice(0, 8).map((suggestion, index) => (
-                                        <Tooltip key={index}>
-                                            <TooltipTrigger asChild>
-                                               <Button
-                                                   type="button"
-                                                   variant="outline"
-                                                   size="sm"
-                                                    className={cn(
-                                                        "text-xs rounded-lg border-dashed hover:bg-primary/10 hover:border-primary/50 h-8 px-2 sm:px-3",
-                                                        "group relative overflow-hidden shadow-sm", 
-                                                        "transition-all duration-300 ease-out",
-                                                        "animate-in fade-in zoom-in-95 flex-shrink-0"
-                                                    )}
-                                                    style={{ animationDelay: `${index * 50}ms` }}
-                                                    onClick={() => {
-                                                        const textToSet = suggestion.quantity
-                                                            ? `${suggestion.suggestionName} (${suggestion.quantity})`
-                                                            : suggestion.suggestionName;
-                                                        setManualInput(textToSet);
-                                                        }}
-                                                    title={`Add "${suggestion.suggestionName}" to input`}
-                                               >
-                                                    <span className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                                                    <span className="relative z-10 truncate max-w-[120px] sm:max-w-none">{suggestion.suggestionName}</span>
-                                               </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="p-2 sm:p-3 max-w-xs bg-popover text-popover-foreground border shadow-lg rounded-md text-xs z-50">
-                                                <p className="font-semibold text-sm mb-1">{suggestion.suggestionName}</p>
-                                                <p className="text-muted-foreground mb-2 italic text-xs">{suggestion.reason}</p>
-                                                {suggestion.quantity && (
-                                                     <p className="text-muted-foreground mb-2 flex items-center gap-1 text-xs"><Scale size={12} /> Quantity: <span className="font-medium text-foreground/90">{suggestion.quantity}</span></p>
-                                                )}
-                                                <Separator className="my-2" />
-                                                <div className="grid grid-cols-2 gap-x-2 gap-y-1 tabular-nums text-xs">
-                                                    <span>Calories:</span><span className="font-medium">{suggestion.estimatedNutrition.calories.toFixed(0)} kcal</span>
-                                                    <span>Protein:</span><span className="font-medium">{suggestion.estimatedNutrition.protein.toFixed(1)} g</span>
-                                                    <span>Carbs:</span><span className="font-medium">{suggestion.estimatedNutrition.carbohydrates.toFixed(1)} g</span>
-                                                    <span>Fat:</span><span className="font-medium">{suggestion.estimatedNutrition.fat.toFixed(1)} g</span>
-                                                </div>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    ))}
-                                </div>
-                             </TooltipProvider>
-                         ) : (
-                              <p className="text-xs text-muted-foreground italic py-1">Click "Get AI Suggestions" to see personalized food recommendations based on your eating habits.</p>
-                         )}
-                     </div>
-
-                     <Button onClick={handleManualSubmit} disabled={!manualInput.trim() || isLoading} className="w-full text-sm sm:text-base py-2.5 sm:py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2">
-                       {isLoading && <><Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Processing...</>}
-                       {!isLoading && <><Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> Identify & Estimate</>}
-                     </Button>
-                </TabsContent>
-
-                <TabsContent value="image" className="space-y-3 sm:space-y-4 animate-in fade-in duration-300">
-                   <Label htmlFor="picture" className="text-sm sm:text-base font-medium block mb-1">Upload Meal Photo</Label>
-                   <div className="relative border-2 border-dashed border-muted rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center text-center min-h-[200px] sm:min-h-[250px] bg-muted/30 hover:border-primary transition-colors duration-200 group overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/10 to-card opacity-50 z-0"></div>
-                      <Input ref={imageInputRef} id="picture" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                      {imagePreview ? (
-                         <div className="relative mb-3 sm:mb-4 group-hover:scale-105 transition-transform duration-300 ease-out z-10">
-                           <Image src={imagePreview} alt="Meal preview" width={150} height={150} className="max-h-32 sm:max-h-40 w-auto rounded-md object-contain shadow-lg border" />
-                           <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md opacity-80 hover:opacity-100 transform hover:scale-110 transition-transform" onClick={(e) => { e.stopPropagation(); setImagePreview(null); setImageFile(null); if (imageInputRef.current) imageInputRef.current.value = ""; }}> <Trash2 className="h-3 w-3"/> </Button>
-                         </div>
-                      ) : ( <Camera className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10" /> )}
-                      <Button variant="outline" size="lg" onClick={triggerImageUpload} disabled={isLoading} className="shadow-md bg-card hover:bg-accent/10 hover:border-accent group-hover:scale-105 transition-transform duration-300 ease-out z-10 text-sm sm:text-base px-4 sm:px-6"> 
-                        <Upload className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> {imagePreview ? "Change Image" : "Select Image"} 
-                      </Button>
-                      {!imagePreview && <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-3 z-10 px-2">Upload a photo to identify food items.</p>}
                   </div>
-                  <Button onClick={handleImageSubmit} disabled={!imagePreview || isLoading} className="w-full text-sm sm:text-base py-2.5 sm:py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"> 
-                    {isLoading ? <><Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Analyzing...</> : <><Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> Add from Image</>} 
-                  </Button>
-                </TabsContent>
+                </div>
 
-                <TabsContent value="voice" className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
-                   <Label className="text-sm sm:text-base font-medium block mb-2">Record Meal Description</Label>
-                    <div className="border border-muted rounded-lg p-4 sm:p-6 flex flex-col items-center justify-center space-y-4 sm:space-y-5 min-h-[200px] sm:min-h-[250px] bg-gradient-to-br from-muted/20 via-card to-muted/30 shadow-inner relative overflow-hidden">
-                        {isRecording && (
-                           <div className="absolute inset-0 z-0 opacity-30 overflow-hidden rounded-lg"> 
-                               <div className="absolute bottom-0 left-1/2 w-[300%] h-[300%] bg-red-500/20 rounded-full animate-pulse origin-bottom" style={{ transform: 'translateX(-50%) scale(1)', animationDuration: '4s' }}></div>
-                               <div className="absolute bottom-0 left-1/2 w-[250%] h-[250%] bg-red-500/30 rounded-full animate-pulse origin-bottom" style={{ transform: 'translateX(-50%) scale(0.8)', animationDuration: '4s', animationDelay: '1s' }}></div>
-                           </div>
-                        )}
-                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 flex items-center justify-center z-10 mb-2 sm:mb-3">
-                           <div className={cn("absolute inset-0 rounded-full border-4 transition-all duration-500 ease-out", isRecording ? "border-red-500/50 scale-110 animate-ping" : "border-primary/30")}></div>
-                           <Mic className={cn("h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 z-10 transition-colors duration-300", isRecording ? "text-red-500" : "text-primary")} />
+                {/* AI Suggestions Section */}                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg relative overflow-hidden transition-all duration-300 bg-clayBlue/30 shadow-clay">                  <div className="absolute top-0 right-0 w-16 h-16 md:w-20 md:h-20 rounded-full blur-2xl bg-clayPurple/20"></div>
+                  <div className="relative z-10">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
+                      <div className="flex items-center space-x-3">                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                          <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                        </div>
+                        <div>                          <span className="text-sm sm:text-base md:text-lg font-bold text-gray-800">AI-Powered Smart Suggestions</span>
+                          <p className="text-xs md:text-sm text-gray-600">Personalized recommendations just for you</p>
+                        </div>
                       </div>
-                      <p className="text-base sm:text-lg font-mono font-semibold text-foreground min-w-[60px] text-center z-10 bg-background/50 px-2 sm:px-3 py-1 rounded-md shadow-sm border border-border/30"> {formatTime(recordingTime)} </p>
-                      <Button variant={isRecording ? "destructive" : "outline"} size="lg" onClick={isRecording ? stopRecording : startRecording} disabled={isLoading} className={cn(
-                           "w-full sm:w-auto px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 text-sm sm:text-base shadow-md bg-card",
-                           "transform hover:scale-105 transition-transform rounded-full z-10",
-                           "focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                           isRecording ? "hover:bg-red-700" : "hover:bg-primary/10 hover:text-primary hover:border-primary"
-                        )}>
-                           {isRecording ? <Pause className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> : <Play className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/>} 
-                           <span className="hidden xs:inline">{isRecording ? "Stop Recording" : "Start Recording"}</span>
-                           <span className="xs:hidden">{isRecording ? "Stop" : "Record"}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchSuggestions}                        className="backdrop-blur-sm border transition-all duration-200 shadow-lg rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-clayGlass text-gray-700 shadow-clay hover:bg-white/80"
+                        disabled={!userId || isSuggesting}
+                      >
+                        <Target className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                        {isSuggesting ? "Getting..." : "Get Suggestions"}
                       </Button>
-                       {audioPreviewUrl && !isRecording && (
-                           <div className="w-full mt-3 sm:mt-4 p-2 sm:p-3 bg-background rounded shadow-inner border z-10 animate-in fade-in duration-300">
-                              <p className="text-xs sm:text-sm text-muted-foreground mb-2">Preview Recording:</p>
-                              <audio controls src={audioPreviewUrl} className="w-full h-8 sm:h-10"></audio>
-                              <Button variant="link" size="sm" className="text-xs h-auto p-0 text-muted-foreground hover:text-destructive mt-1" onClick={() => {
-                                  if (audioPreviewUrl) {
-                                      URL.revokeObjectURL(audioPreviewUrl);
-                                  }
-                                  setAudioPreviewUrl(null); 
-                                  setAudioBlob(null);
-                              }}>Clear Recording</Button>
-                           </div>
-                       )}
-                        {!isRecording && !audioPreviewUrl && ( 
-                            <div className="text-center z-10 px-2 sm:px-4">
-                                <p className="text-xs sm:text-sm text-muted-foreground mb-2">Click "Start Recording" and describe your meal aloud.</p>
-                                <p className="text-xs text-muted-foreground">(e.g., "I had a grilled chicken salad")</p>
-                                <p className="text-xs text-muted-foreground mt-2 italic">Note: Requires microphone permission and HTTPS/localhost</p>
-                            </div>
-                        )}
+                    </div>                    <p className="leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
+                      Get intelligent food recommendations tailored to your dietary preferences, nutritional goals, and eating patterns.
+                    </p>
+                    
+                    {/* AI Suggestions Display */}
+                    <div className="mt-4">
+                      {isSuggesting ? (
+                        <div className="flex flex-wrap gap-2 animate-pulse">
+                          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />)}
+                        </div>
+                      ) : suggestionError ? (
+                        <p className="text-xs text-destructive">{suggestionError}</p>
+                      ) : aiSuggestions.length > 0 ? (
+                        <TooltipProvider delayDuration={100}>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {aiSuggestions.slice(0, 8).map((suggestion, index) => (
+                              <Tooltip key={index}>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className={`text-xs rounded-lg border-dashed hover:bg-primary/10 hover:border-primary/50 h-8 px-2 sm:px-3 group relative overflow-hidden shadow-sm transition-all duration-300 ease-out animate-in fade-in zoom-in-95 flex-shrink-0`}
+                                    onClick={() => {
+                                      const textToSet = suggestion.quantity
+                                        ? `${suggestion.suggestionName} (${suggestion.quantity})`
+                                        : suggestion.suggestionName;
+                                      setManualInput(textToSet);
+                                    }}
+                                    title={`Add "${suggestion.suggestionName}" to input`}
+                                  >
+                                    <span className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                                    <span className="relative z-10 truncate max-w-[120px] sm:max-w-none">{suggestion.suggestionName}</span>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="p-2 sm:p-3 max-w-xs bg-popover text-popover-foreground border shadow-lg rounded-md text-xs z-50">
+                                  <p className="font-semibold text-sm mb-1">{suggestion.suggestionName}</p>
+                                  <p className="text-muted-foreground mb-2 italic text-xs">{suggestion.reason}</p>
+                                  {suggestion.quantity && (
+                                    <p className="text-muted-foreground mb-2 flex items-center gap-1 text-xs">
+                                      <Scale size={12} /> Quantity: <span className="font-medium text-foreground/90">{suggestion.quantity}</span>
+                                    </p>
+                                  )}
+                                  <Separator className="my-2" />
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 tabular-nums text-xs">
+                                    <span>Calories:</span><span className="font-medium">{suggestion.estimatedNutrition.calories.toFixed(0)} kcal</span>
+                                    <span>Protein:</span><span className="font-medium">{suggestion.estimatedNutrition.protein.toFixed(1)} g</span>
+                                    <span>Carbs:</span><span className="font-medium">{suggestion.estimatedNutrition.carbohydrates.toFixed(1)} g</span>
+                                    <span>Fat:</span><span className="font-medium">{suggestion.estimatedNutrition.fat.toFixed(1)} g</span>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ))}
+                          </div>
+                        </TooltipProvider>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic py-1">Click "Get Suggestions" to see personalized food recommendations based on your eating habits.</p>
+                      )}
+                    </div>
                   </div>
-                   <Button onClick={handleVoiceSubmit} disabled={!audioBlob || isLoading || isRecording} className="w-full text-sm sm:text-base py-2.5 sm:py-3 bg-primary hover:bg-primary/90 shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-primary-foreground focus:ring-offset-2"> 
-                     {isLoading ? <><Loader2 className="mr-2 h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> Processing...</> : <><Send className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> Add from Voice</>} 
-                   </Button>
-                </TabsContent>
+                </div>
 
-              </Tabs>
+                {/* Main Action Button */}                <Button
+                  onClick={handleManualSubmit}
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-clay hover:shadow-clayStrong"
+                  disabled={!manualInput.trim() || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-4 h-4 md:w-6 md:h-6" />
+                      <span>Analyze & Estimate Nutrition</span>
+                      <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}            {/* Image Tab Content */}
+            {activeTab === 'image' && (
+              <div className="space-y-6 md:space-y-8">                  <div className="flex items-center space-x-3 mb-4 md:mb-6">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                      <Camera className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Upload Meal Photo</h3>
+                  </div>
+                
+                {/* Image Upload Area */}
+                <div className="text-center space-y-4 md:space-y-6">                  <div className="relative border-2 border-dashed rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] transition-colors duration-200 group overflow-hidden border-gray-300 hover:border-purple-400 bg-gray-50/50">
+                    <Input 
+                      ref={imageInputRef} 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageChange} 
+                    />
+                    {imagePreview ? (
+                      <div className="relative mb-3 sm:mb-4 group-hover:scale-105 transition-transform duration-300 ease-out z-10">
+                        <Image 
+                          src={imagePreview} 
+                          alt="Meal preview" 
+                          width={150} 
+                          height={150}                          className="max-h-32 sm:max-h-40 w-auto rounded-2xl object-contain shadow-clay border"
+                        />
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full shadow-md opacity-80 hover:opacity-100 transform hover:scale-110 transition-transform" 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setImagePreview(null); 
+                            setImageFile(null); 
+                            if (imageInputRef.current) imageInputRef.current.value = ""; 
+                          }}
+                        > 
+                          <Trash2 className="h-3 w-3"/> 
+                        </Button>
+                      </div>
+                    ) : (                      <Camera className="h-16 w-16 md:h-20 md:h-20 mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10 text-gray-400" />
+                    )}
+                    <div>                      <h4 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-800">Upload your meal photo</h4>
+                      <p className="mb-4 md:mb-6 max-w-md mx-auto leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
+                        Take a clear photo of your meal for instant AI analysis
+                      </p>
+                      <Button
+                        onClick={triggerImageUpload}                        className="flex items-center space-x-2 mx-auto shadow-clay rounded-xl px-6 md:px-8 py-2 md:py-3 font-semibold text-sm md:text-base bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                        disabled={isLoading}
+                      >
+                        <Upload className="w-4 h-4 md:w-5 md:h-5" />
+                        <span>{imagePreview ? "Change Image" : "Browse Files"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
 
-              {error && ( 
-                <div className="mt-4 sm:mt-6 p-2 sm:p-3 bg-destructive/10 border border-destructive/30 text-destructive rounded-md flex items-start gap-2 shadow-sm animate-in fade-in duration-300"> 
-                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 mt-0.5"/> 
-                  <p className="text-xs sm:text-sm font-medium">{error}</p> 
-                </div> 
-              )}
+                {/* Add from Image Button */}                <Button
+                  onClick={handleImageSubmit}
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white hover:shadow-clayStrong"
+                  disabled={!imagePreview || isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 md:w-6 md:h-6" />
+                      <span>Analyze Photo</span>
+                      <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
 
-               {pendingResults.length > 0 && (
-                 <Card className="mt-4 sm:mt-6 md:mt-8 border-accent/50 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-500 bg-gradient-to-br from-accent/5 via-card to-card overflow-hidden">
-                   <CardHeader className="bg-accent/10 border-b border-accent/30 p-3 sm:p-4">
-                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 sm:gap-4">
-                         <div>
-                             <CardTitle className="text-accent flex items-center gap-2 text-base sm:text-lg md:text-xl"> 
-                               <Sparkles className="h-4 w-4 sm:h-5 sm:w-5"/> Review Added Items ({pendingResults.length}) 
-                             </CardTitle>
-                             <CardDescription className="text-xs sm:text-sm mt-1 text-muted-foreground">Review AI estimations. Remove incorrect items before confirming.</CardDescription>
-                         </div>
-                          <Button variant="outline" size="sm" onClick={clearAllPending} className="text-xs flex-shrink-0 border-destructive/50 text-destructive hover:bg-destructive/10 self-start sm:self-center transform hover:scale-105 transition-transform focus:ring-1 focus:ring-destructive px-2 sm:px-3"> 
-                            <ListRestart className="mr-1 h-3 w-3"/> Clear All 
-                          </Button>
-                     </div>
-                   </CardHeader>
-                   <CardContent className="p-0">
-                       <div className="max-h-[50vh] sm:max-h-[40vh] overflow-y-auto">
-                           <ul className="divide-y divide-border/50">
-                                <li className="py-2 px-3 sm:px-4 hidden sm:grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0 backdrop-blur-sm z-10 border-b">
-                                   <span className="col-span-5 pl-1">Food Item (AI Identified)</span>
-                                   <span className="col-span-2 text-right">Calories (kcal)</span>
-                                   <span className="col-span-1 text-right">P (g)</span>
-                                   <span className="col-span-1 text-right">C (g)</span>
-                                   <span className="col-span-1 text-right">F (g)</span>
-                                   <span className="col-span-2 text-right">Actions</span>
-                                </li>
-                               {pendingResults.map((item, index) => (
-                               <li key={item.id} className={cn(
-                                   "py-2.5 px-3 sm:px-4 grid grid-cols-6 sm:grid-cols-12 gap-2 text-sm items-center group hover:bg-muted/20 transition-colors duration-150",
-                                   "animate-in fade-in slide-in-from-left-3 duration-300 ease-out"
-                               )} style={{ animationDelay: `${index * 30}ms` }}>
-                                   <div className="col-span-5 sm:col-span-5 flex flex-col min-w-0">
-                                       <span className="font-medium break-words leading-tight text-foreground text-xs sm:text-sm"> {item.identifiedFoodName}</span>
-                                        {item.originalDescription && item.originalDescription !== item.identifiedFoodName && (
-                                           <span className="text-xs text-muted-foreground block italic truncate" title={`Original: ${item.originalDescription}`}> (From: {item.originalDescription.substring(0,20)}...)</span>
-                                        )}
-                                        <span className="sm:hidden text-xs text-muted-foreground tabular-nums mt-1">{item.calories.toFixed(0)} kcal | P:{item.protein.toFixed(1)}g | C:{item.carbohydrates.toFixed(1)}g | F:{item.fat.toFixed(1)}g</span>
-                                   </div>
-                                   <span className="hidden sm:block col-span-2 text-right tabular-nums font-medium text-sm">{item.calories.toFixed(0)}</span>
-                                   <span className="hidden sm:block col-span-1 text-right tabular-nums text-sm">{item.protein.toFixed(1)}</span>
-                                   <span className="hidden sm:block col-span-1 text-right tabular-nums text-sm">{item.carbohydrates.toFixed(1)}</span>
-                                   <span className="hidden sm:block col-span-1 text-right tabular-nums text-sm">{item.fat.toFixed(1)}</span>
-                                    <div className="col-span-1 sm:col-span-2 flex justify-end items-center">
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7 text-muted-foreground hover:text-destructive opacity-50 group-hover:opacity-100 transition-opacity duration-150 transform hover:scale-110 focus:ring-1 focus:ring-destructive rounded-full" onClick={() => removeItem(item.id)} title="Remove item"> <Trash2 className="h-3 w-3 sm:h-4 sm:w-4"/> </Button>
-                                   </div>
-                               </li>
-                               ))}
-                           </ul>
-                       </div>
-                   </CardContent>
-                    <CardFooter className="p-3 sm:p-4 bg-gradient-to-t from-muted/20 via-card to-card border-t border-border/30 mt-auto">
-                       <Button onClick={confirmAndLogFood} className="w-full text-sm sm:text-base py-2.5 sm:py-3 bg-accent hover:bg-accent/90 text-accent-foreground shadow-lg transform hover:scale-[1.02] transition-transform duration-200 focus:ring-2 focus:ring-accent-foreground focus:ring-offset-2" disabled={pendingResults.length === 0 || isLoading}> 
-                         <CheckCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5"/> Confirm & Log {pendingResults.length} Item(s) 
-                       </Button>
-                    </CardFooter>
-                 </Card>
-               )}
-               {pendingResults.length === 0 && !isLoading && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.2 }}
-                    className="text-center py-6 sm:py-8 md:py-10 text-muted-foreground italic"
-                  >
-                      <p className="mb-1 text-sm sm:text-base">Add meals using the options above.</p>
-                      <p className="text-xs sm:text-sm">Your added items will appear here for review before logging.</p>
-                  </motion.div>
-               )}
-            </CardContent>
-          </Card>
-        </motion.div>
+            {/* Voice Tab Content */}
+            {activeTab === 'voice' && (
+              <div className="space-y-6 md:space-y-8">
+                <div className="flex items-center space-x-3 mb-4 md:mb-6">                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-clayInset flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600">
+                    <Mic className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Voice Recording</h3>
+                </div>
+                  <div className="rounded-3xl p-6 md:p-10 shadow-clayInset relative overflow-hidden transition-all duration-300 bg-clay-200/50">
+                  <div className="flex flex-col items-center space-y-6 md:space-y-8 relative z-10">
+                    
+                    {/* Voice Interface */}
+                    <div className="relative">                      <button
+                        onClick={isRecording ? stopRecording : startRecording}
+                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clay ${
+                          isRecording
+                            ? 'bg-red-400 hover:bg-red-500 scale-110'
+                            : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
+                        }`}
+                        disabled={isLoading}
+                      >
+                        {isRecording ? (
+                          <div className="flex items-center space-x-1">
+                            <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
+                            <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
+                          </div>
+                        ) : (
+                          <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Timer Display */}                    <div className="px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clay bg-gray-700">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
+                        <span className="text-2xl md:text-3xl font-mono font-bold text-white">
+                          {formatTime(recordingTime)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="text-center space-y-3 md:space-y-4">                      <h4 className="text-lg md:text-xl font-bold text-gray-800">
+                        {isRecording ? 'Recording...' : 'Tap to record'}
+                      </h4>
+                      <p className="leading-relaxed text-sm md:text-base max-w-md text-gray-600">
+                        {isRecording 
+                          ? 'Speak clearly about your meal. Tap again when finished.' 
+                          : 'Tap the microphone to start recording your meal description'
+                        }
+                      </p>
+                    </div>
+
+                    {/* Audio Preview */}
+                    {audioPreviewUrl && !isRecording && (
+                      <div className="w-full mt-3 sm:mt-4 p-2 sm:p-3 bg-background rounded shadow-inner border z-10 animate-in fade-in duration-300">
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2">Preview Recording:</p>
+                        <audio controls src={audioPreviewUrl} className="w-full h-8 sm:h-10"></audio>
+                        <Button 
+                          variant="link" 
+                          size="sm" 
+                          className="text-xs h-auto p-0 text-muted-foreground hover:text-destructive mt-1" 
+                          onClick={() => {
+                            if (audioPreviewUrl) {
+                              URL.revokeObjectURL(audioPreviewUrl);
+                            }
+                            setAudioPreviewUrl(null); 
+                            setAudioBlob(null);
+                          }}
+                        >
+                          Clear Recording
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Button */}                <Button
+                  onClick={handleVoiceSubmit}
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white hover:shadow-clayStrong"
+                  disabled={!audioBlob || isLoading || isRecording}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4 h-4 md:w-6 md:h-6" />
+                      <span>Process Voice Recording</span>
+                      <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Bottom Information */}
+            {pendingResults.length === 0 && !isLoading && (
+              <div className="text-center mt-8 md:mt-10 pt-6 md:pt-8 border-t border-opacity-20">                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clay transition-all duration-300 bg-clayBlue/30">
+                  <div className="flex items-center justify-center space-x-2 md:space-x-3 mb-2 md:mb-3">
+                    <Target className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                    <h4 className="text-base md:text-lg font-bold text-gray-800">Ready to Transform Your Nutrition?</h4>
+                  </div>
+                  <p className="leading-relaxed text-sm md:text-base text-gray-600">
+                    Your identified food items will appear below for review and confirmation before adding to your daily log.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>        {/* Error Display */}
+        {error && (          <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 md:p-6 mb-6 md:mb-8 transition-all duration-500 bg-red-100/60">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
+              <p className="text-sm md:text-base font-medium text-red-700">
+                {error}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Review Added Items Section */}
+        {pendingResults.length > 0 && (          <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 sm:p-6 md:p-8 mt-6 md:mt-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
+            {/* Decorative Elements */}
+            <div className="absolute top-0 right-0 w-20 h-20 md:w-28 md:h-28 rounded-full blur-2xl md:blur-3xl bg-green-300/20"></div>            <div className="absolute bottom-0 left-0 w-16 h-16 md:w-20 md:h-20 rounded-full blur-2xl md:blur-3xl bg-clayPurple/20"></div>
+            
+            <div className="relative z-10"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
+                  <div className="flex items-center space-x-3 md:space-x-4">
+                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                      <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                        AI Analysis Complete ({pendingResults.length} items)
+                      </h3>
+                      <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                    </div>
+                  </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllPending}                  className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clay rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-clayGlass text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                  <span>Clear All</span>
+                </Button>
+              </div>
+                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clay transition-all duration-300 bg-green-100/60">
+                <div className="flex items-center space-x-2 md:space-x-3 mb-2">
+                  <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                  <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                </div>
+                <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                  Our AI has analyzed your meal and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
+                </p>
+              </div>
+
+              {/* Items Table */}              <div className="overflow-hidden rounded-2xl border shadow-clay backdrop-blur-sm mt-6 transition-all duration-300 bg-clayGlass">
+                <div className="overflow-x-auto">
+                  <table className="w-full">                    <thead className="backdrop-blur-sm bg-clay-300/50">
+                      <tr>                        <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
+                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Cal</th>
+                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Pro</th>
+                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carb</th>
+                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
+                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                      </tr>
+                    </thead>                    <tbody className="backdrop-blur-sm bg-clayGlass">
+                      {pendingResults.map((item, index) => (                        <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                          <td className="py-3 md:py-5 px-3 md:px-6">
+                            <div>
+                              <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                              {item.originalDescription && (
+                                <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clay border bg-clayGlass text-gray-600">
+                                  From: {item.originalDescription.substring(0, 30)}...
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
+                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.protein.toFixed(1)}g</td>
+                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.carbohydrates.toFixed(1)}g</td>
+                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.fat.toFixed(1)}g</td>
+                          <td className="text-center py-3 md:py-5 px-2 md:px-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeItem(item.id)}
+                              className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clay text-gray-500 hover:text-red-500 hover:bg-red-50 hover:shadow-clayStrong"
+                            >
+                              <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Confirm Button */}              <Button
+                onClick={confirmAndLogFood}
+                className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl mt-6 md:mt-8 flex items-center justify-center space-x-2 md:space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay text-sm sm:text-base md:text-lg bg-green-500 hover:bg-green-600 text-white hover:shadow-clayStrong"
+                disabled={pendingResults.length === 0 || isLoading}
+              >
+                <Target className="w-4 h-4 md:w-6 md:h-6" />
+                <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
+                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </motion.div>
+    </div>
   );
 }

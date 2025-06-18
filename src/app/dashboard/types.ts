@@ -313,9 +313,8 @@ export interface DashboardMainContentProps {
     error: string | null;
     userProfile: StoredUserProfile | null;
     dailyTargets: CalculateTargetsOutput | null;
-    periodTotals: PeriodTotals; // Kept for potential re-use, but direct values are preferred now
-    activePeriodTab: 'daily' | 'weekly';
-    setActivePeriodTab: (tab: 'daily' | 'weekly') => void;
+    periodTotals: PeriodTotals; // Kept for potential re-use, but direct values are preferred now    activePeriodTab: 'daily' | 'weekly' | 'ai-targets';
+    setActivePeriodTab: (tab: 'daily' | 'weekly' | 'ai-targets') => void;
     handleRecalculateAiTargets: () => void;
     isCalculatingTargets: boolean; // AI Target calculation specifically
     isLoadingTotals: boolean; // General loading for period totals

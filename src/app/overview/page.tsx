@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DashboardProfileHeader from '@/components/dashboard/DashboardProfileHeader';
 import { StoredUserProfile, StoredExerciseLogEntry } from '@/app/dashboard/types';
 import { getOverviewData } from '@/services/firestore/overviewService';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { Flame, Dumbbell, TrendingUp, AlertCircle, Star, Trophy, Activity, Clock, Zap, ClipboardList } from 'lucide-react';
+import { Flame, Dumbbell, TrendingUp, AlertCircle, Star, Trophy, Activity, Clock, Zap, ClipboardList, User, Target, Heart, CheckCircle, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FitnessTip from '@/components/dashboard/FitnessTip';
 import WaterIntakeTip from '@/components/dashboard/WaterIntakeTip';
@@ -188,49 +189,57 @@ export default function OverviewPage() {
 
     if (isLoading || authLoading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-                <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
-                    {/* Simplified Profile Header Skeleton */}
-                    <Card className="bg-card/80 border-border/50">
-                        <CardHeader>
-                            <div className="flex items-center gap-4">
-                                <Skeleton className="h-20 w-20 sm:h-24 sm:w-24 rounded-full" />
-                                <div className="space-y-2">
-                                    <Skeleton className="h-6 w-48" />
-                                    <Skeleton className="h-4 w-32" />
-                                    <Skeleton className="h-4 w-24" />
-                                </div>
+            <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+                <div className="p-3 md:p-6">
+                    <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+                        {/* Header Skeleton */}
+                        <motion.div
+                            initial={{ opacity: 0, y: -20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <div className="backdrop-blur-sm rounded-3xl shadow-clayStrong border-0 p-4 md:p-6 text-center bg-clay-100/70 border border-white/50">
+                                <Skeleton className="h-8 md:h-10 w-3/4 mx-auto mb-2" />
+                                <Skeleton className="h-4 w-1/2 mx-auto" />
                             </div>
-                        </CardHeader>
-                    </Card>
+                        </motion.div>
 
-                    {/* Simplified Stats Cards Skeleton */}
-                    <Card className="bg-card/80 border-border/50">
-                        <CardHeader>
-                            <Skeleton className="h-6 w-1/2" />
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-4">
-                            {[...Array(4)].map((_, i) => (
-                                <Skeleton key={i} className="h-16 w-full rounded-lg" />
-                            ))}
-                        </CardContent>
-                    </Card>
+                        {/* Profile Card Skeleton */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                        >
+                            <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+                                <CardContent className="p-4 md:p-6">
+                                    <div className="flex items-center space-x-3 md:space-x-4">
+                                        <Skeleton className="h-12 w-12 md:h-16 md:w-16 rounded-full" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-6 w-1/2" />
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <Skeleton className="h-3 w-1/3" />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
 
-                    {/* Additional Cards Skeleton */}
-                    {[...Array(3)].map((_, i) => (
-                        <Card key={i} className="bg-card/80 border-border/50">
-                            <CardHeader>
-                                <Skeleton className="h-6 w-3/4" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    <Skeleton className="h-4 w-full" />
-                                    <Skeleton className="h-4 w-3/4" />
-                                    <Skeleton className="h-4 w-1/2" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                        {/* Additional Cards Skeleton */}
+                        {[...Array(3)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.2 + i * 0.1 }}
+                            >
+                                <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+                                    <CardContent className="p-4 md:p-6">
+                                        <Skeleton className="h-24 w-full" />
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
                 </div>
             </div>
         );
@@ -238,301 +247,321 @@ export default function OverviewPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-                <div className="max-w-xl mx-auto my-10 p-4 text-center">
-                    <Card className="border-destructive bg-card/80">
-                        <CardHeader>
-                            <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-                            <CardTitle className="text-destructive">Error Loading Overview</CardTitle>
-                            <CardDescription>{error}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button onClick={fetchData} variant="outline">
-                                Try Again
-                            </Button>
-                        </CardContent>
-                    </Card>
+            <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
+                <div className="p-3 md:p-6">
+                    <div className="max-w-xl mx-auto text-center">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+                                <CardHeader>
+                                    <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+                                    <CardTitle className="text-red-600">Error Loading Overview</CardTitle>
+                                    <CardDescription>{error}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button onClick={fetchData} variant="outline" className="rounded-2xl">
+                                        Try Again
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
                 </div>
             </div>
         );
     }
     
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-            <div className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto px-4 py-4 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 pb-20 sm:pb-8">
-                <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <h1 className="text-2xl sm:text-3xl font-bold text-primary tracking-tight text-center sm:text-left">
-                        Activity Overview
-                    </h1>
-                </motion.div>
-
-                {profileHeaderData && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
+        <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+            <div className="p-3 md:p-6">
+                <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+                    {/* Header */}
+                    <motion.div 
+                        className="mb-6 md:mb-8"
+                        initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
+                        transition={{ duration: 0.6 }}
                     >
-                        <Card className="bg-card/80 border-border/50">
-                            <CardHeader className="pb-4">
-                                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                                    <div className="relative">
-                                        <img
-                                            src={profileHeaderData.photoURL}
-                                            alt={`${profileHeaderData.displayName}'s profile`}
-                                            className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-4 border-primary/20"
-                                            onError={(e) => {
-                                                e.currentTarget.src = `https://placehold.co/80x80.png?text=${profileHeaderData.displayName.charAt(0)}`;
-                                            }}
-                                        />
-                                        <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-2 border-background" />
-                                    </div>
-                                    <div className="space-y-1 text-center sm:text-left flex-1">
-                                        <h2 className="text-xl sm:text-2xl font-bold text-primary">
-                                            {profileHeaderData.displayName}
-                                        </h2>
-                                        <p className="text-sm sm:text-base text-muted-foreground">
-                                            Welcome to your fitness journey!
-                                        </p>
-                                        <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-muted-foreground">
-                                            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                                            <span>Last active: Today</span>
+                        <div className="backdrop-blur-sm rounded-3xl shadow-lg border-0 p-4 md:p-6 text-center bg-clay-100/70 shadow-clayStrong transition-all duration-500">
+                            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 text-gray-800">
+                                Activity Overview
+                            </h1>
+                            <p className="text-sm md:text-base text-gray-600">
+                                Track your fitness journey with beautiful insights
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    {/* User Profile Section */}
+                    {profileHeaderData && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.1 }}
+                        >
+                            <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                                <CardContent className="p-4 md:p-6">
+                                    <div className="flex items-center space-x-3 md:space-x-4">
+                                        <Avatar className="h-12 w-12 md:h-16 md:w-16 shadow-lg flex-shrink-0">
+                                            <AvatarImage 
+                                                src={profileHeaderData.photoURL}
+                                                alt={`${profileHeaderData.displayName}'s profile`}
+                                            />
+                                            <AvatarFallback className="text-lg md:text-xl font-bold bg-gradient-to-br from-purple-400 to-purple-600 text-white">
+                                                <User className="w-6 h-6 md:w-8 md:h-8" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            <h2 className="text-lg md:text-xl font-semibold mb-1 truncate text-gray-800">
+                                                {profileHeaderData.displayName}
+                                            </h2>
+                                            <p className="text-sm md:text-base mb-2 text-gray-600">
+                                                Welcome to your fitness journey!
+                                            </p>
+                                            <div className="flex items-center">
+                                                <div className="w-3 h-3 bg-green-400 rounded-full mr-2 shadow-sm animate-pulse flex-shrink-0"></div>
+                                                <span className="text-xs md:text-sm text-gray-500">Last active: Today</span>
+                                            </div>
                                         </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )}
+
+                    {/* Today's Points */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                        <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                            <CardContent className="p-4 md:p-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-3 mb-3">
+                                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-orange-400 to-orange-600 flex-shrink-0">
+                                                <Star className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                            </div>
+                                            <h3 className="text-base md:text-lg font-semibold text-gray-800">Today's Points</h3>
+                                        </div>
+                                        <div className="flex items-baseline space-x-2">
+                                            <span className="text-2xl md:text-3xl font-bold text-gray-800">
+                                                {pointsData?.todayPoints || 0}
+                                            </span>
+                                            <span className="text-sm md:text-base text-gray-500">/100</span>
+                                        </div>
+                                        <p className="text-xs md:text-sm mt-1 text-gray-600">Points earned today</p>
+                                    </div>
+                                    <div className="backdrop-blur-sm rounded-2xl p-3 md:p-4 shadow-lg text-center sm:text-right bg-clay-100/40">
+                                        <p className="text-xs md:text-sm text-gray-600">Total Points</p>
+                                        <p className="text-xl md:text-2xl font-bold text-purple-600">
+                                            {pointsData?.totalPoints || 0}
+                                        </p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+
+                    {/* Weekly Progress */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                    >
+                        <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                            <CardHeader className="pb-2 md:pb-3">
+                                <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
+                                        <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <CardTitle className="text-lg md:text-xl text-gray-800">Weekly Progress</CardTitle>
+                                        <p className="text-xs md:text-sm text-gray-600">Track your consistency and goals</p>
                                     </div>
                                 </div>
                             </CardHeader>
+                            <CardContent className="space-y-4 md:space-y-6">
+                                {/* Weekly Goals Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                                    <div className="p-3 md:p-4 rounded-2xl shadow-lg backdrop-blur-sm bg-gradient-to-br from-green-50 to-green-100 transition-all duration-300">
+                                        <div className="flex items-center space-x-2 md:space-x-3 mb-2 md:mb-3">
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-green-400 to-green-600 flex-shrink-0">
+                                                <Target className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                                            </div>
+                                            <h4 className="text-sm md:text-base font-semibold text-green-800">Weekly Goals</h4>
+                                        </div>
+                                        <div className="text-xl md:text-2xl font-bold mb-1 text-green-600">
+                                            {weeklyActivitySummary?.totalWorkouts || 0}/5
+                                        </div>
+                                        <p className="text-xs mb-1 md:mb-2 text-gray-600">Workouts</p>
+                                        <p className="text-xs text-gray-500">
+                                            {weeklyActivitySummary && weeklyActivitySummary.totalWorkouts >= 5 
+                                                ? "🎉 Weekly goal achieved!" 
+                                                : `${5 - (weeklyActivitySummary?.totalWorkouts || 0)} more to reach weekly goal!`
+                                            }
+                                        </p>
+                                    </div>
+                                    
+                                    <div className="p-3 md:p-4 rounded-2xl shadow-lg backdrop-blur-sm bg-gradient-to-br from-orange-50 to-orange-100 transition-all duration-300">
+                                        <div className="flex items-center space-x-2 md:space-x-3 mb-2 md:mb-3">
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-orange-400 to-orange-600 flex-shrink-0">
+                                                <Zap className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                                            </div>
+                                            <h4 className="text-sm md:text-base font-semibold text-orange-800">Activity Streak</h4>
+                                        </div>
+                                        <div className="text-xl md:text-2xl font-bold mb-1 text-orange-600">
+                                            {weeklyActivitySummary ? Math.min(weeklyActivitySummary.totalWorkouts, 7) : 0}
+                                        </div>
+                                        <p className="text-xs mb-1 md:mb-2 text-gray-600">days this week</p>
+                                        <p className="text-xs text-gray-500">
+                                            {weeklyActivitySummary && weeklyActivitySummary.totalWorkouts > 0 
+                                                ? "Keep the momentum going! 🔥" 
+                                                : "Start today to build your streak!"
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Quick Stats */}
+                                <div>
+                                    <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-3 text-gray-800">Quick Stats</h4>
+                                    <div className="rounded-2xl p-3 md:p-4 shadow-lg backdrop-blur-sm bg-clay-100/60">
+                                        <div className="grid grid-cols-2 gap-3 md:gap-4">
+                                            <div className="text-center">
+                                                <div className="text-lg md:text-2xl font-bold mb-1 text-blue-600">
+                                                    {weeklyActivitySummary?.totalCaloriesBurned || 0}
+                                                </div>
+                                                <div className="text-xs text-gray-600">Calories burned</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg md:text-2xl font-bold mb-1 text-blue-600">
+                                                    {weeklyActivitySummary?.strengthWorkouts || 0}
+                                                </div>
+                                                <div className="text-xs text-gray-600">Strength sessions</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg md:text-2xl font-bold mb-1 text-purple-600">
+                                                    {weeklyActivitySummary?.cardioWorkouts || 0}
+                                                </div>
+                                                <div className="text-xs text-gray-600">Cardio sessions</div>
+                                            </div>
+                                            <div className="text-center">
+                                                <div className="text-lg md:text-2xl font-bold mb-1 text-green-600">
+                                                    {weeklyActivitySummary && weeklyActivitySummary.totalWorkouts > 0 
+                                                        ? Math.round(weeklyActivitySummary.totalCaloriesBurned / weeklyActivitySummary.totalWorkouts)
+                                                        : 0
+                                                    }
+                                                </div>
+                                                <div className="text-xs text-gray-600">Avg per workout</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Recommended Actions */}
+                                <div>
+                                    <h4 className="text-sm md:text-base font-semibold mb-2 md:mb-3 text-gray-800">Recommended Actions</h4>
+                                    <div className="p-3 md:p-4 rounded-2xl shadow-lg border backdrop-blur-sm bg-gradient-to-r from-blue-50 to-purple-50 border-blue-100">
+                                        <div className="flex items-center space-x-2 md:space-x-3">
+                                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 flex-shrink-0">
+                                                <Target className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                                            </div>
+                                            <span className="text-xs md:text-sm font-medium text-blue-800">
+                                                {weeklyActivitySummary && weeklyActivitySummary.totalWorkouts >= 5
+                                                    ? "Excellent work! Consider adding recovery or flexibility sessions"
+                                                    : weeklyActivitySummary && weeklyActivitySummary.totalWorkouts >= 3
+                                                    ? "Great progress! Keep up the consistency"
+                                                    : "Focus on consistency - aim for at least 3 workouts this week!"
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
                         </Card>
                     </motion.div>
-                )}
 
-                {/* Today's Points */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                >
-                    <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg font-semibold text-yellow-700 dark:text-yellow-400 flex items-center gap-2">
-                                <Star className="h-5 w-5 text-yellow-500" />
-                                Today's Points
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            {pointsData ? (
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                                            {pointsData.todayPoints}<span className="text-lg text-muted-foreground">/100</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">Points earned today</p>
-                                    </div>
-                                    <div className="text-right space-y-1">
-                                        <div className="flex items-center gap-1">
-                                            <Trophy className="h-5 w-5 text-orange-500" />
-                                            <span className="text-sm font-medium text-muted-foreground">Total Points</span>
-                                        </div>
-                                        <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">
-                                            {pointsData.totalPoints.toLocaleString()}
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center justify-between">
-                                    <div className="space-y-1">
-                                        <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-                                            0<span className="text-lg text-muted-foreground">/100</span>
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">Points earned today</p>
-                                    </div>
-                                    <div className="text-right space-y-1">
-                                        <div className="flex items-center gap-1">
-                                            <Trophy className="h-5 w-5 text-orange-500" />
-                                            <span className="text-sm font-medium text-muted-foreground">Total Points</span>
-                                        </div>
-                                        <p className="text-xl font-semibold text-orange-600 dark:text-orange-400">0</p>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Weekly Progress & Goals */}
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.3 }}
-                >
-                    <Card className="border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-card/80">
-                        <CardHeader>
-                            <CardTitle className="text-xl font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                                <TrendingUp size={22} />
-                                Weekly Progress
-                            </CardTitle>
-                            <CardDescription>
-                                Track your consistency and goal progress
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {weeklyActivitySummary ? (
-                                <>
-                                    {/* Progress Highlights */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        {/* Weekly Goal Progress */}
-                                        <div className="p-4 bg-gradient-to-r from-emerald-50/80 to-green-50/80 dark:from-emerald-900/20 dark:to-green-900/20 rounded-lg border border-emerald-200/50 dark:border-emerald-800/50">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Trophy className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                                                <span className="font-semibold text-emerald-700 dark:text-emerald-300">Weekly Goals</span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="text-muted-foreground">Workouts</span>
-                                                    <span className="font-medium">{weeklyActivitySummary.totalWorkouts}/5</span>
-                                                </div>
-                                                <div className="w-full bg-muted/50 rounded-full h-2">
-                                                    <div 
-                                                        className="bg-gradient-to-r from-emerald-500 to-green-500 h-2 rounded-full transition-all duration-500"
-                                                        style={{ width: `${Math.min(100, (weeklyActivitySummary.totalWorkouts / 5) * 100)}%` }}
-                                                    />
-                                                </div>
-                                                {weeklyActivitySummary.totalWorkouts >= 5 ? (
-                                                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">🎉 Weekly goal achieved!</p>
-                                                ) : (
-                                                    <p className="text-xs text-muted-foreground">{5 - weeklyActivitySummary.totalWorkouts} more to reach weekly goal</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Activity Streak */}
-                                        <div className="p-4 bg-gradient-to-r from-orange-50/80 to-amber-50/80 dark:from-orange-900/20 dark:to-amber-900/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <Flame className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                                                <span className="font-semibold text-orange-700 dark:text-orange-300">Activity Streak</span>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                                        {weeklyActivitySummary.totalWorkouts > 0 ? Math.min(weeklyActivitySummary.totalWorkouts, 7) : 0}
-                                                    </span>
-                                                    <span className="text-xs text-muted-foreground">days this week</span>
-                                                </div>
-                                                {weeklyActivitySummary.totalWorkouts > 0 ? (
-                                                    <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">Keep the momentum going! 🔥</p>
-                                                ) : (
-                                                    <p className="text-xs text-muted-foreground">Start today to build your streak</p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Quick Stats */}
-                                    <div className="border-t pt-4">
-                                        <h4 className="font-medium text-sm text-muted-foreground mb-3">Quick Stats</h4>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
-                                                <p className="text-lg font-bold text-primary">{weeklyActivitySummary.totalCaloriesBurned}</p>
-                                                <p className="text-xs text-muted-foreground">Calories burned</p>
-                                            </div>
-                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
-                                                <p className="text-lg font-bold text-blue-600">{weeklyActivitySummary.strengthWorkouts}</p>
-                                                <p className="text-xs text-muted-foreground">Strength sessions</p>
-                                            </div>
-                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
-                                                <p className="text-lg font-bold text-purple-600">{weeklyActivitySummary.cardioWorkouts}</p>
-                                                <p className="text-xs text-muted-foreground">Cardio sessions</p>
-                                            </div>
-                                            <div className="text-center p-2 bg-muted/30 rounded-lg">
-                                                <p className="text-lg font-bold text-green-600">
-                                                    {weeklyActivitySummary.totalWorkouts > 0 ? 
-                                                        Math.round(weeklyActivitySummary.totalCaloriesBurned / weeklyActivitySummary.totalWorkouts) : 0}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">Avg per workout</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Next Actions */}
-                                    <div className="border-t pt-4">
-                                        <h4 className="font-medium text-sm text-muted-foreground mb-3">Recommended Actions</h4>
-                                        <div className="space-y-2">
-                                            {weeklyActivitySummary.totalWorkouts < 3 && (
-                                                <div className="flex items-center gap-2 text-sm p-2 bg-blue-50/50 dark:bg-blue-900/20 rounded border border-blue-200/50 dark:border-blue-800/50">
-                                                    <Dumbbell className="h-4 w-4 text-blue-600" />
-                                                    <span className="text-blue-700 dark:text-blue-300">Focus on consistency - aim for at least 3 workouts this week</span>
-                                                </div>
-                                            )}
-                                            {weeklyActivitySummary.strengthWorkouts === 0 && weeklyActivitySummary.totalWorkouts > 0 && (
-                                                <div className="flex items-center gap-2 text-sm p-2 bg-purple-50/50 dark:bg-purple-900/20 rounded border border-purple-200/50 dark:border-purple-800/50">
-                                                    <Activity className="h-4 w-4 text-purple-600" />
-                                                    <span className="text-purple-700 dark:text-purple-300">Add strength training to your routine for balanced fitness</span>
-                                                </div>
-                                            )}
-                                            {weeklyActivitySummary.totalWorkouts >= 5 && (
-                                                <div className="flex items-center gap-2 text-sm p-2 bg-green-50/50 dark:bg-green-900/20 rounded border border-green-200/50 dark:border-green-800/50">
-                                                    <Star className="h-4 w-4 text-green-600" />
-                                                    <span className="text-green-700 dark:text-green-300">Excellent work! Consider adding recovery or flexibility sessions</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-center py-8">
-                                    <Activity className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                                    <h3 className="font-medium text-muted-foreground mb-2">No activity logged this week</h3>
-                                    <p className="text-sm text-muted-foreground mb-4">Start your fitness journey by logging your first workout!</p>
-                                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                                        <Button 
-                                            size="sm" 
-                                            onClick={() => router.push('/log')}
-                                            className="gap-2"
-                                        >
-                                            <Dumbbell className="h-4 w-4" />
-                                            Log Workout
-                                        </Button>
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline"
-                                            onClick={() => router.push('/workout-plans')}
-                                            className="gap-2"
-                                        >
-                                            <ClipboardList className="h-4 w-4" />
-                                            View Plans
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* Health Tips and Goals Section */}
-                <motion.div 
-                    className="space-y-4 sm:space-y-6"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: 0.4 }}
-                >
+                    {/* Today's Fitness Tip */}
                     {randomTip && (
-                        <div>
-                            <FitnessTip tip={randomTip} />
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6, delay: 0.4 }}
+                        >
+                            <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                                <CardContent className="p-4 md:p-6">
+                                    <div className="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4">
+                                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-400 to-purple-600 flex-shrink-0">
+                                            <Heart className="w-5 h-5 md:w-6 md:h-6 text-white" />
+                                        </div>
+                                        <h3 className="text-base md:text-lg font-semibold text-gray-800">Today's Fitness Tip</h3>
+                                    </div>
+                                    <div className="backdrop-blur-sm rounded-2xl p-3 md:p-4 shadow-lg bg-clay-100/40">
+                                        <div className="flex items-start space-x-2 md:space-x-3">
+                                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg bg-gradient-to-br from-green-400 to-green-600">
+                                                <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-white" />
+                                            </div>
+                                            <p className="text-sm md:text-base text-gray-700">{randomTip.text}</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
                     )}
-                    
-                    {/* Sleep Goals and Hydration - Ensure proper spacing for mobile */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="w-full">
-                            <SleepGoals />
-                        </div>
-                        <div className="w-full">
-                            <WaterIntakeTip />
-                        </div>
-                    </div>
-                </motion.div>
+
+                    {/* Goals Cards */}
+                    <motion.div 
+                        className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.5 }}
+                    >
+                        <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                            <CardContent className="p-4 md:p-6">
+                                <div className="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4">
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-100 to-purple-200">
+                                        <Heart className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
+                                    </div>
+                                    <h3 className="text-sm md:text-base font-semibold text-gray-800">Sleep Goals</h3>
+                                </div>
+                                <div className="backdrop-blur-sm rounded-2xl p-3 md:p-4 shadow-lg bg-clay-100/40">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-3 h-3 rounded-full bg-purple-400 flex-shrink-0"></div>
+                                            <span className="text-xs md:text-sm text-gray-700">Target: 7-9 hours</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Quality sleep supports recovery and metabolism</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="backdrop-blur-sm border-0 hover:shadow-xl transition-all duration-300 rounded-3xl bg-clay-100/70 shadow-clayStrong">
+                            <CardContent className="p-4 md:p-6">
+                                <div className="flex items-center space-x-2 md:space-x-3 mb-3 md:mb-4">
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-100 to-blue-200">
+                                        <Zap className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
+                                    </div>
+                                    <h3 className="text-sm md:text-base font-semibold text-gray-800">Hydration</h3>
+                                </div>
+                                <div className="backdrop-blur-sm rounded-2xl p-3 md:p-4 shadow-lg bg-clay-100/40">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-3 h-3 rounded-full bg-blue-400 flex-shrink-0"></div>
+                                            <span className="text-xs md:text-sm text-gray-700">Target: 3L daily</span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">Stay hydrated for optimal performance</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
             </div>
         </div>
     );

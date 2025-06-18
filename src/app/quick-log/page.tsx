@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Trash2, Edit3, ListChecks, Loader2, XCircle, Save, Flame, Dumbbell, Zap, Leaf, CheckCircle, History, BrainCircuit, AlertTriangle, Edit, BookmarkPlus } from "lucide-react";
+import { PlusCircle, Trash2, Edit3, ListChecks, Loader2, XCircle, Save, Flame, Dumbbell, Zap, Leaf, CheckCircle, History, BrainCircuit, AlertTriangle, Edit, BookmarkPlus, Plus, Clock, Sparkles, Hash, TrendingUp, Battery, Droplets } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import {
   getQuickLogItems, addQuickLogItem, deleteQuickLogItem, updateQuickLogItem,
@@ -40,7 +40,6 @@ const initialFormState: Omit<FormState, 'id'> = {
 
 const LOCAL_STORAGE_QUICKLOG_KEY_PREFIX = 'bago-quicklog-items-';
 const LOCAL_STORAGE_DAILY_FOOD_LOGS_PREFIX = 'bago-daily-food-logs-';
-
 
 export default function QuickLogPage() {
   const { toast } = useToast();
@@ -393,220 +392,611 @@ export default function QuickLogPage() {
 
 
   if (authLoading && !isClient) {
-    return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>;
+    return (
+      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 flex justify-center items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600"/>
+      </div>
+    );
   }
   if (!userId && !authLoading && isClient) {
-    // This case should ideally be handled by middleware redirecting to /authorize
-    // However, if client-side routing somehow lands here, provide a fallback.
-    return <div className="text-center p-10">Please log in to access this page.</div>;
+    return (
+      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 flex items-center justify-center">
+        <div className="text-center p-10">Please log in to access this page.</div>
+      </div>
+    );
   }
 
   return (
     <motion.div 
-      className="max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto my-2 sm:my-4 md:my-8 px-3 py-4 sm:px-4 pb-12 sm:pb-8"
+      className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 transition-all duration-500"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-br from-primary/5 via-accent/5 to-secondary/5 pointer-events-none -z-10"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.2 }}
-      />
-      <Card className="shadow-xl border border-border/20 bg-card/95 backdrop-blur-sm relative">
-        <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-3 sm:p-5 md:p-6">
-          <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-primary flex items-center gap-2">
-            <ListChecks className="h-6 w-6 sm:h-7 sm:w-7" /> Quick Log
-          </CardTitle>
-          <CardDescription className="text-sm sm:text-base mt-1 text-muted-foreground">
-            Manage frequently eaten foods or log from your history.
-            {isSyncing && <span className="ml-2 text-xs text-primary animate-pulse">(Syncing...)</span>}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
-          <div className="mb-4 sm:mb-6 grid grid-cols-1 gap-2 sm:gap-3">
-            <Button onClick={() => { setShowForm(!showForm); setShowHistoryLogSection(false); setEditingItemId(null); setFormState(initialFormState); }} variant={showForm ? "outline" : "default"} className="shadow-sm w-full"> <PlusCircle className="mr-2 h-4 w-4"/>{showForm ? "Cancel New" : "Add New Quick Item"} </Button>
-            <Button onClick={() => { setShowHistoryLogSection(!showHistoryLogSection); setShowForm(false); }} variant={showHistoryLogSection ? "outline" : "secondary"} className="shadow-sm w-full"> <History className="mr-2 h-4 w-4"/>{showHistoryLogSection ? "Hide History" : "Log from History"} </Button>
-          </div>
+      <div className="p-3 md:p-4">
+        <div className="max-w-3xl mx-auto">
+          {/* Quick Log Header Card */}
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                      <Zap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+                        Quick Log
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Log your meals and workouts instantly
+                        {isSyncing && <span className="ml-2 text-xs text-purple-600 animate-pulse">(Syncing...)</span>}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-          {showForm && (
-            <Card className="mb-6 sm:mb-8 p-3 sm:p-4 md:p-6 shadow-lg border border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300">
-              <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                <h3 className="text-base sm:text-lg font-semibold text-primary mb-2 sm:mb-3 flex items-center gap-2">
-                  {editingItemId ? <Edit3 size={16} className="sm:w-[18px] sm:h-[18px]"/> : <BrainCircuit size={16} className="sm:w-[18px] sm:h-[18px]"/>}
-                  {editingItemId ? "Edit" : "Add New"} Quick Log Item
-                </h3>
-                <div>
-                  <Label htmlFor="foodName">Food Name *</Label>
-                  <Input ref={foodNameInputRef} id="foodName" name="foodName" value={formState.foodName} onChange={handleInputChange} onBlur={handleFoodNameBlur} placeholder="e.g., Apple, Chicken Breast" required className="mt-1"/>
-                  {isEstimatingNutrition && <p className="text-xs text-primary mt-1 flex items-center gap-1"><Loader2 size={12} className="animate-spin"/> AI estimating nutrition...</p>}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-                  <div><Label htmlFor="calories" className="text-xs">Calories *</Label><Input Icon={Flame} id="calories" name="calories" type="number" value={formState.calories} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
-                  <div><Label htmlFor="protein" className="text-xs">Protein (g) *</Label><Input Icon={Dumbbell} id="protein" name="protein" type="number" step="0.1" value={formState.protein} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
-                  <div><Label htmlFor="carbohydrates" className="text-xs">Carbs (g) *</Label><Input Icon={Zap} id="carbohydrates" name="carbohydrates" type="number" step="0.1" value={formState.carbohydrates} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
-                  <div><Label htmlFor="fat" className="text-xs">Fat (g) *</Label><Input Icon={Leaf} id="fat" name="fat" type="number" step="0.1" value={formState.fat} onChange={handleInputChange} placeholder="0" required className="mt-1 text-xs h-9"/></div>
-                </div>
-                <div>
-                  <Label htmlFor="servingSizeDescription">Serving Size (Optional)</Label>
-                  <Input id="servingSizeDescription" name="servingSizeDescription" value={formState.servingSizeDescription || ''} onChange={handleInputChange} placeholder="e.g., 1 cup, 100g" className="mt-1"/>
-                </div>
-                <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingItemId(null); setFormState(initialFormState); }} disabled={isSubmitting || isEstimatingNutrition} className="w-full sm:w-auto">Cancel</Button>
-                  <Button type="submit" disabled={isSubmitting || isEstimatingNutrition} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto">
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
-                    {editingItemId ? "Update Item" : "Save Item"}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    onClick={() => { setShowForm(!showForm); setShowHistoryLogSection(false); setEditingItemId(null); setFormState(initialFormState); }}
+                    className="w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    {showForm ? "Cancel New" : "Add New Quick Item"}
+                  </Button>
+                  
+                  <Button 
+                    onClick={() => { setShowHistoryLogSection(!showHistoryLogSection); setShowForm(false); }}
+                    variant="outline"
+                    className="w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 bg-white/60 border-gray-200 text-gray-700 hover:text-gray-800 hover:bg-white/80"
+                  >
+                    <Clock className="w-5 h-5 mr-2" />
+                    {showHistoryLogSection ? "Hide History" : "Log from History"}
                   </Button>
                 </div>
-              </form>
+              </CardContent>
             </Card>
-          )}
+          </motion.div>
 
-          {showHistoryLogSection && (
-             <Card className="mb-8 p-4 md:p-6 shadow-lg border-accent/20 animate-in fade-in duration-300">
-                <CardHeader className="p-0 mb-3">
-                    <CardTitle className="text-lg font-semibold text-accent flex items-center gap-2"><History size={18}/> Log from Your History</CardTitle>
-                    <CardDescription className="text-sm">Select a past meal to log it for today or save as a new quick item.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0 max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                    {isLoadingHistory ? (
-                        <div className="space-y-2"><Skeleton className="h-16 w-full"/><Skeleton className="h-16 w-full"/><Skeleton className="h-16 w-full"/></div>
-                    ) : historyError ? (
-                        <p className="text-center text-destructive py-4">{historyError}</p>
-                    ) : historyLogItems.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6 italic">No recent food history found to log from.</p>
-                    ) : (
-                        <div className="pr-2">
-                            <ul className="space-y-2">
-                                {historyLogItems.map(log => (
-                                    <li key={log.id} className="p-2.5 border rounded-md bg-background hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                        <div className="flex-grow">
-                                            <p className="font-medium text-sm">{log.identifiedFoodName || log.foodItem}</p>
-                                            <p className="text-xs text-muted-foreground tabular-nums">
-                                                {log.calories.toFixed(0)} kcal &bull; P:{log.protein.toFixed(1)}g &bull; C:{log.carbohydrates.toFixed(1)}g &bull; F:{log.fat.toFixed(1)}g
-                                                {log.originalDescription && <span className="italic"> ({log.originalDescription})</span>}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground/70">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
-                                        </div>
-                                        <div className="flex gap-1.5 sm:ml-auto mt-2 sm:mt-0 flex-shrink-0">
-                                            <Button variant="outline" size="sm" onClick={() => triggerLogFromHistoryDialog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs">Log Now</Button>
-                                            <Button variant="outline" size="sm" onClick={() => handleAddHistoryItemToQuickLog(log)} disabled={isSubmitting} className="h-7 px-2 text-xs"><BookmarkPlus size={12} className="mr-1"/>Save to Quick</Button>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
+          {/* Add New Form */}
+          <AnimatePresence>
+            {showForm && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="mb-6"
+              >
+                <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
+                  <CardContent className="p-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="flex items-center space-x-3 mb-4">
+                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                          {editingItemId ? <Edit3 className="w-5 h-5 text-white"/> : <BrainCircuit className="w-5 h-5 text-white"/>}
                         </div>
-                    )}
-                </CardContent>
-             </Card>
-          )}
+                        <h3 className="text-lg font-bold text-gray-800">
+                          {editingItemId ? "Edit" : "Add New"} Quick Log Item
+                        </h3>
+                      </div>
 
-          {!showForm && !showHistoryLogSection && (
-             isLoading && items.length === 0 ? (
-                <div className="space-y-3 mt-6">
-                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-lg" />)}
-                </div>
-             ) : items.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8 mt-6">You haven't added any quick log items yet. Click "Add New Quick Item" to start!</p>
-             ) : items.length > 0 ? (
-                <div className="space-y-3 mt-4 sm:mt-6">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm sm:text-md font-semibold text-foreground/80">Your Saved Quick Log Items ({items.length})</h3>
-                        {items.length > 5 && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                className="text-xs text-muted-foreground hover:text-primary"
-                            >
-                                ↑ Top
-                            </Button>
+                      <div>
+                        <Label htmlFor="foodName" className="text-gray-700">Food Name *</Label>
+                        <Input 
+                          ref={foodNameInputRef} 
+                          id="foodName" 
+                          name="foodName" 
+                          value={formState.foodName} 
+                          onChange={handleInputChange} 
+                          onBlur={handleFoodNameBlur} 
+                          placeholder="e.g., Apple, Chicken Breast" 
+                          required 
+                          className="mt-2 rounded-2xl border-gray-200 bg-white/80 focus:border-purple-400 focus:ring-purple-200"
+                        />
+                        {isEstimatingNutrition && (
+                          <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
+                            <Loader2 size={12} className="animate-spin"/> AI estimating nutrition...
+                          </p>
                         )}
-                    </div>
-                    <div className="max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent pr-2 space-y-3">
-                        {items.map((item, index) => (
-                            <Card key={item.id} className={cn("p-3 sm:p-4 group hover:shadow-md transition-shadow border-border/50", loggedTodayMap[item.id] && "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700")}>
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                                    <div className="flex-grow min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <p className="font-medium text-sm sm:text-base truncate">{item.foodName}</p>
-                                            <span className="text-xs text-muted-foreground/50 font-mono">#{index + 1}</span>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground tabular-nums">
-                                            {item.calories.toFixed(0)} kcal &bull; P:{item.protein.toFixed(1)}g &bull; C:{item.carbohydrates.toFixed(1)}g &bull; F:{item.fat.toFixed(1)}g
-                                            {item.servingSizeDescription && <span className="italic block sm:inline"> ({item.servingSizeDescription})</span>}
-                                        </p>
-                                    </div>
-                                    <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto sm:ml-auto">
-                                       <Button variant={loggedTodayMap[item.id] ? "secondary" : "default"} size="sm" onClick={() => handleLogForTodayFromPreset(item)} disabled={isSubmitting || loggedTodayMap[item.id]} className="h-8 px-3 text-xs sm:text-sm shadow-sm hover:scale-105 transition-transform flex-1 sm:flex-none">
-                                           {loggedTodayMap[item.id] ? <CheckCircle size={14} className="mr-1.5 text-green-600"/> : <PlusCircle size={14} className="mr-1.5"/>}
-                                           {loggedTodayMap[item.id] ? "Logged Today" : "Log Today"}
-                                       </Button>
-                                        <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-7 sm:w-7 text-muted-foreground hover:text-primary" onClick={() => handleEdit(item)} title="Edit Item"><Edit3 size={14}/></Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" title="Delete Item"><Trash2 size={14}/></Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Delete Quick Item?</AlertDialogTitle><AlertDialogDescription>Delete "{item.foodName}" from your quick log presets?</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
-                        {items.length > 10 && (
-                            <div className="flex justify-center pt-4 pb-2">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                                    className="text-xs text-muted-foreground hover:text-primary"
-                                >
-                                    ↑ Back to Top
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-             ) : null
-          )}
-        </CardContent>
-      </Card>
+                      </div>
 
-      <AlertDialog open={showLogFromHistoryDialog} onOpenChange={setShowLogFromHistoryDialog}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Log "{itemToLogFromHistory?.identifiedFoodName || itemToLogFromHistory?.foodItem}" for Today?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Review and edit nutritional details if needed before logging.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            {itemToLogFromHistory && (
-                <div className="space-y-3 py-2">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div><Label htmlFor="dialog-foodName" className="text-xs">Food Name</Label><Input id="dialog-foodName" name="foodName" value={editableHistoryLogDetails.foodName || ''} onChange={handleDialogInputChange} className="mt-1 h-9 text-sm"/></div>
-                        <div><Label htmlFor="dialog-calories" className="text-xs">Calories (kcal)</Label><Input Icon={Flame} id="dialog-calories" name="calories" type="number" value={editableHistoryLogDetails.calories || 0} onChange={handleDialogInputChange} className="mt-1 h-9 text-sm"/></div>
-                    </div>
-                     <div className="grid grid-cols-3 gap-3">
-                        <div><Label htmlFor="dialog-protein" className="text-xs">Protein (g)</Label><Input Icon={Dumbbell} id="dialog-protein" name="protein" type="number" step="0.1" value={editableHistoryLogDetails.protein || 0} onChange={handleDialogInputChange} className="mt-1 h-9 text-sm"/></div>
-                        <div><Label htmlFor="dialog-carbohydrates" className="text-xs">Carbs (g)</Label><Input Icon={Zap} id="dialog-carbohydrates" name="carbohydrates" type="number" step="0.1" value={editableHistoryLogDetails.carbohydrates || 0} onChange={handleDialogInputChange} className="mt-1 h-9 text-sm"/></div>
-                        <div><Label htmlFor="dialog-fat" className="text-xs">Fat (g)</Label><Input Icon={Leaf} id="dialog-fat" name="fat" type="number" step="0.1" value={editableHistoryLogDetails.fat || 0} onChange={handleDialogInputChange} className="mt-1 h-9 text-sm"/></div>
-                    </div>
-                    <div><Label htmlFor="dialog-servingSizeDescription" className="text-xs">Serving/Notes</Label><Input id="dialog-servingSizeDescription" name="servingSizeDescription" value={editableHistoryLogDetails.servingSizeDescription || ''} onChange={handleDialogInputChange} placeholder="e.g., 1 bowl, as eaten" className="mt-1 h-9 text-sm"/></div>
-                </div>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                          <Label htmlFor="calories" className="text-xs text-gray-600">Calories *</Label>
+                          <div className="relative mt-1">
+                            <Flame className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
+                            <Input 
+                              id="calories" 
+                              name="calories" 
+                              type="number" 
+                              value={formState.calories} 
+                              onChange={handleInputChange} 
+                              placeholder="0" 
+                              required 
+                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="protein" className="text-xs text-gray-600">Protein (g) *</Label>
+                          <div className="relative mt-1">
+                            <Dumbbell className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500" />
+                            <Input 
+                              id="protein" 
+                              name="protein" 
+                              type="number" 
+                              step="0.1" 
+                              value={formState.protein} 
+                              onChange={handleInputChange} 
+                              placeholder="0" 
+                              required 
+                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="carbohydrates" className="text-xs text-gray-600">Carbs (g) *</Label>
+                          <div className="relative mt-1">
+                            <Battery className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-yellow-500" />
+                            <Input 
+                              id="carbohydrates" 
+                              name="carbohydrates" 
+                              type="number" 
+                              step="0.1" 
+                              value={formState.carbohydrates} 
+                              onChange={handleInputChange} 
+                              placeholder="0" 
+                              required 
+                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="fat" className="text-xs text-gray-600">Fat (g) *</Label>
+                          <div className="relative mt-1">
+                            <Droplets className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
+                            <Input 
+                              id="fat" 
+                              name="fat" 
+                              type="number" 
+                              step="0.1" 
+                              value={formState.fat} 
+                              onChange={handleInputChange} 
+                              placeholder="0" 
+                              required 
+                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="servingSizeDescription" className="text-gray-700">Serving Size (Optional)</Label>
+                        <Input 
+                          id="servingSizeDescription" 
+                          name="servingSizeDescription" 
+                          value={formState.servingSizeDescription || ''} 
+                          onChange={handleInputChange} 
+                          placeholder="e.g., 1 cup, 100g" 
+                          className="mt-2 rounded-2xl border-gray-200 bg-white/80 focus:border-purple-400"
+                        />
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => { setShowForm(false); setEditingItemId(null); setFormState(initialFormState); }} 
+                          disabled={isSubmitting || isEstimatingNutrition} 
+                          className="rounded-2xl px-6 py-3 bg-white/60 border-gray-200 text-gray-700 hover:bg-white/80"
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={isSubmitting || isEstimatingNutrition} 
+                          className="rounded-2xl px-6 py-3 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg"
+                        >
+                          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                          {editingItemId ? "Update Item" : "Save Item"}
+                        </Button>
+                      </div>
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
             )}
-            <AlertDialogFooter className="mt-2">
-                <AlertDialogCancel onClick={() => setShowLogFromHistoryDialog(false)} disabled={isSubmitting}>Cancel</AlertDialogCancel>
-                <Button onClick={() => confirmLogFromHistory(true)} disabled={isSubmitting} variant="outline">Log As Is</Button>
-                <Button onClick={() => confirmLogFromHistory(false)} disabled={isSubmitting} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                     {isSubmitting ? <Loader2 size={16} className="animate-spin mr-1.5"/> : <Save size={16} className="mr-1.5"/>} Log Edited Values
-                </Button>
-            </AlertDialogFooter>
+          </AnimatePresence>
+
+          {/* History Section */}
+          <AnimatePresence>
+            {showHistoryLogSection && (
+              <motion.div
+                initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="mb-6"
+              >
+                <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
+                  <CardContent className="p-6">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                        <History className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-800">Log from Your History</h3>
+                        <p className="text-sm text-gray-600">Select a past meal to log it for today or save as a new quick item.</p>
+                      </div>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto">
+                      {isLoadingHistory ? (
+                        <div className="space-y-3">
+                          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
+                        </div>
+                      ) : historyError ? (
+                        <p className="text-center text-red-600 py-6 font-medium">{historyError}</p>
+                      ) : historyLogItems.length === 0 ? (
+                        <p className="text-center text-gray-500 py-8 italic">No recent food history found to log from.</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {historyLogItems.map((log, index) => (
+                            <motion.div
+                              key={log.id}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.05 }}
+                              className="p-4 backdrop-blur-sm rounded-2xl shadow-lg bg-white/40 hover:bg-white/60 transition-all duration-200 flex flex-col sm:flex-row sm:items-center gap-3"
+                            >
+                              <div className="flex-grow">
+                                <p className="font-semibold text-gray-800 text-sm">{log.identifiedFoodName || log.foodItem}</p>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                    <Flame className="w-3 h-3 text-orange-500" />
+                                    <span className="text-gray-600">{log.calories.toFixed(0)} kcal</span>
+                                  </span>
+                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                    <Dumbbell className="w-3 h-3 text-blue-500" />
+                                    <span className="text-gray-600">P:{log.protein.toFixed(1)}g</span>
+                                  </span>
+                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                    <Battery className="w-3 h-3 text-yellow-500" />
+                                    <span className="text-gray-600">C:{log.carbohydrates.toFixed(1)}g</span>
+                                  </span>
+                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                    <Droplets className="w-3 h-3 text-green-500" />
+                                    <span className="text-gray-600">F:{log.fat.toFixed(1)}g</span>
+                                  </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
+                              </div>
+                              <div className="flex gap-2 sm:ml-auto">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => triggerLogFromHistoryDialog(log)} 
+                                  disabled={isSubmitting} 
+                                  className="rounded-2xl px-3 py-2 text-xs bg-white/60 border-gray-200 hover:bg-white/80"
+                                >
+                                  Log Now
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => handleAddHistoryItemToQuickLog(log)} 
+                                  disabled={isSubmitting} 
+                                  className="rounded-2xl px-3 py-2 text-xs bg-white/60 border-gray-200 hover:bg-white/80"
+                                >
+                                  <BookmarkPlus size={12} className="mr-1"/>Save to Quick
+                                </Button>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Your Saved Quick Log Items */}
+          {!showForm && !showHistoryLogSection && (
+            <>
+              {/* Header */}
+              <motion.div 
+                className="mb-6"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="backdrop-blur-sm rounded-3xl shadow-lg p-6 border-0 transition-all duration-300 bg-white/60 shadow-lg">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <h2 className="md:text-2xl font-bold text-base text-gray-800">
+                      Your Saved Quick Log Items
+                    </h2>
+                  </div>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <TrendingUp className="w-4 h-4 text-purple-600" />
+                    <span className="text-gray-600">{items.length} items ready to log</span>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Items List */}
+              {isLoading && items.length === 0 ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-3xl" />)}
+                </div>
+              ) : items.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-center py-12"
+                >
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
+                  <p className="text-gray-600 text-lg mb-4">You haven't added any quick log items yet.</p>
+                  <p className="text-gray-500 text-sm">Click "Add New Quick Item" to start!</p>
+                </motion.div>
+              ) : (
+                <div className="space-y-4">
+                  {items.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className={cn(
+                        "backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 hover:scale-[1.01] bg-white/60 shadow-lg",
+                        loggedTodayMap[item.id] && "bg-green-100/60 border-green-200"
+                      )}
+                    >
+                      <div className="p-5 md:p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+                          <div className="flex-1">
+                            <div className="flex items-start lg:items-center justify-between mb-3">
+                              <h3 className="text-lg md:text-xl font-bold flex-1 mr-3 text-gray-800">
+                                {item.foodName}
+                              </h3>
+                              <div className="flex items-center space-x-1 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg bg-white/40">
+                                <Hash className="w-3 h-3 text-purple-600" />
+                                <span className="text-sm text-purple-600 font-bold">
+                                  {index + 1}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
+                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                                <Flame className="w-4 h-4 text-orange-500" />
+                                <span className="font-semibold text-gray-600">{item.calories.toFixed(0)} kcal</span>
+                              </div>
+                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                                <Dumbbell className="w-4 h-4 text-blue-500" />
+                                <span className="text-gray-600">P: {item.protein.toFixed(1)}g</span>
+                              </div>
+                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                                <Battery className="w-4 h-4 text-yellow-500" />
+                                <span className="text-gray-600">C: {item.carbohydrates.toFixed(1)}g</span>
+                              </div>
+                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                                <Droplets className="w-4 h-4 text-green-500" />
+                                <span className="text-gray-600">F: {item.fat.toFixed(1)}g</span>
+                              </div>
+                            </div>
+                            
+                            {item.servingSizeDescription && (
+                              <p className="text-sm backdrop-blur-sm rounded-2xl px-4 py-2 inline-block shadow-lg text-gray-500 bg-white/40">
+                                {item.servingSizeDescription}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between lg:justify-end space-x-3 lg:ml-6">
+                            <div className="flex items-center space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                className="backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl bg-white/60 text-gray-600 hover:text-gray-800 hover:bg-white/80" 
+                                onClick={() => handleEdit(item)}
+                                title="Edit Item"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    className="backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl bg-white/60 text-gray-600 hover:text-red-500 hover:bg-red-50"
+                                    title="Delete Item"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Quick Item?</AlertDialogTitle>
+                                    <AlertDialogDescription>Delete "{item.foodName}" from your quick log presets?</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(item.id)} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                            
+                            <Button 
+                              className={cn(
+                                "font-semibold px-6 py-3 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 text-sm",
+                                loggedTodayMap[item.id] 
+                                  ? "bg-green-500 hover:bg-green-600 text-white" 
+                                  : "bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                              )}
+                              onClick={() => handleLogForTodayFromPreset(item)} 
+                              disabled={isSubmitting || loggedTodayMap[item.id]}
+                            >
+                              {loggedTodayMap[item.id] ? (
+                                <>
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Logged Today
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="w-4 h-4 mr-2" />
+                                  Log Today
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Log from History Dialog */}
+      <AlertDialog open={showLogFromHistoryDialog} onOpenChange={setShowLogFromHistoryDialog}>
+        <AlertDialogContent className="rounded-3xl bg-white/95 backdrop-blur-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log "{itemToLogFromHistory?.identifiedFoodName || itemToLogFromHistory?.foodItem}" for Today?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Review and edit nutritional details if needed before logging.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {itemToLogFromHistory && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="dialog-foodName" className="text-xs">Food Name</Label>
+                  <Input 
+                    id="dialog-foodName" 
+                    name="foodName" 
+                    value={editableHistoryLogDetails.foodName || ''} 
+                    onChange={handleDialogInputChange} 
+                    className="mt-1 h-10 text-sm rounded-2xl bg-white/80"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dialog-calories" className="text-xs">Calories (kcal)</Label>
+                  <div className="relative mt-1">
+                    <Flame className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
+                    <Input 
+                      id="dialog-calories" 
+                      name="calories" 
+                      type="number" 
+                      value={editableHistoryLogDetails.calories || 0} 
+                      onChange={handleDialogInputChange} 
+                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <Label htmlFor="dialog-protein" className="text-xs">Protein (g)</Label>
+                  <div className="relative mt-1">
+                    <Dumbbell className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500" />
+                    <Input 
+                      id="dialog-protein" 
+                      name="protein" 
+                      type="number" 
+                      step="0.1" 
+                      value={editableHistoryLogDetails.protein || 0} 
+                      onChange={handleDialogInputChange} 
+                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="dialog-carbohydrates" className="text-xs">Carbs (g)</Label>
+                  <div className="relative mt-1">
+                    <Battery className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-yellow-500" />
+                    <Input 
+                      id="dialog-carbohydrates" 
+                      name="carbohydrates" 
+                      type="number" 
+                      step="0.1" 
+                      value={editableHistoryLogDetails.carbohydrates || 0} 
+                      onChange={handleDialogInputChange} 
+                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="dialog-fat" className="text-xs">Fat (g)</Label>
+                  <div className="relative mt-1">
+                    <Droplets className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
+                    <Input 
+                      id="dialog-fat" 
+                      name="fat" 
+                      type="number" 
+                      step="0.1" 
+                      value={editableHistoryLogDetails.fat || 0} 
+                      onChange={handleDialogInputChange} 
+                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="dialog-servingSizeDescription" className="text-xs">Serving/Notes</Label>
+                <Input 
+                  id="dialog-servingSizeDescription" 
+                  name="servingSizeDescription" 
+                  value={editableHistoryLogDetails.servingSizeDescription || ''} 
+                  onChange={handleDialogInputChange} 
+                  placeholder="e.g., 1 bowl, as eaten" 
+                  className="mt-1 h-10 text-sm rounded-2xl bg-white/80"
+                />
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel 
+              onClick={() => setShowLogFromHistoryDialog(false)} 
+              disabled={isSubmitting}
+              className="rounded-2xl"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <Button 
+              onClick={() => confirmLogFromHistory(true)} 
+              disabled={isSubmitting} 
+              variant="outline"
+              className="rounded-2xl"
+            >
+              Log As Is
+            </Button>
+            <Button 
+              onClick={() => confirmLogFromHistory(false)} 
+              disabled={isSubmitting} 
+              className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl"
+            >
+              {isSubmitting ? <Loader2 size={16} className="animate-spin mr-1.5"/> : <Save size={16} className="mr-1.5"/>} 
+              Log Edited Values
+            </Button>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </motion.div>

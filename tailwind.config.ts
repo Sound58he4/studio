@@ -8,8 +8,7 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-  	extend: {
-  		colors: {
+  	extend: {  		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {
@@ -59,7 +58,20 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+  			// Clay Design System Colors
+  			clay: {
+  				100: '#f8fbff',
+  				200: '#e6eaff',
+  				300: '#dde6fa',
+  				400: '#e5e8f2',
+  				500: '#cacbec',
+  				600: '#aebbe4'
+  			},
+  			clayGlass: 'rgba(255,255,255,0.7)',
+  			clayBlue: '#c7e3ff',
+  			clayPurple: '#e3dffd',
+  			clayAccent: '#a4cdf2'
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
@@ -143,10 +155,26 @@ export default {
               '0%': { backgroundPosition: '0% 0%' },
               '50%': { backgroundPosition: '100% 100%' },
               '100%': { backgroundPosition: '0% 0%' },
-            },
-            'hero-opacity-pulse': {
+            },            'hero-opacity-pulse': {
               '0%, 100%': { opacity: '0.6' }, // Base glow opacity
               '50%': { opacity: '1.0' },    // Peak glow opacity
+            },
+            // Clay Design System Animations
+            'scale-in': {
+              '0%': { opacity: '0', transform: 'scale(0.9)' },
+              '100%': { opacity: '1', transform: 'scale(1)' }
+            },
+            'slide-up': {
+              '0%': { opacity: '0', transform: 'translateY(20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            'slide-down': {
+              '0%': { opacity: '0', transform: 'translateY(-20px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            'fade-in': {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' }
             }
   		},
   		animation: {
@@ -170,6 +198,11 @@ export default {
             'float': 'float 3s ease-in-out infinite',
             'pulse-ring': 'pulse-ring 1.5s cubic-bezier(0.24, 0, 0.38, 1) infinite',
             'star-twinkle': 'star-twinkle 2s ease-in-out infinite',
+            // Clay Design System Animations
+            'scale-in': 'scale-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            'slide-up': 'slide-up 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            'slide-down': 'slide-down 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+            'fade-in': 'fade-in 0.5s ease-out'
   		},
           backgroundSize: {
              '200%': '200% 200%',
@@ -180,11 +213,20 @@ export default {
              'out-bounce': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
              'in-out-quad': 'cubic-bezier(0.455, 0.03, 0.515, 0.955)',
              'ease-out-quad': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Added for smooth progress bar animation
-          },
-          boxShadow: {
+          },          boxShadow: {
              'glow-primary': '0 0 15px 3px hsl(var(--primary) / 0.4)',
              'glow-accent': '0 0 12px 2px hsl(var(--accent) / 0.3)',
              'inner-lg': 'inset 0 2px 10px 0 rgb(0 0 0 / 0.1)',
+             // Clay Design System Shadows
+             'clay': '8px 8px 24px #c7e3ff, -8px -8px 24px #e6eaff',
+             'clayInset': 'inset 2px 2px 8px #dde6fa, inset -2px -2px 8px #ffffff',             'clayStrong': '4px 8px 36px 0px rgba(120,148,255,0.15), 0px 8px 20px 0px #e6eaff'
+          },
+          // Safe area utilities for mobile devices
+          spacing: {
+            'safe-top': 'env(safe-area-inset-top)',
+            'safe-bottom': 'env(safe-area-inset-bottom)',
+            'safe-left': 'env(safe-area-inset-left)',
+            'safe-right': 'env(safe-area-inset-right)',
           },
   	}
   },

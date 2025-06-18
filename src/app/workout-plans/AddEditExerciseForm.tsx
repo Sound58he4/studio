@@ -2,20 +2,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel as UiSelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Check, X, Info, Dumbbell, Weight, Clock, Repeat, Scale, Tag, ListFilter, Youtube, Wand2, BrainCircuit, ThumbsUp, Sparkles, Search, Plus, Minus } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Minus, Check, X, Dumbbell, FileText, Edit } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { EditableExercise } from './page';
-import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Image from 'next/image';
+import type { DayOfWeek } from './page';
 
 // --- Mock Data (Replace with actual data fetching or pass as props) ---
 const exerciseLibrary = [
@@ -51,234 +45,12 @@ interface AddEditExerciseFormProps {
     onChange: (field: keyof EditableExercise, value: any) => void;
 }
 
-
-// --- Stepper Component ---
-const StepperInput: React.FC<{
-    label: string; id: string; value: number | null; min?: number; step?: number; unit?: string;
-    onChange: (value: number | null) => void; icon?: React.ElementType; className?: string;
-}> = ({ label, id, value, min = 0, step = 1, unit, onChange, icon: Icon, className }) => {
-    const handleIncrement = () => onChange(value === null ? min + step : Math.max(min, (value || 0) + step));
-    const handleDecrement = () => onChange(value === null ? min : Math.max(min, (value || 0) - step));
-    const handleChangeEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const numValue = e.target.value === '' ? null : parseInt(e.target.value, 10);
-        if (numValue === null || (!isNaN(numValue) && numValue >= min)) {
-            onChange(numValue);
-        } else if (!isNaN(numValue) && numValue < min) {
-            onChange(min);
-        }
-    };
-
-    return (
-        <div className={cn("space-y-2", className)}>
-            <Label htmlFor={id} className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-               {Icon && <Icon size={16} className="text-blue-500"/>} {label} {unit && <span className="text-xs text-slate-500">({unit})</span>}
-            </Label>
-            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400" 
-                        onClick={handleDecrement} 
-                        aria-label={`Decrease ${label}`}
-                    >
-                        <Minus size={16}/>
-                    </Button>
-                </motion.div>
-                <Input
-                    id={id}
-                    type="number"
-                    min={min}
-                    step={step}
-                    value={value ?? ''}
-                    onChange={handleChangeEvent}
-                    placeholder="--"
-                    className="h-10 border-0 bg-transparent text-center px-2 flex-grow min-w-[60px] font-semibold text-lg focus-visible:ring-0"
-                    aria-label={label}
-                />
-                <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                    <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400" 
-                        onClick={handleIncrement} 
-                        aria-label={`Increase ${label}`}
-                    >
-                        <Plus size={16}/>
-                    </Button>
-                </motion.div>
-            </div>
-        </div>
-    );
-};
-
-// --- Chip Component ---
-const Chip: React.FC<{
-    label: string | React.ReactNode;
-    value: string; selected?: boolean; onClick: () => void; className?: string;
-}> = ({ label, selected = false, onClick, className }) => (
-    <Button
-        type="button"
-        variant={selected ? "secondary" : "outline"}
-        size="sm"
-        onClick={onClick}
-        className={cn(
-            "text-xs h-7 px-2.5 rounded-full transition-all duration-150 ease-in-out hover:scale-105 flex items-center gap-1",
-            selected ? "bg-primary/15 text-primary border-primary/30 ring-1 ring-primary/20" : "border-input hover:bg-muted/50",
-            className
-        )}
-        aria-pressed={selected}
-    >
-        {label}
-    </Button>
-);
-
-// --- Autocomplete Component ---
-const ExerciseAutocomplete: React.FC<{
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-}> = ({ value, onChange, placeholder }) => {
-    const [query, setQuery] = useState(value || "");
-    const [suggestions, setSuggestions] = useState<{ name: string; category: string }[]>([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const inputRef = React.useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        setQuery(value || "");
-    }, [value]);
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newQuery = e.target.value;
-        setQuery(newQuery);
-        onChange(newQuery);
-
-        if (newQuery.length > 1) {
-            const filtered = exerciseLibrary
-                .filter(ex => ex.name.toLowerCase().includes(newQuery.toLowerCase()))
-                .slice(0, 5);
-            setSuggestions(filtered);
-            setIsOpen(filtered.length > 0);
-        } else {
-            setSuggestions([]);
-            setIsOpen(false);
-        }
-    };
-
-    const handleSuggestionClick = (suggestionName: string) => {
-        setQuery(suggestionName);
-        onChange(suggestionName);
-        setIsOpen(false);
-        setSuggestions([]);
-         inputRef.current?.focus();
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-          if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
-            setIsOpen(false);
-          }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-          document.removeEventListener("mousedown", handleClickOutside);
-        };
-      }, []);
-
-
-    return (
-        <div className="relative">
-             <Label htmlFor="exercise-name-input" className="text-sm font-medium">Exercise Name *</Label>
-            <Input
-                ref={inputRef}
-                id="exercise-name-input"
-                value={query}
-                onChange={handleInputChange}
-                placeholder={placeholder || "Start typing (e.g., Bench Press)"}
-                className="text-base"
-                onFocus={() => query.length > 1 && suggestions.length > 0 && setIsOpen(true)}
-                required
-                autoComplete="off"
-                aria-autocomplete="list"
-                aria-controls="exercise-suggestions"
-                aria-expanded={isOpen}
-            />
-            {isOpen && suggestions.length > 0 && (
-                <ul
-                   id="exercise-suggestions"
-                   role="listbox"
-                   className="absolute z-20 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-48 overflow-y-auto"
-                 >
-                    {suggestions.map((s) => (
-                        <li
-                            key={s.name}
-                            role="option"
-                            aria-selected={query === s.name}
-                            onMouseDown={(e) => { e.preventDefault(); handleSuggestionClick(s.name); }}
-                            className="px-3 py-2 text-sm hover:bg-accent cursor-pointer flex justify-between items-center"
-                        >
-                            <span>{s.name}</span>
-                            <span className="text-xs text-muted-foreground italic">{s.category}</span>
-                        </li>
-                    ))}
-                     <li className="px-3 py-2 text-xs text-muted-foreground italic border-t">Continue typing for custom exercise</li>
-                </ul>
-            )}
-        </div>
-    );
-};
-
-// --- Multi-Select Chips Component ---
-const MultiSelectChips: React.FC<{
-    label: string; options: string[]; value: string[]; onChange: (value: string[]) => void; icon?: React.ElementType;
-}> = ({ label, options, value: selectedValues = [], onChange, icon: Icon }) => {
-    const handleToggle = (option: string) => {
-        const currentSelection = Array.isArray(selectedValues) ? selectedValues : [];
-        const newSelection = currentSelection.includes(option)
-            ? currentSelection.filter(item => item !== option)
-            : [...currentSelection, option];
-        onChange(newSelection);
-    };
-
-    return (
-        <div className="space-y-2">
-            <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                 {Icon && <Icon size={12}/>} {label}
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-                {options.map(option => {
-                     let chipLabel: string | React.ReactNode = option;
-                     if (option === "Bago") {
-                         chipLabel = (
-                             <span className="flex items-center gap-1">
-                                 <Image src="https://picsum.photos/id/237/16/16" alt="Bago Logo" width={16} height={16} data-ai-hint="logo fitness" className="inline-block rounded-sm" />
-                                 Bago
-                             </span>
-                         );
-                     }
-                     return (
-                        <Chip
-                            key={option}
-                            label={chipLabel}
-                            value={option}
-                            selected={selectedValues.includes(option)}
-                            onClick={() => handleToggle(option)}
-                        />
-                     );
-                })}
-            </div>
-        </div>
-    );
-};
-
 // --- Main Form Component ---
 const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
     exercise: initialExercise, day, onSave, onCancel, onChange: propagateChange
 }) => {
     const [exercise, setExercise] = useState<EditableExercise>({
-        id: initialExercise?.id || generateUniqueId(day),
+        id: initialExercise?.id || `${day}-new-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         exercise: initialExercise?.exercise || "",
         sets: initialExercise?.sets ?? 3,
         reps: initialExercise?.reps ?? "8-12",
@@ -297,7 +69,7 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
 
     useEffect(() => {
         setExercise({
-            id: initialExercise?.id || generateUniqueId(day),
+            id: initialExercise?.id || `${day}-new-${Date.now()}-${Math.random().toString(16).slice(2)}`,
             exercise: initialExercise?.exercise || "",
             sets: initialExercise?.sets ?? 3,
             reps: initialExercise?.reps ?? (trackingType === 'duration' ? '60s' : '8-12'),
@@ -331,201 +103,186 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
     const trackingOptions = trackingType === 'reps' ? commonRepCounts : commonDurations;
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-        >
-            <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <motion.div
-                            className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center"
-                            whileHover={{ rotate: 5, scale: 1.1 }}
-                            transition={{ type: "spring", stiffness: 300 }}
-                        >
-                            <Dumbbell className="h-4 w-4 text-white" />
-                        </motion.div>
-                        {exercise.isNew ? 'Add New Exercise' : 'Edit Exercise'}
-                    </h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                        Configure your exercise details for {day}
-                    </p>
+        <div className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-50/80 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
+            {/* Header */}
+            <div className="p-4 md:p-6 pb-3 md:pb-4 border-b border-blue-200/30">
+                <div className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
+                    <div className="w-8 h-8 mr-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        {exercise.isNew ? <Plus className="w-5 h-5 text-white" /> : <Edit className="w-5 h-5 text-white" />}
+                    </div>
+                    {exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}
                 </div>
+                
+                <p className="text-sm text-gray-600 mt-2 ml-11">Configure your exercise details for {day}</p>
             </div>
 
-            <form onSubmit={handleSaveClick} className="space-y-6">
-                {/* Exercise Name Section */}
-                <motion.div
-                    className="space-y-4 p-6 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 rounded-2xl border border-blue-200/50 dark:border-blue-800/50"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1, duration: 0.4 }}
+            <div className="p-4 md:p-6 space-y-8">
+                {/* Exercise Details Section */}
+                <motion.div 
+                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
                 >
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <Search className="h-3 w-3 text-white" />
+                    <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-lg">1</span>
                         </div>
-                        <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Exercise Details</h4>
+                        <h3 className="text-xl font-semibold text-gray-800">Exercise Details</h3>
                     </div>
                     
-                    <ExerciseAutocomplete
-                        value={exercise.exercise}
-                        onChange={(value) => handleChange('exercise', value)}
-                        placeholder="Start typing exercise name (e.g., Bench Press, Squats)"
-                    />
+                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-100/50">
+                        <Label htmlFor="exerciseName" className="text-sm font-semibold text-gray-700 mb-3 block">
+                            Exercise Name *
+                        </Label>
+                        <Input 
+                            id="exerciseName" 
+                            value={exercise.exercise} 
+                            onChange={e => handleChange('exercise', e.target.value)} 
+                            className="w-full h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg text-gray-800 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" 
+                            placeholder="Start typing exercise name (e.g., Bench Press, Squats)" 
+                        />
+                    </div>
                 </motion.div>
 
-                {/* Sets and Reps Section */}
-                <motion.div
-                    className="space-y-4 p-6 bg-gradient-to-br from-green-50/50 to-emerald-50/50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-2xl border border-green-200/50 dark:border-green-800/50"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2, duration: 0.4 }}
+                {/* Volume & Intensity Section */}
+                <motion.div 
+                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
                 >
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-green-500 rounded-lg flex items-center justify-center">
-                            <Repeat className="h-3 w-3 text-white" />
+                    <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-lg">2</span>
                         </div>
-                        <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Volume & Intensity</h4>
+                        <h3 className="text-xl font-semibold text-gray-800">Volume & Intensity</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <StepperInput
-                            id="sets" 
-                            label="Sets" 
-                            icon={Repeat}
-                            value={exercise.sets ?? null}
-                            onChange={(value) => handleChange('sets', value)}
-                            className="w-full"
-                        />
-
-                        <div className="space-y-3">
-                            <Label className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <ListFilter size={16} className="text-green-500"/>
-                                Repetitions / Duration
-                            </Label>
-                            
-                            {/* Tracking Type Toggle */}
-                            <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
-                                <motion.div
-                                    className="flex-1"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
+                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100/50">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Sets */}
+                            <div>
+                                <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                                    Sets
+                                </Label>
+                                <div className="flex items-center justify-center space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-lg">
                                     <Button 
                                         type="button" 
-                                        size="sm" 
-                                        variant={trackingType === 'reps' ? 'default' : 'ghost'}
-                                        className={cn(
-                                            "w-full rounded-lg transition-all duration-200",
-                                            trackingType === 'reps' 
-                                                ? "bg-white dark:bg-slate-700 shadow-md text-slate-900 dark:text-slate-100" 
-                                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                                        )} 
-                                        onClick={() => handleTrackingTypeChange('reps')}
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={() => handleChange('sets', Math.max(1, (exercise.sets || 1) - 1))} 
+                                        className="h-12 w-12 rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
                                     >
-                                        Reps
+                                        <Minus className="w-5 h-5 text-gray-600" />
                                     </Button>
-                                </motion.div>
-                                <motion.div
-                                    className="flex-1"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
+                                    <span className="text-2xl font-bold w-12 text-center text-gray-800">{exercise.sets || 1}</span>
                                     <Button 
                                         type="button" 
-                                        size="sm" 
-                                        variant={trackingType === 'duration' ? 'default' : 'ghost'}
-                                        className={cn(
-                                            "w-full rounded-lg transition-all duration-200",
-                                            trackingType === 'duration' 
-                                                ? "bg-white dark:bg-slate-700 shadow-md text-slate-900 dark:text-slate-100" 
-                                                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                                        )} 
-                                        onClick={() => handleTrackingTypeChange('duration')}
+                                        variant="outline" 
+                                        size="icon" 
+                                        onClick={() => handleChange('sets', (exercise.sets || 1) + 1)} 
+                                        className="h-12 w-12 rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
                                     >
-                                        Time
+                                        <Plus className="w-5 h-5 text-gray-600" />
                                     </Button>
-                                </motion.div>
+                                </div>
                             </div>
 
-                            <Input
-                                id="reps-duration" 
-                                type="text"
-                                placeholder={trackingType === 'reps' ? "e.g., 8-12" : "e.g., 60s"}
-                                value={exercise.reps ?? ''}
-                                onChange={(e) => handleChange('reps', e.target.value)}
-                                className="h-12 text-base rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-green-400 dark:focus:border-green-600"
-                            />
-
-                            {/* Quick Select Options */}
-                            <div className="space-y-2">
-                                <Label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                                    Quick Select:
+                            {/* Repetitions / Duration */}
+                            <div>
+                                <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                                    Repetitions / Duration
                                 </Label>
-                                <div className="flex flex-wrap gap-2">
-                                    {trackingOptions.map(opt => (
-                                        <motion.div
-                                            key={opt}
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                        >
-                                            <Chip 
-                                                label={opt} 
-                                                value={opt} 
-                                                onClick={() => handleChange('reps', opt)} 
-                                                selected={exercise.reps === opt}
-                                                className="h-8"
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <Label className="text-xs text-gray-600 font-medium">Reps</Label>
+                                            <Input 
+                                                value={trackingType === 'reps' ? (exercise.reps || '') : ''} 
+                                                onChange={e => {
+                                                    handleChange('reps', e.target.value);
+                                                    if (e.target.value) setTrackingType('reps');
+                                                }} 
+                                                className="h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg" 
+                                                placeholder="8-12" 
                                             />
-                                        </motion.div>
-                                    ))}
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs text-gray-600 font-medium">Time</Label>
+                                            <Input 
+                                                value={trackingType === 'duration' ? (exercise.reps || '') : ''} 
+                                                onChange={e => {
+                                                    handleChange('reps', e.target.value);
+                                                    if (e.target.value) setTrackingType('duration');
+                                                }} 
+                                                className="h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg" 
+                                                placeholder="60s" 
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <p className="text-xs text-gray-600 font-medium mb-3">Quick Select:</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {trackingOptions.map(option => (
+                                                <Button 
+                                                    key={option} 
+                                                    type="button" 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    onClick={() => handleChange('reps', option)} 
+                                                    className="text-xs h-9 px-4 bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 rounded-xl transition-all duration-200"
+                                                >
+                                                    {option}
+                                                </Button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Notes Section */}
-                <motion.div
-                    className="space-y-4 p-6 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-900/10 dark:to-pink-900/10 rounded-2xl border border-purple-200/50 dark:border-purple-800/50"
+                {/* Additional Information Section */}
+                <motion.div 
+                    className="space-y-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.4 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
                 >
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-6 h-6 bg-purple-500 rounded-lg flex items-center justify-center">
-                            <Info className="h-3 w-3 text-white" />
+                    <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-lg">3</span>
                         </div>
-                        <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Additional Information</h4>
+                        <h3 className="text-xl font-semibold text-gray-800">Additional Information</h3>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="notes" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-100/50 space-y-5">
+                        <div>
+                            <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-3 block">
                                 Notes & Form Cues
                             </Label>
                             <Textarea 
                                 id="notes" 
-                                placeholder="Add any form cues, modifications, or special instructions..."
-                                value={exercise.notes ?? ''} 
-                                onChange={(e) => handleChange('notes', e.target.value)} 
-                                className="min-h-[80px] rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-purple-400 dark:focus:border-purple-600 resize-none"
+                                value={exercise.notes || ''} 
+                                onChange={e => handleChange('notes', e.target.value)} 
+                                className="w-full min-h-[100px] bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg resize-none text-gray-800 placeholder-gray-500" 
+                                placeholder="Add any form cues, modifications, or special instructions..." 
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="youtubeLink" className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <Youtube size={16} className="text-red-500"/>
+                        <div>
+                            <Label htmlFor="tutorialLink" className="text-sm font-semibold text-gray-700 mb-3 block">
                                 Tutorial Link (Optional)
                             </Label>
                             <Input 
-                                id="youtubeLink" 
-                                placeholder="https://youtube.com/watch?v=..."
-                                value={exercise.youtubeLink ?? ''} 
-                                onChange={(e) => handleChange('youtubeLink', e.target.value)} 
-                                className="h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 focus:border-purple-400 dark:focus:border-purple-600"
+                                id="tutorialLink" 
+                                value={exercise.youtubeLink || ''} 
+                                onChange={e => handleChange('youtubeLink', e.target.value)} 
+                                className="w-full h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg text-gray-800 placeholder-gray-500" 
+                                placeholder="https://youtube.com/watch?v=..." 
                             />
                         </div>
                     </div>
@@ -533,47 +290,32 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
 
                 {/* Action Buttons */}
                 <motion.div 
-                    className="flex gap-4 pt-4"
+                    className="flex space-x-4 pt-6 border-t border-blue-200/30"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.4 }}
+                    transition={{ duration: 0.4, delay: 0.3 }}
                 >
-                    <motion.div
-                        className="flex-1"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                    <Button 
+                        variant="outline" 
+                        onClick={onCancel} 
+                        className="flex-1 h-14 border-blue-200/30 bg-white/80 text-gray-700 hover:bg-blue-50/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
                     >
-                        <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={onCancel}
-                            className="w-full h-12 rounded-xl border-2 border-slate-300 dark:border-slate-600 hover:border-red-400 dark:hover:border-red-600 text-slate-700 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400"
-                        >
-                            <X size={18} className="mr-2"/> 
-                            Cancel
-                        </Button>
-                    </motion.div>
-                    <motion.div
-                        className="flex-1"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        <X className="w-5 h-5 mr-2" />
+                        Cancel
+                    </Button>
+                    <Button 
+                        onClick={handleSaveClick} 
+                        disabled={!exercise.exercise?.trim()} 
+                        className="flex-1 h-14 bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200"
                     >
-                        <Button 
-                            type="submit"
-                            className="w-full h-12 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
-                        >
-                            <Check size={18} className="mr-2"/> 
-                            Save Exercise
-                        </Button>
-                    </motion.div>
+                        <Check className="w-5 h-5 mr-2" />
+                        Save Exercise
+                    </Button>
                 </motion.div>
-            </form>
-        </motion.div>
+            </div>
+        </div>
     );
 };
 
-const generateUniqueId = (day: string) => `${day}-new-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-
 export default AddEditExerciseForm;
-    
+

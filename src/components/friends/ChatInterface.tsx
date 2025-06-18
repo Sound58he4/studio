@@ -1,7 +1,7 @@
-// src/components/friends/ChatInterface.tsx
+// src/app/friends/ChatInterface.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import type { UserFriend, ChatMessage } from '@/app/dashboard/types';
 import { 
@@ -19,6 +19,9 @@ import { sendChatMessage } from '@/services/firestore/chatService';
 import { askAIChatAssistant, AskAIChatInput } from '@/ai/flows/ai-chat-assistant';
 import { AI_ASSISTANT_ID } from '@/app/dashboard/types';
 import { debounce } from 'lodash';
+import { usePerformanceMonitor, useFirebasePerformance } from '@/hooks/use-performance';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 
 import MessageList from '@/components/friends/MessageList';
 import MessageInput from '@/components/friends/MessageInput';
@@ -29,93 +32,152 @@ import { Loader2 } from 'lucide-react';
 interface ChatInterfaceProps {
     friend: UserFriend | null;
     currentUserId: string | null;
-    chatId: string | null;
+    chatId: string | null; 
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({ friend, currentUserId, chatId }) => {
+export interface ChatInterfaceHandle {
+    performClearLocalAIChat: () => void;
+    showSuggestions: () => void;
+    sendMessage: (text: string, voiceUri?: string, imageUri?: string) => Promise<void>;
+}
+
+const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ friend, currentUserId, chatId }, ref) => {
+    // Performance monitoring
+    const performanceRef = usePerformanceMonitor('ChatInterface');
+    const firebasePerf = useFirebasePerformance();
+    
     const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const initialAIMessage: ChatMessage = {
+        id: `ai-greeting-${Date.now()}`, senderId: AI_ASSISTANT_ID,
+        text: "Hello! I'm Bago AI. How can I help you with your fitness and nutrition today?",
+        timestamp: new Date().toISOString(), isAI: true,
+    };
+    const [aiLocalMessages, setAiLocalMessages] = useState<ChatMessage[]>([initialAIMessage]);
     const [newMessage, setNewMessage] = useState('');
     const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [isAIChatting, setIsAIChatting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const messageInputRef = useRef<HTMLInputElement>(null); 
     const { toast } = useToast();
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
     const isAISelected = useMemo(() => friend?.id === AI_ASSISTANT_ID, [friend]);
 
-    const scrollToBottom = useCallback(() => {
-        setTimeout(() => {
-            if (scrollAreaRef.current) {
-                scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-            }
-        }, 50);
+    const focusInput = useCallback(() => {
+        if (messageInputRef.current) {
+            messageInputRef.current.focus();
+        }
     }, []);
 
-    useEffect(() => {
-        if (!friend || !currentUserId || !chatId) {
-            setMessages([]); setError(null); setIsLoadingMessages(false);
-            return;
+    const scrollToBottom = useCallback((force = false) => {
+        if (!scrollAreaRef.current) return;
+        
+        const scrollContainer = scrollAreaRef.current;
+        const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100;
+        
+        if (force || shouldAutoScroll || isNearBottom) {
+            setTimeout(() => {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }, 50);
         }
+    }, [shouldAutoScroll]);
 
-        setIsLoadingMessages(true); setError(null);
-        const messagesRef = collection(db, 'chats', chatId, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc'), firestoreLimit(100));
+    const handleScroll = useCallback(() => {
+        if (!scrollAreaRef.current) return;
+        
+        const scrollContainer = scrollAreaRef.current;
+        const isAtBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 10;
+        setShouldAutoScroll(isAtBottom);
+    }, []);
 
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const fetchedMessages: ChatMessage[] = [];
-            querySnapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
-                const data = doc.data();
-                fetchedMessages.push({
-                    id: doc.id,
-                    senderId: data.senderId,
-                    text: data.text,
-                    timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : data.timestamp,
-                    isAI: data.senderId === AI_ASSISTANT_ID
+    // Firestore listener for friend chats
+    useEffect(() => {
+        if (!isAISelected && friend && currentUserId && chatId) {
+            setIsLoadingMessages(true); setError(null);
+            const messagesRef = collection(db, 'chats', chatId, 'messages');
+            const q = query(messagesRef, orderBy('timestamp', 'asc'), firestoreLimit(100));
+
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const fetchedMessages: ChatMessage[] = [];
+                querySnapshot.forEach((doc: QueryDocumentSnapshot<DocumentData>) => {
+                    const data = doc.data();
+                    fetchedMessages.push({
+                        id: doc.id,
+                        senderId: data.senderId,
+                        text: data.text,
+                        timestamp: data.timestamp instanceof Timestamp ? data.timestamp.toDate().toISOString() : data.timestamp,
+                        isAI: false // Friend chats are not AI unless explicitly marked
+                    });
                 });
+                setMessages(fetchedMessages);
+                setIsLoadingMessages(false);
+                scrollToBottom(true); // Force scroll for new messages
+            }, (err) => {
+                console.error("[ChatInterface] Error fetching friend messages:", err);
+                setError("Could not load messages."); setIsLoadingMessages(false);
             });
-            setMessages(fetchedMessages);
-            setIsLoadingMessages(false);
-            scrollToBottom();
-        }, (err) => {
-            console.error("[ChatInterface] Error fetching messages:", err);
-            setError("Could not load messages."); setIsLoadingMessages(false);
-        });
-
-        return () => unsubscribe();
+            return () => unsubscribe();
+        } else if (!isAISelected) {
+             setMessages([]); // Clear messages if no friend chat
+             setIsLoadingMessages(false);
+        }
     }, [friend, currentUserId, chatId, scrollToBottom, isAISelected]);
 
-    // Removed automatic suggestion triggering - now only shows on button tap
-    // useEffect(() => {
-    //     setShowSuggestions(isAISelected && messages.length > 0 && newMessage.trim() === '');
-    // }, [isAISelected, messages, newMessage]);
-
+    // Effect for AI chat initialization and suggestion bar
+    useEffect(() => {
+        if (isAISelected) {
+            setIsLoadingMessages(false); // Not loading from server for AI
+            scrollToBottom();
+            focusInput();
+        } else {
+            setShowSuggestions(false);
+        }
+    }, [isAISelected, scrollToBottom, focusInput]);    useImperativeHandle(ref, () => ({
+        performClearLocalAIChat: () => {
+            if (isAISelected) {
+                console.log("[ChatInterface] Clearing local AI chat messages via ref.");
+                setAiLocalMessages([initialAIMessage]); // Reset to only the greeting
+                scrollToBottom();
+                focusInput();
+            }
+        },
+        showSuggestions: () => {
+            if (isAISelected) {
+                console.log("[ChatInterface] Showing AI suggestions via ref.");
+                setShowSuggestions(true);
+            }
+        },
+        sendMessage: async (text: string, voiceUri?: string, imageUri?: string) => {
+            await handleSendMessage(text, voiceUri, imageUri);
+        }
+    }));
 
     const triggerAIChat = useCallback(async (
-        history: ChatMessage[],
-        userMessage?: string,
+        historyForAI: ChatMessage[], 
+        userMessageText?: string,
         voiceUri?: string,
         imageUri?: string
     ) => {
-         if (!isAISelected || !currentUserId || !chatId) return;
-
+         if (!isAISelected || !currentUserId) return;
          setIsAIChatting(true);
-         const optimisticAIMessage: ChatMessage = {
+         const thinkingAIMessage: ChatMessage = {
              id: `temp-ai-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: "Bago is thinking...",
              timestamp: new Date().toISOString(), isAI: true,
          };
-         setMessages(prev => [...prev, optimisticAIMessage]);
-         scrollToBottom();
+         // Add thinking message to aiLocalMessages directly
+         setAiLocalMessages(prev => [...prev, thinkingAIMessage]);
+         scrollToBottom(true); // Force scroll for AI thinking message
 
          try {
-             const historyForAI = history.slice(-10);
              const aiInput: AskAIChatInput = {
                  userId: currentUserId,
-                 message: userMessage,
+                 message: userMessageText,
                  voiceRecordingDataUri: voiceUri,
                  imageDataUri: imageUri,
-                 chatHistory: historyForAI.map(msg => ({
+                 chatHistory: historyForAI.slice(-10).map(msg => ({ // Use up to last 10 messages for context
                      senderId: msg.senderId,
                      text: msg.text,
                      timestamp: msg.timestamp,
@@ -123,127 +185,183 @@ const ChatInterface: React.FC<ChatInterfaceProps> = React.memo(({ friend, curren
                  }))
              };
              const aiResponse = await askAIChatAssistant(aiInput);
-
-             await sendChatMessage(chatId, AI_ASSISTANT_ID, aiResponse.response);
-             setMessages(prev => prev.filter(msg => msg.id !== optimisticAIMessage.id));
-
-
+             const finalAIMessage: ChatMessage = {
+                id: `ai-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: aiResponse.response,
+                timestamp: new Date().toISOString(), isAI: true,
+             };
+             // Replace thinking message with actual response in aiLocalMessages
+             setAiLocalMessages(prev => [...prev.filter(msg => msg.id !== thinkingAIMessage.id), finalAIMessage]);
          } catch (aiError: any) {
              console.error("[ChatInterface] AI chat flow error:", aiError);
-             const errorMessage = `Sorry, I encountered an error: ${aiError.message}. Please try again.`;
-             await sendChatMessage(chatId, AI_ASSISTANT_ID, errorMessage);
-             setMessages(prev => prev.filter(msg => msg.id !== optimisticAIMessage.id));
-         } finally { setIsAIChatting(false); }
-     }, [isAISelected, currentUserId, chatId, scrollToBottom]);
-
+             const errorMessageText = `Sorry, I encountered an error: ${aiError.message}. Please try again.`;
+             const errorAIMessage: ChatMessage = {
+                id: `ai-error-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: errorMessageText,
+                timestamp: new Date().toISOString(), isAI: true,
+             };
+             // Replace thinking message with error message
+             setAiLocalMessages(prev => [...prev.filter(msg => msg.id !== thinkingAIMessage.id), errorAIMessage]);
+         } finally { 
+            setIsAIChatting(false); 
+            scrollToBottom(true); // Force scroll for AI response
+        }
+     }, [isAISelected, currentUserId, scrollToBottom]);
 
     const handleSendMessage = useCallback(async (text: string, voiceUri?: string, imageUri?: string) => {
         const messageText = text.trim();
-        if ((!messageText && !voiceUri && !imageUri) || !chatId || !currentUserId || isSending || isAIChatting) return;
-
-        setNewMessage('');
-
-        setIsSending(true);
-
+        if ((!messageText && !voiceUri && !imageUri) || !currentUserId || isSending || isAIChatting) return;
+        
+        const commonMessageContent = messageText || (voiceUri ? "[Voice Message]" : "[Image Message]");
         const optimisticUserMessage: ChatMessage = {
             id: `temp-user-${Date.now()}`, senderId: currentUserId,
-            text: messageText || (voiceUri ? "[Voice Message]" : "[Image Message]"),
-            timestamp: new Date().toISOString(), isAI: false,
+            text: commonMessageContent, timestamp: new Date().toISOString(), isAI: false,
         };
         
-        const messagesBeforeUserSend = [...messages]; // Capture messages *before* adding optimistic user message
-        setMessages(prev => [...prev, optimisticUserMessage]);
-        scrollToBottom();
-
-        try {
-            await sendChatMessage(chatId, currentUserId, messageText || (voiceUri ? "[Voice Message]" : "[Image Message]"));
-            // Optimistic message will be replaced by real message from Firestore snapshot listener
-            setIsSending(false);
-
-             if (isAISelected) {
-                 // Pass the state of messages *before* the user's message was optimistically added
-                 await triggerAIChat(messagesBeforeUserSend, messageText || undefined, voiceUri, imageUri);
-             }
-        } catch (err) {
-            console.error("[ChatInterface] Error sending message:", err);
-            setError("Failed to send message.");
-            setNewMessage(messageText); // Restore input if send failed
-            setMessages(prev => prev.filter(msg => msg.id !== optimisticUserMessage.id)); // Remove optimistic message
-            setIsSending(false);
+        setNewMessage(''); 
+          if (isAISelected) {
+            // For AI, update local state directly and trigger AI
+            setIsSending(true); // Briefly set to true for UI feedback on user message part
+            const finalUserMessage: ChatMessage = {
+                id: `user-${Date.now()}`, senderId: currentUserId,
+                text: commonMessageContent, timestamp: new Date().toISOString(), isAI: false,
+            };
+            const currentAIMessages = [...aiLocalMessages, finalUserMessage];
+            setAiLocalMessages(currentAIMessages);
+            scrollToBottom(true); // Force scroll for user message
+            setIsSending(false); // Reset for AI call
+            await triggerAIChat(currentAIMessages, messageText || undefined, voiceUri, imageUri);
+        } else { // Friend chat
+            if (!chatId) {
+                setError("Chat session not available."); 
+                toast({variant: "destructive", title: "Error", description: "Chat session not available."});
+                return;
+            }
+            setIsSending(true);
+            const messagesBeforeUserSend = [...messages]; // For potential rollback
+            setMessages(prev => [...prev, optimisticUserMessage]); // Optimistic UI update
+            scrollToBottom(true); // Force scroll for user message
+            try {
+                await sendChatMessage(chatId, currentUserId, commonMessageContent);
+            } catch (err) {
+                console.error("[ChatInterface] Error sending friend message:", err);
+                setError("Failed to send message.");
+                toast({ variant: "destructive", title: "Send Error", description: "Could not send message." });
+                setNewMessage(text); // Restore input field content
+                setMessages(messagesBeforeUserSend); // Rollback optimistic update
+            } finally {
+                setIsSending(false);
+            }
         }
-    }, [chatId, currentUserId, isSending, isAIChatting, scrollToBottom, isAISelected, triggerAIChat, messages]);
-    
-    const debouncedAIChatTrigger = useCallback(
-       debounce((message: string, history: ChatMessage[]) => {
-           // This specific debounced trigger logic seems to have been removed or integrated elsewhere.
-           // If it was meant for AI suggestions *during typing*, that would need a different flow.
-           // For now, it's just an empty debounced function.
-       }, 1000),
-       [] 
-    );
+    }, [chatId, currentUserId, isSending, isAIChatting, scrollToBottom, isAISelected, triggerAIChat, messages, aiLocalMessages, toast]);
 
-     const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-          const value = e.target.value;
-          setNewMessage(value);
-          debouncedAIChatTrigger.cancel(); 
-      }, [debouncedAIChatTrigger]); // Include setNewMessage in deps if ESLint complains, though it's stable
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+          setNewMessage(e.target.value);
+      }, []);
 
-    useEffect(() => { return () => { debouncedAIChatTrigger.cancel(); }; }, [debouncedAIChatTrigger]);
+    // Effect to manage chat minimization state
+    useEffect(() => {
+        if (friend) {
+            // Set data attribute to indicate chat is active - but let the parent manage it
+            const isMobile = window.innerWidth < 768;
+            if (isMobile) {
+                document.documentElement.setAttribute('data-chat-minimized', 'true');
+            }
+        }
 
-    return (
-        <div className="flex flex-col h-full bg-background">
+        return () => {
+            // Only remove if we're actually unmounting, not just re-rendering
+            if (!friend) {
+                document.documentElement.removeAttribute('data-chat-minimized');
+            }
+        };
+    }, [friend]);    return (
+        <div className="flex flex-col h-full w-full overflow-hidden relative">
             {friend ? (
                 <>
-                    <MessageList
-                        messages={messages}
-                        currentUserId={currentUserId}
-                        isLoading={isLoadingMessages}
-                        error={error}
-                        friend={friend}
-                        isAISelected={isAISelected}
-                        scrollAreaRef={scrollAreaRef}
-                    />
-                    {isAISelected && showSuggestions && (
-                        <AISuggestionBar 
-                            onSuggestionClick={(prompt) => {
-                                setNewMessage(prompt); // Set input field directly
-                                setShowSuggestions(false); // Hide suggestions after click
-                                // Optionally, auto-send or let user press send
-                            }} 
-                            onHide={() => setShowSuggestions(false)} 
-                        />
-                    )}
-                    {isAISelected && !showSuggestions && (
-                        <div className="p-2 border-t bg-muted/50 flex justify-center">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowSuggestions(true)}
-                                className="text-xs px-3 py-1 h-7 rounded-md"
+                    {/* Messages Area - Scrollable */}
+                    <div className="flex-1 min-h-0 overflow-hidden">                          <div 
+                            ref={scrollAreaRef}
+                            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 break-words pb-4"
+                            onScroll={handleScroll}
+                        >
+                            <MessageList
+                                messages={isAISelected ? aiLocalMessages : messages}
+                                currentUserId={currentUserId}
+                                isLoading={isLoadingMessages}
+                                error={error}
+                                friend={friend}
+                                isAISelected={isAISelected}
+                                scrollAreaRef={scrollAreaRef}
+                            />
+                        </div>
+                    </div>
+                      {/* Auto-scroll button when not at bottom */}
+                    <AnimatePresence>
+                        {!shouldAutoScroll && (
+                            <motion.button
+                                className="absolute bottom-24 right-3 z-30 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                onClick={() => scrollToBottom(true)}
+                                title="Scroll to bottom"
                             >
-                                Show AI Suggestions
-                            </Button>
+                                <ArrowLeft size={14} className="rotate-90" />
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
+
+                    {/* AI Suggestions Bar - Fixed above input */}
+                    {isAISelected && showSuggestions && (
+                        <motion.div 
+                            className="flex-shrink-0 backdrop-blur-sm border-t border-gray-200/50 bg-white/90"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.3 }}
+                        >
+                            <AISuggestionBar 
+                                onSuggestionClick={(prompt) => {
+                                    setNewMessage(prompt); 
+                                    setShowSuggestions(false); 
+                                    focusInput(); 
+                                }} 
+                                onHide={() => setShowSuggestions(false)} 
+                            />
+                        </motion.div>                    )}
+
+                    {/* Input Area - Fixed at bottom - Hidden for AI Assistant */}
+                    {!isAISelected && (
+                        <div className="backdrop-blur-sm p-3 sm:p-4 lg:p-6 shadow-lg transition-all duration-300 flex-shrink-0 bg-white/90 border-t border-gray-200/50 relative z-10">
+                            <MessageInput
+                                ref={messageInputRef} 
+                                newMessage={newMessage}
+                                onInputChange={handleInputChange}
+                                onSendMessage={handleSendMessage}
+                                isSending={isSending || isAIChatting}
+                                isAISelected={isAISelected}
+                            />
                         </div>
                     )}
-                    <MessageInput
-                        newMessage={newMessage}
-                        onInputChange={handleInputChange}
-                        onSendMessage={handleSendMessage}
-                        isSending={isSending || isAIChatting}
-                        isAISelected={isAISelected}
-                    />
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground italic p-6 text-center bg-muted/20">
-                     <Loader2 size={40} className="mb-4 opacity-40 animate-spin"/>
-                    Loading chat...
-                </div>
+                <motion.div 
+                    className="flex flex-col items-center justify-center h-full text-gray-600 italic p-4 md:p-6 text-center backdrop-blur-sm rounded-2xl m-2 md:m-4"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                >
+                     <motion.div
+                         animate={{ rotate: 360 }}
+                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                     >
+                         <Loader2 size={28} className="md:size-8 mb-3 opacity-40 text-blue-600"/>
+                     </motion.div>
+                    <span className="text-sm font-medium">Loading chat...</span>
+                </motion.div>
             )}
         </div>
     );
 });
 
 ChatInterface.displayName = 'ChatInterface';
-
 export default ChatInterface;

@@ -1,4 +1,3 @@
-
 // src/components/friends/MessageList.tsx
 "use client";
 
@@ -26,18 +25,18 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
 }) => {
 
     return (
-        <ScrollArea className="flex-grow bg-gradient-to-b from-background to-muted/10 min-h-0" viewportRef={scrollAreaRef}>
+        <ScrollArea className="flex-grow bg-gradient-to-b from-background via-clayGlass/20 to-clayGlass/40 min-h-0" viewportRef={scrollAreaRef}>
            <div className="p-3 sm:p-4 space-y-4">
-               {isLoading && ( <div className="flex justify-center items-center h-32"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> )}
-               {error && <p className="text-destructive text-center text-sm">{error}</p>}
+               {isLoading && ( <div className="flex justify-center items-center h-32"><Loader2 className="h-6 w-6 animate-spin text-blue-600" /></div> )}
+               {error && <p className="text-red-600 text-center text-sm bg-red-50/80 backdrop-blur-sm p-2 rounded-xl border border-red-200/50">{error}</p>}
                {!isLoading && !error && messages.length === 0 && !isAISelected && (
-                   <div className="text-center py-12 text-muted-foreground italic text-sm">
+                   <div className="text-center py-12 text-gray-600 italic text-sm bg-clayGlass backdrop-blur-sm rounded-2xl shadow-clay p-6">
                        <MessageSquare size={40} className="mx-auto mb-3 opacity-50"/>
                        No messages yet. Say hello!
                    </div>
                )}
                 {!isLoading && !error && messages.length === 0 && isAISelected && (
-                    <div className="text-center py-12 text-muted-foreground italic text-sm">
+                    <div className="text-center py-12 text-gray-600 italic text-sm bg-clayGlass backdrop-blur-sm rounded-2xl shadow-clay p-6">
                         <Bot size={40} className="mx-auto mb-3 opacity-50"/>
                         Ask Bago AI anything! You can also send voice notes or images.
                     </div>
@@ -65,11 +64,11 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                 )}
                                 <div className={cn("flex flex-col", isUserMessage ? "items-end" : "items-start")}>
                                     <div className={cn(
-                                        "p-2 px-3 rounded-lg text-sm shadow-md relative",
-                                        "transition-all duration-200 ease-out group-hover:scale-[1.01] group-hover:shadow-lg",
+                                        "p-2 px-3 rounded-2xl text-sm shadow-clay relative",
+                                        "transition-all duration-200 ease-out group-hover:scale-[1.01] group-hover:shadow-clayStrong",
                                         isUserMessage
-                                            ? "bg-primary text-primary-foreground rounded-br-none"
-                                            : msg.isAI ? "bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 text-foreground rounded-bl-none" : "bg-muted text-foreground rounded-bl-none",
+                                            ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md"
+                                            : msg.isAI ? "bg-clayGlass backdrop-blur-sm border border-clay-300/30 text-gray-900 rounded-bl-md" : "bg-clayGlass backdrop-blur-sm border border-clay-300/30 text-gray-900 rounded-bl-md",
                                         isTemp && "opacity-70" 
                                     )}>
                                         {msg.isAI && msg.text && msg.text !== "Bago is thinking..." ? (
