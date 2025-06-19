@@ -100,102 +100,94 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
         onSave(exercise);
     };
 
-    const trackingOptions = trackingType === 'reps' ? commonRepCounts : commonDurations;
-
-    return (
-        <div className="max-w-[95vw] md:max-w-2xl max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-50/80 backdrop-blur-xl border-0 shadow-2xl rounded-3xl">
+    const trackingOptions = trackingType === 'reps' ? commonRepCounts : commonDurations;    return (
+        <div className="w-full max-w-full max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-50/80 backdrop-blur-xl border-0 shadow-2xl rounded-2xl sm:rounded-3xl">
             {/* Header */}
-            <div className="p-4 md:p-6 pb-3 md:pb-4 border-b border-blue-200/30">
-                <div className="text-lg md:text-xl font-semibold text-gray-800 flex items-center">
-                    <div className="w-8 h-8 mr-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                        {exercise.isNew ? <Plus className="w-5 h-5 text-white" /> : <Edit className="w-5 h-5 text-white" />}
+            <div className="sticky top-0 z-10 p-3 sm:p-6 pb-2 sm:pb-4 border-b border-blue-200/30 bg-white/80 backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl">
+                <div className="text-base sm:text-xl font-semibold text-gray-800 flex items-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                        {exercise.isNew ? <Plus className="w-3 h-3 sm:w-5 sm:h-5 text-white" /> : <Edit className="w-3 h-3 sm:w-5 sm:h-5 text-white" />}
                     </div>
-                    {exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}
+                    <span className="truncate">{exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}</span>
                 </div>
                 
-                <p className="text-sm text-gray-600 mt-2 ml-11">Configure your exercise details for {day}</p>
-            </div>
-
-            <div className="p-4 md:p-6 space-y-8">
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 ml-8 sm:ml-11 truncate">Configure your exercise details for {day}</p>
+            </div>            <div className="p-3 sm:p-6 space-y-4 sm:space-y-8">
                 {/* Exercise Details Section */}
                 <motion.div 
-                    className="space-y-4"
+                    className="space-y-3 sm:space-y-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4 }}
                 >
-                    <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-lg">1</span>
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-sm sm:text-lg">1</span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800">Exercise Details</h3>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Exercise Details</h3>
                     </div>
                     
-                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-100/50">
-                        <Label htmlFor="exerciseName" className="text-sm font-semibold text-gray-700 mb-3 block">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-blue-100/50">
+                        <Label htmlFor="exerciseName" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
                             Exercise Name *
                         </Label>
                         <Input 
                             id="exerciseName" 
                             value={exercise.exercise} 
                             onChange={e => handleChange('exercise', e.target.value)} 
-                            className="w-full h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg text-gray-800 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" 
+                            className="w-full h-10 sm:h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-gray-800 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm sm:text-base" 
                             placeholder="Start typing exercise name (e.g., Bench Press, Squats)" 
                         />
                     </div>
-                </motion.div>
-
-                {/* Volume & Intensity Section */}
+                </motion.div>                {/* Volume & Intensity Section */}
                 <motion.div 
-                    className="space-y-4"
+                    className="space-y-3 sm:space-y-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.1 }}
                 >
-                    <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-lg">2</span>
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-sm sm:text-lg">2</span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800">Volume & Intensity</h3>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Volume & Intensity</h3>
                     </div>
 
-                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-green-100/50">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-green-100/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {/* Sets */}
                             <div>
-                                <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                                <Label className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
                                     Sets
                                 </Label>
-                                <div className="flex items-center justify-center space-x-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-lg">
+                                <div className="flex items-center justify-center space-x-3 sm:space-x-4 bg-white/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg">
                                     <Button 
                                         type="button" 
                                         variant="outline" 
                                         size="icon" 
                                         onClick={() => handleChange('sets', Math.max(1, (exercise.sets || 1) - 1))} 
-                                        className="h-12 w-12 rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
+                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
                                     >
-                                        <Minus className="w-5 h-5 text-gray-600" />
+                                        <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                     </Button>
-                                    <span className="text-2xl font-bold w-12 text-center text-gray-800">{exercise.sets || 1}</span>
+                                    <span className="text-xl sm:text-2xl font-bold w-8 sm:w-12 text-center text-gray-800">{exercise.sets || 1}</span>
                                     <Button 
                                         type="button" 
                                         variant="outline" 
                                         size="icon" 
                                         onClick={() => handleChange('sets', (exercise.sets || 1) + 1)} 
-                                        className="h-12 w-12 rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
+                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
                                     >
-                                        <Plus className="w-5 h-5 text-gray-600" />
+                                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                                     </Button>
                                 </div>
-                            </div>
-
-                            {/* Repetitions / Duration */}
+                            </div>                            {/* Repetitions / Duration */}
                             <div>
-                                <Label className="text-sm font-semibold text-gray-700 mb-3 block">
+                                <Label className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
                                     Repetitions / Duration
                                 </Label>
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
+                                <div className="space-y-3 sm:space-y-4">
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                         <div>
                                             <Label className="text-xs text-gray-600 font-medium">Reps</Label>
                                             <Input 
@@ -204,7 +196,7 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                                                     handleChange('reps', e.target.value);
                                                     if (e.target.value) setTrackingType('reps');
                                                 }} 
-                                                className="h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg" 
+                                                className="h-9 sm:h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base" 
                                                 placeholder="8-12" 
                                             />
                                         </div>
@@ -216,15 +208,15 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                                                     handleChange('reps', e.target.value);
                                                     if (e.target.value) setTrackingType('duration');
                                                 }} 
-                                                className="h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg" 
+                                                className="h-9 sm:h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base" 
                                                 placeholder="60s" 
                                             />
                                         </div>
                                     </div>
                                     
                                     <div>
-                                        <p className="text-xs text-gray-600 font-medium mb-3">Quick Select:</p>
-                                        <div className="flex flex-wrap gap-2">
+                                        <p className="text-xs text-gray-600 font-medium mb-2 sm:mb-3">Quick Select:</p>
+                                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                             {trackingOptions.map(option => (
                                                 <Button 
                                                     key={option} 
@@ -232,7 +224,7 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                                                     variant="outline" 
                                                     size="sm" 
                                                     onClick={() => handleChange('reps', option)} 
-                                                    className="text-xs h-9 px-4 bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 rounded-xl transition-all duration-200"
+                                                    className="text-xs h-7 sm:h-9 px-2 sm:px-4 bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 rounded-lg sm:rounded-xl transition-all duration-200"
                                                 >
                                                     {option}
                                                 </Button>
@@ -243,74 +235,72 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                             </div>
                         </div>
                     </div>
-                </motion.div>
-
-                {/* Additional Information Section */}
+                </motion.div>                {/* Additional Information Section */}
                 <motion.div 
-                    className="space-y-4"
+                    className="space-y-3 sm:space-y-4"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.2 }}
                 >
-                    <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
-                            <span className="text-white font-bold text-lg">3</span>
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-sm sm:text-lg">3</span>
                         </div>
-                        <h3 className="text-xl font-semibold text-gray-800">Additional Information</h3>
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Additional Information</h3>
                     </div>
 
-                    <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-purple-100/50 space-y-5">
+                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-purple-100/50 space-y-4 sm:space-y-5">
                         <div>
-                            <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-3 block">
+                            <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
                                 Notes & Form Cues
                             </Label>
                             <Textarea 
                                 id="notes" 
                                 value={exercise.notes || ''} 
                                 onChange={e => handleChange('notes', e.target.value)} 
-                                className="w-full min-h-[100px] bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg resize-none text-gray-800 placeholder-gray-500" 
+                                className="w-full min-h-[80px] sm:min-h-[100px] bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg resize-none text-gray-800 placeholder-gray-500 text-sm sm:text-base" 
                                 placeholder="Add any form cues, modifications, or special instructions..." 
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="tutorialLink" className="text-sm font-semibold text-gray-700 mb-3 block">
+                            <Label htmlFor="tutorialLink" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
                                 Tutorial Link (Optional)
                             </Label>
                             <Input 
                                 id="tutorialLink" 
                                 value={exercise.youtubeLink || ''} 
                                 onChange={e => handleChange('youtubeLink', e.target.value)} 
-                                className="w-full h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-xl shadow-lg text-gray-800 placeholder-gray-500" 
+                                className="w-full h-10 sm:h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-gray-800 placeholder-gray-500 text-sm sm:text-base" 
                                 placeholder="https://youtube.com/watch?v=..." 
                             />
                         </div>
                     </div>
-                </motion.div>
-
-                {/* Action Buttons */}
+                </motion.div>                {/* Action Buttons */}
                 <motion.div 
-                    className="flex space-x-4 pt-6 border-t border-blue-200/30"
+                    className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-blue-200/30 p-3 sm:p-6 rounded-b-2xl sm:rounded-b-3xl"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.3 }}
                 >
-                    <Button 
-                        variant="outline" 
-                        onClick={onCancel} 
-                        className="flex-1 h-14 border-blue-200/30 bg-white/80 text-gray-700 hover:bg-blue-50/50 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
-                    >
-                        <X className="w-5 h-5 mr-2" />
-                        Cancel
-                    </Button>
-                    <Button 
-                        onClick={handleSaveClick} 
-                        disabled={!exercise.exercise?.trim()} 
-                        className="flex-1 h-14 bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-2xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200"
-                    >
-                        <Check className="w-5 h-5 mr-2" />
-                        Save Exercise
-                    </Button>
+                    <div className="flex space-x-3 sm:space-x-4">
+                        <Button 
+                            variant="outline" 
+                            onClick={onCancel} 
+                            className="flex-1 h-12 sm:h-14 border-blue-200/30 bg-white/80 text-gray-700 hover:bg-blue-50/50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base"
+                        >
+                            <X className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                            <span className="truncate">Cancel</span>
+                        </Button>
+                        <Button 
+                            onClick={handleSaveClick} 
+                            disabled={!exercise.exercise?.trim()} 
+                            className="flex-1 h-12 sm:h-14 bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl sm:rounded-2xl shadow-xl disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-all duration-200 text-sm sm:text-base"
+                        >
+                            <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                            <span className="truncate">Save Exercise</span>
+                        </Button>
+                    </div>
                 </motion.div>
             </div>
         </div>

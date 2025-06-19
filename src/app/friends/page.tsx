@@ -8,42 +8,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertCircle, Users, MessageSquare, Eye, UserPlus, Search, ArrowLeft, LayoutDashboard, Settings, Crown, Trophy, Target, BarChart3, MessageCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Users, MessageSquare, Eye, UserPlus, Search, ArrowLeft, LayoutDashboard, Settings, Crown, Trophy, Target, BarChart3, MessageCircle, ChevronUp } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from '@/context/AuthContext';
 import { getFriends, searchUsers, sendViewRequest } from '@/services/firestore/socialService'; 
-import { getOrCreateChatRoom } from '@/services/firestore/chatService';
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { UserFriend, SearchResultUser } from '@/app/dashboard/types'; 
-import ChatInterface from '@/components/friends/ChatInterface';
 import ProgressViewer from './ProgressViewer'; 
 import FriendProfile from '@/components/friends/FriendProfile';
-import ChatHeader from '@/components/friends/ChatHeader';
 import { AI_ASSISTANT_ID } from '@/app/dashboard/types';
 import { motion, AnimatePresence } from 'framer-motion';
+import FriendChatModal from '@/components/friends/FriendChatModal';
 
 interface SelectedFriendAction {
     friend: UserFriend;
-    action: 'chat' | 'progress' | 'profile';
+    action: 'progress' | 'profile';
 }
 
 export default function FriendsPage() {
     const { userId, loading: authLoading } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
-    const [friends, setFriends] = useState<UserFriend[]>([]);
-    const [selectedFriendAction, setSelectedFriendAction] = useState<SelectedFriendAction | null>(null);
-    const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+    const [friends, setFriends] = useState<UserFriend[]>([]);    const [selectedFriendAction, setSelectedFriendAction] = useState<SelectedFriendAction | null>(null);
     const [isLoadingFriends, setIsLoadingFriends] = useState(true);
-    const [isLoadingChatId, setIsLoadingChatId] = useState(false);
     const [firestoreError, setFirestoreError] = useState<string | null>(null);
-    const [hasFetchedFriends, setHasFetchedFriends] = useState(false);
-    const [isNavMinimized, setIsNavMinimized] = useState(false);
-    const [isFullChatMode, setIsFullChatMode] = useState(false);
+    const [hasFetchedFriends, setHasFetchedFriends] = useState(false);    const [isNavMinimized, setIsNavMinimized] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [showScrollTop, setShowScrollTop] = useState(false);
+    const [showChatModal, setShowChatModal] = useState(false);
+    const [chatModalFriend, setChatModalFriend] = useState<UserFriend | null>(null);
 
     const fetchFriendsCallback = useCallback(async () => {
         if (!userId || hasFetchedFriends) {
@@ -76,72 +72,34 @@ export default function FriendsPage() {
             fetchFriendsCallback();
         } else if (!authLoading && !userId) {
             setIsLoadingFriends(false);
-        }
-    }, [authLoading, userId, fetchFriendsCallback, hasFetchedFriends]);
-
-    useEffect(() => {
-        if (selectedFriendAction?.action === 'chat' && selectedFriendAction.friend && userId) {
-            console.log(`[FriendsPage] Initializing chat for ${selectedFriendAction.friend.displayName}`);
-            setIsLoadingChatId(true);
-            setCurrentChatId(null);
-            const friendIdToUse = selectedFriendAction.friend.id;
-
-            getOrCreateChatRoom(userId, friendIdToUse)
-                .then(chatId => {
-                    setCurrentChatId(chatId);
-                    console.log(`[FriendsPage] Chat ID set: ${chatId}`);
-                })
-                .catch(err => {
-                    console.error("[Friends Page] Error getting chat room ID:", err);
-                    toast({ variant: "destructive", title: "Chat Error", description: "Could not initialize chat session." });
-                    setCurrentChatId(null);
-                })
-                .finally(() => setIsLoadingChatId(false));
-        } else {
-            setCurrentChatId(null); 
-            setIsLoadingChatId(false);
-        }
-    }, [selectedFriendAction, userId, toast]);
+        }    }, [authLoading, userId, fetchFriendsCallback, hasFetchedFriends]);
 
     const handleSelectAction = useCallback((friend: UserFriend, action: 'chat' | 'progress' | 'profile') => {
         console.log(`[FriendsPage] Selected action '${action}' for friend: ${friend.displayName}`);
-        setSelectedFriendAction({ friend, action });
-        // Minimize nav on mobile when chat opens
-        if (window.innerWidth < 768) {
-            setIsNavMinimized(true);
-            // Set the data attribute to communicate with layout
-            document.documentElement.setAttribute('data-chat-minimized', 'true');
-        }
-    }, []);
-    
-    const clearSelection = useCallback(() => {
-        console.log("[FriendsPage] Clearing friend selection.");
-        setSelectedFriendAction(null);
-        setCurrentChatId(null);
-        // Restore nav when closing chat
-        setIsNavMinimized(false);
-        setIsFullChatMode(false);
-        // Remove the data attribute
-        document.documentElement.removeAttribute('data-chat-minimized');
-    }, []);
-
-    const toggleFullChatMode = useCallback(() => {
-        setIsFullChatMode(!isFullChatMode);
-        if (!isFullChatMode && selectedFriendAction) {
-            // Entering full chat mode - minimize everything
-            setIsNavMinimized(true);
-            document.documentElement.setAttribute('data-chat-minimized', 'true');
-            document.documentElement.setAttribute('data-navbar-minimized', 'true');
+        
+        if (action === 'chat') {
+            // Use the new chat modal instead of the old interface
+            setChatModalFriend(friend);
+            setShowChatModal(true);
         } else {
-            // Exiting full chat mode - restore normal chat view
+            setSelectedFriendAction({ friend, action });
+            // Minimize nav on mobile when other actions open
             if (window.innerWidth < 768) {
                 setIsNavMinimized(true);
-            } else {
-                setIsNavMinimized(false);
+                document.documentElement.setAttribute('data-chat-minimized', 'true');
             }
-            document.documentElement.removeAttribute('data-navbar-minimized');
         }
-    }, [isFullChatMode, selectedFriendAction]);
+    }, []);    const clearSelection = useCallback(() => {
+        console.log("[FriendsPage] Clearing friend selection.");
+        setSelectedFriendAction(null);
+        // Restore nav when closing
+        setIsNavMinimized(false);
+        // Remove the data attribute
+        document.documentElement.removeAttribute('data-chat-minimized');
+    }, []);const closeChatModal = useCallback(() => {
+        setShowChatModal(false);
+        setChatModalFriend(null);
+    }, []);
 
     // Effect to handle navigation minimization state
     useEffect(() => {
@@ -172,6 +130,49 @@ export default function FriendsPage() {
     const filteredFriends = friends.filter(friend => 
         friend.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) || false
     );
+
+    // Scroll to top functionality
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollContainer = document.querySelector('.friends-scroll-container');
+            if (scrollContainer) {
+                setShowScrollTop(scrollContainer.scrollTop > 200);
+            }
+        };
+
+        const scrollContainer = document.querySelector('.friends-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.addEventListener('scroll', handleScroll);
+            return () => scrollContainer.removeEventListener('scroll', handleScroll);
+        }
+    }, []);
+
+    const scrollToTop = () => {
+        const scrollContainer = document.querySelector('.friends-scroll-container');
+        if (scrollContainer) {
+            scrollContainer.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+    };
+
+    // Dynamic height calculation for mobile navigation
+    useEffect(() => {
+        const updateScrollHeight = () => {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        };
+
+        updateScrollHeight();
+        window.addEventListener('resize', updateScrollHeight);
+        window.addEventListener('orientationchange', updateScrollHeight);
+
+        return () => {
+            window.removeEventListener('resize', updateScrollHeight);
+            window.removeEventListener('orientationchange', updateScrollHeight);
+        };
+    }, []);
 
     if (authLoading || (isLoadingFriends && !hasFetchedFriends)) {
         return ( 
@@ -220,34 +221,12 @@ export default function FriendsPage() {
             <motion.div 
                 className="h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col md:flex-row bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden relative"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6 }}
+                animate={{ opacity: 1 }}                transition={{ duration: 0.6 }}
                 style={{ zIndex: 1 }}
             >
-                {/* Full Chat Mode Toggle */}
-                <AnimatePresence>
-                    {selectedFriendAction?.action === 'chat' && (
-                        <motion.button
-                            className="fixed top-16 right-4 z-40 bg-white/90 text-gray-600 p-2 rounded-full shadow-lg border-2 border-gray-200/50 hover:bg-white hover:text-gray-800 transition-colors backdrop-blur-sm"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                            transition={{ delay: 0.3 }}
-                            onClick={toggleFullChatMode}
-                            title={isFullChatMode ? "Exit full chat mode" : "Enter full chat mode"}
-                        >
-                            {isFullChatMode ? (
-                                <ArrowLeft size={16} className="rotate-45" />
-                            ) : (
-                                <ArrowLeft size={16} className="-rotate-45" />
-                            )}
-                        </motion.button>
-                    )}
-                </AnimatePresence>
-
                 {/* Mobile Navigation Toggle */}
                 <AnimatePresence>
-                    {isNavMinimized && !isFullChatMode && (
+                    {isNavMinimized && (
                         <motion.button
                             className="md:hidden fixed bottom-20 left-4 z-50 bg-gradient-to-br from-blue-400 to-purple-500 text-white p-3 rounded-full shadow-lg"
                             initial={{ scale: 0, opacity: 0 }}
@@ -267,9 +246,7 @@ export default function FriendsPage() {
                         "backdrop-blur-sm border-r border-gray-200/50 flex flex-col transition-all duration-300 ease-in-out min-h-0 shadow-lg",
                         "md:w-80 lg:w-96",
                         !selectedFriendAction && "w-full md:flex",
-                        selectedFriendAction && isNavMinimized && "hidden",
-                        selectedFriendAction && !isNavMinimized && "w-full md:w-80 lg:w-96",
-                        isFullChatMode && "hidden"
+                        selectedFriendAction && isNavMinimized && "hidden",                        selectedFriendAction && !isNavMinimized && "w-full md:w-80 lg:w-96"
                     )}
                     initial={{ x: -20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -366,9 +343,7 @@ export default function FriendsPage() {
                     className={cn(
                         "flex-1 flex flex-col overflow-hidden min-h-0", 
                         !selectedFriendAction && "hidden md:flex",
-                        selectedFriendAction && !isNavMinimized && "hidden md:flex",
-                        selectedFriendAction && isNavMinimized && "flex",
-                        isFullChatMode && "flex"
+                        selectedFriendAction && !isNavMinimized && "hidden md:flex",                        selectedFriendAction && isNavMinimized && "flex"
                     )}
                     initial={{ x: 20, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -381,32 +356,7 @@ export default function FriendsPage() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.3 }}
-                            className="flex flex-col h-full w-full"
-                        >                                        <div className={cn(
-                                            "flex-shrink-0",
-                                            isFullChatMode ? "hidden" : "hidden md:block",
-                                            selectedFriendAction.action === 'profile' && "hidden"
-                                        )}>
-                                <ChatHeader
-                                    friend={selectedFriendAction.friend}
-                                    chatId={currentChatId} 
-                                    onClose={clearSelection}
-                                    currentAction={selectedFriendAction.action}
-                                    onSwitchView={(action) => handleSelectAction(selectedFriendAction.friend, action)}
-                                />
-                            </div>
-                            {selectedFriendAction.action === 'chat' && (
-                                isLoadingChatId ? (
-                                    <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                                ) : currentChatId ? (
-                                    <div className="flex-1 min-h-0 relative w-full h-full px-2 sm:px-4 pb-4 sm:pb-2">
-                                        <ChatInterface friend={selectedFriendAction.friend} currentUserId={userId} chatId={currentChatId} />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-500 italic p-6 text-center">
-                                        <MessageSquare size={40} className="mb-4 opacity-40"/> Could not load chat.
-                                    </div>
-                                )                            )}
+                            className="flex flex-col h-full w-full"                        >
                             {selectedFriendAction.action === 'progress' && (
                                 <div className="flex-1 min-h-0">
                                     <ProgressViewer friend={selectedFriendAction.friend} currentUserId={userId} />
@@ -425,89 +375,83 @@ export default function FriendsPage() {
     }
 
     // Main friends grid view with new design
-    return (
-        <motion.div 
-            className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+    return (        <motion.div 
+            className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden touch-pan-y"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
-            <div className="flex-1 w-full max-w-6xl mx-auto px-4 py-6">
-                
-                {/* Header Section */}
+            <div className="flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 friends-scroll-container scroll-smooth overscroll-contain pb-safe">{/* Header Section */}
                 <motion.div 
-                    className="backdrop-blur-sm p-6 border border-gray-200/50 shadow-lg rounded-3xl mb-6 transition-all duration-300"
+                    className="backdrop-blur-sm p-4 sm:p-6 border border-gray-200/50 shadow-lg rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 transition-all duration-300"
                     style={{ background: 'rgba(255, 255, 255, 0.9)' }}
                     initial={{ y: -20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.1 }}
                 >
-                    <div className="text-center mb-6">
-                        <h1 className="text-3xl font-bold mb-2 text-gray-900">
+                    <div className="text-center mb-4 sm:mb-6">
+                        <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900">
                             Friends
                         </h1>
-                        <p className="text-lg text-gray-600">
+                        <p className="text-base sm:text-lg text-gray-600">
                             Connect with your fitness community
                         </p>
                     </div>
 
                     {/* Search and Actions */}
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <Input 
                                 placeholder="Search friends..." 
                                 value={searchQuery} 
                                 onChange={e => setSearchQuery(e.target.value)} 
-                                className="pl-10 rounded-2xl border-0 h-12 text-sm backdrop-blur-sm bg-gray-100/80 focus:bg-white/80" 
+                                className="pl-10 rounded-xl sm:rounded-2xl border-0 h-11 sm:h-12 text-sm backdrop-blur-sm bg-gray-100/80 focus:bg-white/80" 
                             />
                         </div>
                         <div className="flex gap-3">
                             <Button 
                                 variant="outline" 
                                 onClick={() => router.push('/settings')}
-                                className="h-12 px-6 rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80"
+                                className="h-11 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80 text-sm sm:text-base"
                             >
                                 <Settings className="w-4 h-4 mr-2" />
-                                Manage
+                                <span className="hidden sm:inline">Manage</span>
+                                <span className="sm:hidden">Manage</span>
                             </Button>
                         </div>
                     </div>
-                </motion.div>
-
-                {/* Loading State */}
+                </motion.div>                {/* Loading State */}
                 {(authLoading || (isLoadingFriends && !hasFetchedFriends)) && (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2 pb-20 sm:pb-8">
                         {[1,2,3,4,5,6].map(i => (
-                            <Card key={i} className="backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-3xl" style={{ background: 'rgba(255, 255, 255, 0.9)' }}>
-                                <CardHeader className="pb-4">
-                                    <div className="flex items-center space-x-4">
-                                        <Skeleton className="h-16 w-16 rounded-full" />
+                            <Card key={i} className="backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-2xl sm:rounded-3xl" style={{ background: 'rgba(255, 255, 255, 0.9)' }}>
+                                <CardHeader className="pb-3 sm:pb-4">
+                                    <div className="flex items-center space-x-3 sm:space-x-4">
+                                        <Skeleton className="h-12 w-12 sm:h-16 sm:w-16 rounded-full" />
                                         <div className="flex-1">
-                                            <Skeleton className="h-5 w-32 mb-2" />
-                                            <Skeleton className="h-4 w-20" />
+                                            <Skeleton className="h-4 sm:h-5 w-24 sm:w-32 mb-2" />
+                                            <Skeleton className="h-3 sm:h-4 w-16 sm:w-20" />
                                         </div>
                                     </div>
                                 </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <Skeleton className="h-16 w-full rounded-2xl" />
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <Skeleton className="h-12 w-full rounded-xl" />
-                                        <Skeleton className="h-12 w-full rounded-xl" />
+                                <CardContent className="space-y-3 sm:space-y-4">
+                                    <Skeleton className="h-12 sm:h-16 w-full rounded-xl sm:rounded-2xl" />
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                        <Skeleton className="h-10 sm:h-12 w-full rounded-lg sm:rounded-xl" />
+                                        <Skeleton className="h-10 sm:h-12 w-full rounded-lg sm:rounded-xl" />
                                     </div>
                                     <div className="flex space-x-2 pt-2">
-                                        <Skeleton className="h-8 flex-1 rounded-xl" />
-                                        <Skeleton className="h-8 w-8 rounded-xl" />
+                                        <Skeleton className="h-7 sm:h-8 flex-1 rounded-lg sm:rounded-xl" />
+                                        <Skeleton className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl" />
                                     </div>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
-                )}
-
-                {/* Error State */}
+                )}                {/* Error State */}
                 {firestoreError && (
-                    <Card className="w-full max-w-2xl mx-auto text-center border-destructive" style={{ background: 'rgba(255, 255, 255, 0.9)' }}>
+                    <Card className="w-full max-w-2xl mx-auto text-center border-destructive mb-20 sm:mb-8" style={{ background: 'rgba(255, 255, 255, 0.9)' }}>
                         <CardHeader>
                             <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
                             <CardTitle className="text-destructive">Database Configuration Needed</CardTitle>
@@ -531,130 +475,184 @@ export default function FriendsPage() {
                     </Card>
                 )}                {/* Friends Grid */}
                 {!authLoading && !isLoadingFriends && !firestoreError && filteredFriends.length > 0 && (
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredFriends.map((friend, index) => (
-                            <motion.div
-                                key={friend.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3, delay: index * 0.1 }}
-                            >
-                                <Card className="backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-3xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group"
-                                      style={{ background: 'rgba(255, 255, 255, 0.9)' }}>
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center space-x-4">
-                                            <div className="relative">
-                                                <div className="w-16 h-16 rounded-full p-0.5 bg-gradient-to-br from-blue-400 to-purple-500">
-                                                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                                                        {friend.photoURL ? (
-                                                            <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
-                                                        ) : (
-                                                            <span className="text-xl font-bold text-gray-700">
-                                                                {friend.displayName?.charAt(0).toUpperCase() || 'U'}
-                                                            </span>
-                                                        )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-thumb-blue-300 scrollbar-track-gray-100 hover:scrollbar-thumb-blue-400 pr-2 pb-20 sm:pb-8">{filteredFriends.map((friend, index) => {
+                            // Mock data for better visual presentation
+                            const mockStats = {
+                                level: Math.floor(Math.random() * 15) + 1,
+                                weeklyGoal: Math.floor(Math.random() * 5) + 3,
+                                completedWorkouts: Math.floor(Math.random() * 6) + 1,
+                                streak: Math.floor(Math.random() * 25) + 1,
+                                badges: Math.floor(Math.random() * 4) + 1,
+                                status: Math.random() > 0.3 ? 'online' : 'offline'
+                            };
+                            
+                            const progressPercentage = Math.min((mockStats.completedWorkouts / mockStats.weeklyGoal) * 100, 100);
+                            const getProgressWidth = (percentage: number) => {
+                                if (percentage >= 100) return 'w-full';
+                                if (percentage >= 90) return 'w-11/12';
+                                if (percentage >= 80) return 'w-4/5';
+                                if (percentage >= 75) return 'w-3/4';
+                                if (percentage >= 66) return 'w-2/3';
+                                if (percentage >= 60) return 'w-3/5';
+                                if (percentage >= 50) return 'w-1/2';
+                                if (percentage >= 40) return 'w-2/5';
+                                if (percentage >= 33) return 'w-1/3';
+                                if (percentage >= 25) return 'w-1/4';
+                                if (percentage >= 20) return 'w-1/5';
+                                return 'w-1/12';
+                            };
+                            
+                            return (
+                                <motion.div
+                                    key={friend.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                                >                                    <Card className="backdrop-blur-sm border border-gray-200/50 shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group scroll-mt-4"
+                                          style={{ background: 'rgba(255, 255, 255, 0.9)' }}
+                                          onClick={() => handleSelectAction(friend, 'profile')}>
+                                        <CardHeader className="pb-3 sm:pb-4">
+                                            <div className="flex items-center space-x-3 sm:space-x-4">
+                                                <div className="relative flex-shrink-0">
+                                                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full p-0.5 bg-gradient-to-br from-blue-400 to-purple-500">
+                                                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                                                            {friend.photoURL ? (
+                                                                <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
+                                                            ) : (
+                                                                <span className="text-lg sm:text-xl font-bold text-gray-700">
+                                                                    {friend.displayName?.charAt(0).toUpperCase() || 'U'}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className={`absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-white ${mockStats.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-semibold text-base sm:text-lg text-gray-900 truncate">
+                                                        {friend.displayName || 'Unknown User'}
+                                                    </h3>
+                                                    <div className="flex items-center space-x-2 mt-1">
+                                                        <Badge variant="secondary" className="text-xs px-2 py-0.5 sm:py-1 bg-purple-100 text-purple-700">
+                                                            Level {mockStats.level}
+                                                        </Badge>
+                                                        <span className="text-xs text-gray-500 truncate">
+                                                            {mockStats.status === 'online' ? 'Active now' : '2h ago'}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                                <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white bg-green-500"></div>
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold text-lg text-gray-900">
-                                                    {friend.displayName || 'Unknown User'}
-                                                </h3>
-                                                <div className="flex items-center space-x-2 mt-1">
-                                                    <Badge variant="secondary" className="text-xs px-2 py-1 bg-purple-100 text-purple-700">
-                                                        Level 1
-                                                    </Badge>
-                                                    <span className="text-xs text-gray-500">
-                                                        Active now
+                                        </CardHeader>
+                                          <CardContent className="space-y-3 sm:space-y-4">
+                                            {/* Weekly Progress */}
+                                            <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-50/80">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-xs sm:text-sm font-medium text-gray-600">
+                                                        Weekly Goal
+                                                    </span>
+                                                    <span className="text-xs sm:text-sm font-bold text-gray-900">
+                                                        {mockStats.completedWorkouts}/{mockStats.weeklyGoal}
                                                     </span>
                                                 </div>
+                                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                                    <div 
+                                                        className={`h-2 rounded-full transition-all duration-300 bg-gradient-to-r from-blue-400 to-purple-500 ${getProgressWidth(progressPercentage)}`}
+                                                    ></div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </CardHeader>
-                                    
-                                    <CardContent className="space-y-4">
-                                        {/* Weekly Progress */}
-                                        <div className="p-4 rounded-2xl bg-gray-50/80">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-medium text-gray-600">
-                                                    Weekly Goal
-                                                </span>
-                                                <span className="text-sm font-bold text-gray-900">
-                                                    3/5
-                                                </span>
-                                            </div>
-                                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                                <div className="h-2 rounded-full transition-all duration-300 bg-gradient-to-r from-blue-400 to-purple-500 w-[60%]"></div>
-                                            </div>
-                                        </div>
 
-                                        {/* Stats */}
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="text-center p-3 rounded-xl bg-gray-50/80">
-                                                <div className="text-lg font-bold text-gray-900">
-                                                    7
+                                            {/* Stats */}
+                                            <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                                <div className="text-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50/80">
+                                                    <div className="text-base sm:text-lg font-bold text-gray-900">
+                                                        {mockStats.streak}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        Day Streak
+                                                    </div>
                                                 </div>
-                                                <div className="text-xs text-gray-500">
-                                                    Day Streak
+                                                <div className="text-center p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gray-50/80">
+                                                    <div className="text-base sm:text-lg font-bold text-gray-900">
+                                                        {mockStats.badges}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500">
+                                                        Badges
+                                                    </div>
                                                 </div>
+                                            </div>{/* Actions */}
+                                            <div className="flex space-x-2 pt-2">
+                                                <Button 
+                                                    onClick={(e) => { e.stopPropagation(); handleSelectAction(friend, 'profile'); }} 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="flex-1 rounded-lg sm:rounded-xl transition-all duration-300 border-purple-200/50 bg-purple-50/50 text-purple-700 hover:bg-purple-100/80 text-xs sm:text-sm h-8 sm:h-9"
+                                                >
+                                                    <span className="hidden sm:inline">View Profile</span>
+                                                    <span className="sm:hidden">Profile</span>
+                                                </Button>
+                                                <Button 
+                                                    onClick={(e) => { e.stopPropagation(); handleSelectAction(friend, 'chat'); }} 
+                                                    size="sm" 
+                                                    className="rounded-lg sm:rounded-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white h-8 sm:h-9 px-3 sm:px-4"
+                                                >
+                                                    <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                                                </Button>
                                             </div>
-                                            <div className="text-center p-3 rounded-xl bg-gray-50/80">
-                                                <div className="text-lg font-bold text-gray-900">
-                                                    2
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                    Badges
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex space-x-2 pt-2">                                                    <Button 
-                                                        onClick={() => handleSelectAction(friend, 'profile')} 
-                                                        variant="outline" 
-                                                        size="sm" 
-                                                        className="flex-1 rounded-xl transition-all duration-300 border-purple-200/50 bg-purple-50/50 text-purple-700 hover:bg-purple-100/80"
-                                                    >
-                                                        View Profile
-                                                    </Button>
-                                            <Button 
-                                                onClick={() => handleSelectAction(friend, 'chat')} 
-                                                size="sm" 
-                                                className="rounded-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
-                                            >
-                                                <MessageCircle className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        ))}
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            );
+                        })}
+                        
+                        {/* Extra spacing at the bottom for mobile navigation */}
+                        <div className="col-span-full h-4 sm:h-2"></div>
                     </div>
-                )}
-
-                {/* Empty State */}
+                )}                {/* Empty State */}
                 {!authLoading && !isLoadingFriends && !firestoreError && filteredFriends.length === 0 && (
-                    <div className="text-center py-16 rounded-3xl bg-white/30 backdrop-blur-sm">
-                        <Users className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                        <h3 className="text-xl font-semibold mb-2 text-gray-600">
+                    <div className="text-center py-12 sm:py-16 rounded-2xl sm:rounded-3xl bg-white/30 backdrop-blur-sm mx-2 sm:mx-0 mb-20 sm:mb-8">
+                        <Users className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-gray-400" />
+                        <h3 className="text-lg sm:text-xl font-semibold mb-2 text-gray-600">
                             {searchQuery ? 'No friends found' : 'No friends yet'}
                         </h3>
-                        <p className="text-sm mb-6 text-gray-500">
+                        <p className="text-sm mb-6 text-gray-500 px-4">
                             {searchQuery ? 'Try adjusting your search terms' : 'Start connecting with other fitness enthusiasts'}
                         </p>
                         {!searchQuery && (
                             <Button 
                                 onClick={() => router.push('/settings')}
-                                className="px-8 py-3 rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
+                                className="px-6 sm:px-8 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white text-sm sm:text-base"
                             >
                                 <UserPlus className="w-4 h-4 mr-2" />
-                                Add Your First Friend
-                            </Button>                        )}
+                                <span className="hidden sm:inline">Add Your First Friend</span>
+                                <span className="sm:hidden">Add Friend</span>
+                            </Button>
+                        )}
                     </div>
                 )}
-            </div>
+            </div>            {/* Scroll to Top Button */}
+            <AnimatePresence>
+                {showScrollTop && (
+                    <motion.button
+                        className="fixed bottom-24 sm:bottom-20 right-4 z-50 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/20"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        transition={{ duration: 0.3 }}
+                        onClick={scrollToTop}
+                        title="Scroll to top"
+                    >
+                        <ChevronUp className="w-5 h-5" />
+                    </motion.button>
+                )}            </AnimatePresence>
+
+            {/* Chat Modal */}
+            {chatModalFriend && (
+                <FriendChatModal 
+                    friend={chatModalFriend} 
+                    isOpen={showChatModal} 
+                    onClose={closeChatModal} 
+                />
+            )}
         </motion.div>
     );
 }

@@ -125,13 +125,12 @@ const FriendProfile = ({ friend, onBack }: FriendProfileProps) => {
       </TableBody>
     </Table>
   );
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 animate-fade-in transition-all duration-500">
-      <div className="max-w-md mx-auto px-3 py-4 space-y-4">
-        {/* Header */}
-        <div className="backdrop-blur-sm rounded-3xl shadow-lg border border-gray-200/50 p-4 animate-slide-down transition-all duration-300 bg-white/90">
-          <div className="flex items-center justify-between mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 animate-fade-in transition-all duration-500 overflow-hidden">
+      <div className="h-screen flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 backdrop-blur-sm rounded-b-3xl shadow-lg border-b border-gray-200/50 p-4 animate-slide-down transition-all duration-300 bg-white/90 sticky top-0 z-10">
+          <div className="flex items-center justify-between mb-4 max-w-md mx-auto">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -147,31 +146,30 @@ const FriendProfile = ({ friend, onBack }: FriendProfileProps) => {
             <div className="w-10"></div>
           </div>
           
-          <div className="text-center">
+          <div className="text-center max-w-md mx-auto">
             <div className="text-sm mb-1 text-gray-600">Goal: Stay Fit</div>
             <div className="text-sm text-gray-500">Friend since: 9 days ago</div>
           </div>
-        </div>
-
-        {/* Time Period Tabs */}
-        <Tabs defaultValue="today" className="w-full">
-          <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-1 animate-scale-in transition-all duration-300 bg-white/90">
-            <TabsList className="grid w-full grid-cols-3 p-1 rounded-xl bg-gray-100/50">
-              <TabsTrigger value="today" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                <Calendar className="w-4 h-4 mr-2" />
-                Today
-              </TabsTrigger>
-              <TabsTrigger value="yesterday" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                Yesterday
-              </TabsTrigger>
-              <TabsTrigger value="week" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
-                This Week
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {Object.entries(summaryData).map(([period, data]) => (
-            <TabsContent key={period} value={period} className="space-y-4">
+        </div>        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 pb-safe">
+          <div className="max-w-md mx-auto px-3 py-4 space-y-4">            {/* Time Period Tabs */}
+            <Tabs defaultValue="today" className="w-full">
+              <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-1 animate-scale-in transition-all duration-300 bg-white/90 sticky top-0 z-10">
+                <TabsList className="grid w-full grid-cols-3 p-1 rounded-xl bg-gray-100/50">
+                  <TabsTrigger value="today" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Today
+                  </TabsTrigger>
+                  <TabsTrigger value="yesterday" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
+                    Yesterday
+                  </TabsTrigger>
+                  <TabsTrigger value="week" className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900">
+                    This Week
+                  </TabsTrigger>
+                </TabsList>
+              </div>              <div className="space-y-4 pt-4 pb-20">
+                {Object.entries(summaryData).map(([period, data]) => (
+                  <TabsContent key={period} value={period} className="space-y-4">
               {/* Summary */}
               <div className="backdrop-blur-sm rounded-3xl shadow-lg border border-gray-200/50 p-6 animate-slide-up transition-all duration-300 bg-white/90">
                 <h2 className="text-xl font-bold mb-2 text-blue-600">{getTabTitle(period)}</h2>
@@ -219,28 +217,32 @@ const FriendProfile = ({ friend, onBack }: FriendProfileProps) => {
                     <span className="font-semibold text-orange-600">{data.calories.burned} kcal Burned</span>
                   </div>
                 </div>
-              </div>              {/* Nutrition Table */}
-              <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-4 animate-scale-in transition-all duration-300 bg-white/90">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Utensils className="w-5 h-5 text-gray-600" />
-                  <span className="font-semibold text-gray-800">Nutrition</span>
-                </div>
-                <div className="rounded-xl p-4 shadow-lg overflow-x-auto transition-all duration-300 bg-white/50 border border-gray-200/30">
-                  {renderNutritionTable(data.nutrition)}
-                </div>
-              </div>              {/* Exercise Table */}
-              <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-4 animate-scale-in transition-all duration-300 bg-white/90">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Activity className="w-5 h-5 text-gray-600" />
-                  <span className="font-semibold text-gray-800">Exercise</span>
-                </div>
-                <div className="rounded-xl p-4 shadow-lg overflow-x-auto transition-all duration-300 bg-white/50 border border-gray-200/30">
-                  {renderExerciseTable(data.exercise)}
-                </div>
+              </div>                    {/* Nutrition Table */}
+                    <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-4 animate-scale-in transition-all duration-300 bg-white/90">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Utensils className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold text-gray-800">Nutrition</span>
+                      </div>
+                      <div className="rounded-xl p-4 shadow-lg overflow-x-auto max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 transition-all duration-300 bg-white/50 border border-gray-200/30">
+                        {renderNutritionTable(data.nutrition)}
+                      </div>
+                    </div>
+
+                    {/* Exercise Table */}
+                    <div className="backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-4 animate-scale-in transition-all duration-300 bg-white/90">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Activity className="w-5 h-5 text-gray-600" />
+                        <span className="font-semibold text-gray-800">Exercise</span>
+                      </div>
+                      <div className="rounded-xl p-4 shadow-lg overflow-x-auto max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 transition-all duration-300 bg-white/50 border border-gray-200/30">
+                        {renderExerciseTable(data.exercise)}
+                      </div>
+                    </div></TabsContent>
+                ))}
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );

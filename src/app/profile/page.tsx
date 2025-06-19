@@ -742,40 +742,20 @@ export default function ProfilePage() {
       </motion.div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200 py-4 pb-24 sm:pb-8 animate-fade-in">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        {/* Modern Header */}
-        <div className="text-center mb-8 animate-slide-down">
-          <div className="bg-clayGlass backdrop-blur-sm rounded-3xl shadow-clay border-0 p-6 mb-6">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-clayInset animate-scale-in">
-              <User className="w-8 h-8 text-white" />
+    <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200">
+      <div className="max-w-2xl mx-auto px-3 py-4 md:px-6 md:py-8 space-y-4 md:space-y-6">
+        {/* Header */}
+        <div className="mb-6 md:mb-8 animate-slide-down">          <div className="backdrop-blur-sm rounded-3xl shadow-clay border-0 p-6 text-center transition-all duration-500 bg-clayGlass">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-scale-in bg-gradient-to-br from-blue-400 to-blue-600">
+              <User className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800 mb-2">Complete Your Profile</h1>
-            <p className="text-sm text-gray-600">Quick setup to get personalized recommendations</p>
-            
-            {/* Progress Steps */}
-            <div className="flex items-center justify-center gap-2 mt-6">
-              <div className="flex items-center gap-1">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs flex items-center justify-center font-medium shadow-clayInset">1</div>
-                <span className="text-xs font-medium text-gray-700">Basic Info</span>
-              </div>
-              <div className="w-4 h-px bg-blue-200"></div>
-              <div className="flex items-center gap-1">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs flex items-center justify-center font-medium shadow-clayInset">2</div>
-                <span className="text-xs font-medium text-gray-700">Goals</span>
-              </div>
-              <div className="w-4 h-px bg-blue-200"></div>
-              <div className="flex items-center gap-1">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xs flex items-center justify-center font-medium shadow-clayInset">3</div>
-                <span className="text-xs font-medium text-gray-700">Preferences</span>
-              </div>
-            </div>
+            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800">Complete Your Profile</h1>
+            <p className="text-sm md:text-base text-gray-600">Customize your Bago experience</p>
           </div>
         </div>
 
-        <Card className="border-0 shadow-clay bg-clayGlass backdrop-blur-sm rounded-3xl animate-fade-in">
+        <Card className="backdrop-blur-sm border-0 hover:shadow-clayStrong transition-all duration-300 rounded-3xl animate-fade-in bg-clayGlass shadow-clay">
           <CardContent className="p-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
@@ -788,13 +768,14 @@ export default function ProfilePage() {
                     "Form Validation Error", 
                     `Please fix the following errors:\n\n${errorMessages.join('\n')}`
                   );
-                })} className="space-y-8">
-                  {/* Step 1: Basic Info */}
+                })} className="space-y-8">                  {/* Step 1: Basic Info */}
                   <div className="space-y-6 animate-stagger-in">
-                    <div className="flex items-center gap-3 pb-3 border-b border-blue-200/50">
-                      <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm flex items-center justify-center font-medium shadow-clayInset">1</div>
-                      <h2 className="text-lg font-semibold text-gray-800">Basic Information</h2>
-                    </div>
+                    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                      <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm flex items-center justify-center font-medium">
+                          <User className="h-5 w-5" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-800">Basic Information</h2>
+                      </div>
 
                       <FormField control={form.control} name="displayName" render={({ field }) => (
                         <FormItem>
@@ -900,15 +881,17 @@ export default function ProfilePage() {
                           </div>
                           <FormMessage />
                         </FormItem>
-                      )} />
-                    </div>
+                      )} />                    </div>
+                  </div>
 
                     {/* Step 2: Goals & Activity */}
-                    <div className="space-y-6 animate-stagger-in" style={{ animationDelay: '200ms' }}>
-                      <div className="flex items-center gap-3 pb-3 border-b border-blue-200/50">
-                        <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 text-white text-sm flex items-center justify-center font-medium shadow-clayInset">2</div>
-                        <h2 className="text-lg font-semibold text-gray-800">Your Goals & Activity</h2>
-                      </div>
+                    <div className="space-y-6 animate-stagger-in">
+                      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                        <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm flex items-center justify-center font-medium">
+                            <TargetIcon className="h-5 w-5" />
+                          </div>
+                          <h2 className="text-lg font-semibold text-gray-800">Your Goals & Activity</h2>
+                        </div>
 
                       <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
                         <FormItem>
@@ -944,17 +927,19 @@ export default function ProfilePage() {
                               checked={field.value ?? false} 
                               onCheckedChange={field.onChange}
                             />
-                          </FormControl>
-                        </FormItem>
+                          </FormControl>                        </FormItem>
                       )} />
+                      </div>
                     </div>
 
                     {/* Step 3: Preferences & Targets */}
-                    <div className="space-y-6 animate-stagger-in" style={{ animationDelay: '400ms' }}>
-                      <div className="flex items-center gap-3 pb-3 border-b border-blue-200/50">
-                        <div className="w-8 h-8 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 text-white text-sm flex items-center justify-center font-medium shadow-clayInset">3</div>
-                        <h2 className="text-lg font-semibold text-gray-800">Preferences & Targets</h2>
-                      </div>
+                    <div className="space-y-6 animate-stagger-in">
+                      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                        <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 text-white text-sm flex items-center justify-center font-medium">
+                            <Utensils className="h-5 w-5" />
+                          </div>
+                          <h2 className="text-lg font-semibold text-gray-800">Preferences & Targets</h2>
+                        </div>
 
                       {/* Quick Dietary Preferences */}
                       <FormField control={form.control} name="dietaryStyles" render={({ field }) => (
@@ -1013,7 +998,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Target Settings - Simplified */}
-                    <div className="space-y-6 p-4 border-0 rounded-3xl bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm shadow-clayInset animate-stagger-in" style={{ animationDelay: '600ms' }}>
+                    <div className="space-y-6 p-4 border-0 rounded-3xl bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm shadow-clayInset animate-stagger-in">
                       <div className="text-center">
                         <h3 className="text-lg font-semibold mb-2 text-gray-800">How should we set your daily targets?</h3>
                         <p className="text-sm text-gray-600">Choose how to calculate your nutrition goals</p>
@@ -1237,13 +1222,13 @@ export default function ProfilePage() {
                                 You can always switch back to AI targets later.
                               </p>
                             </div>
-                          </motion.div>
-                        )}
+                          </motion.div>                        )}
                       </AnimatePresence>
+                      </div>
                     </div>
 
                     {/* Simple Weight Reminder */}
-                    <div className="p-4 border-0 rounded-2xl bg-white/40 backdrop-blur-sm shadow-clayInset animate-stagger-in" style={{ animationDelay: '800ms' }}>
+                    <div className="p-4 border-0 rounded-2xl bg-white/40 backdrop-blur-sm shadow-clayInset animate-stagger-in">
                       <div className="flex items-center justify-between">
                         <div>
                           <ShadCnFormLabel className="text-sm font-medium flex items-center gap-2 text-gray-800">
@@ -1272,19 +1257,17 @@ export default function ProfilePage() {
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={handleTestNotification}
-                              className="text-xs h-8 bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl hover:bg-white/80 hover:shadow-clay transition-all duration-300"
+                              onClick={handleTestNotification}                              className="text-xs h-8 bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl hover:bg-white/80 hover:shadow-clay transition-all duration-300"
                             >
                               <TestTube className="h-3 w-3 mr-1" />
                               Test
                             </Button>
-                          </div>
-                        </div>
+                          </div>                        </div>
                       )}
                     </div>
 
                   {/* Submit Button */}
-                  <div className="pt-8 animate-fade-in" style={{ animationDelay: '1000ms' }}>
+                  <div className="pt-8 animate-fade-in">
                     <Button 
                       type="submit" 
                       size="lg" 

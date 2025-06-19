@@ -22,7 +22,10 @@ import {
   CheckCircle,
   Star,
   TrendingDown,
-  ThumbsUp
+  ThumbsUp,
+  Flame,
+  Dumbbell,
+  Activity
 } from 'lucide-react';
 import { getUserProfile, getFoodLogs } from '@/services/firestore';
 import { StoredUserProfile, StoredFoodLogEntry } from '@/app/dashboard/types';
@@ -228,7 +231,7 @@ export default function PointsPage() {
         points: getPointsForGoal(caloriesPercent, 30),
         maxPoints: 30,
         percentage: Math.min(caloriesPercent, 100),
-        icon: Zap,
+        icon: Flame,
         color: 'text-orange-500',
         bgColor: 'bg-orange-500',
       },
@@ -237,7 +240,7 @@ export default function PointsPage() {
         points: getPointsForGoal(proteinPercent, 25),
         maxPoints: 25,
         percentage: Math.min(proteinPercent, 100),
-        icon: Target,
+        icon: Dumbbell,
         color: 'text-blue-500',
         bgColor: 'bg-blue-500',
       },
@@ -246,7 +249,7 @@ export default function PointsPage() {
         points: getPointsForGoal(carbsPercent, 15),
         maxPoints: 15,
         percentage: Math.min(carbsPercent, 100),
-        icon: Apple,
+        icon: Activity,
         color: 'text-green-500',
         bgColor: 'bg-green-500',
       },
@@ -374,9 +377,7 @@ export default function PointsPage() {
 
     // Calculate unhealthy food penalty
     const unhealthyFoodCount = countUnhealthyFoods(todayFoodLogs);
-    const penalty = calculateUnhealthyFoodPenalty(unhealthyFoodCount);
-
-    const breakdown = [
+    const penalty = calculateUnhealthyFoodPenalty(unhealthyFoodCount);    const breakdown = [
       {
         label: 'Calories',
         achieved: caloriesPercent >= 100,
@@ -386,7 +387,7 @@ export default function PointsPage() {
         current: Math.round(todayProgress.calories),
         target: dailyTargets.calories,
         unit: 'kcal',
-        icon: Zap,
+        icon: Flame,
         color: 'text-orange-500',
         bgColor: 'bg-orange-500',
       },
@@ -397,9 +398,8 @@ export default function PointsPage() {
         maxPoints: 25,
         progress: proteinPercent,
         current: Math.round(todayProgress.protein),
-        target: dailyTargets.protein,
-        unit: 'g',
-        icon: Target,
+        target: dailyTargets.protein,        unit: 'g',
+        icon: Dumbbell,
         color: 'text-blue-500',
         bgColor: 'bg-blue-500',
       },
@@ -412,7 +412,7 @@ export default function PointsPage() {
         current: Math.round(todayProgress.carbohydrates),
         target: dailyTargets.carbohydrates,
         unit: 'g',
-        icon: Apple,
+        icon: Activity,
         color: 'text-green-500',
         bgColor: 'bg-green-500',
       },
@@ -446,10 +446,9 @@ export default function PointsPage() {
 
     return breakdown;
   };
-
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300 transition-all duration-500">
+      <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
         <div className="p-3 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 animate-pulse">
             <div className="space-y-2">
@@ -457,7 +456,7 @@ export default function PointsPage() {
               <Skeleton className="h-4 w-96" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-clayGlass shadow-clay rounded-3xl">
+              <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
                 <CardHeader>
                   <Skeleton className="h-6 w-32" />
                 </CardHeader>
@@ -465,7 +464,7 @@ export default function PointsPage() {
                   <Skeleton className="h-16 w-full" />
                 </CardContent>
               </Card>
-              <Card className="bg-clayGlass shadow-clay rounded-3xl">
+              <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
                 <CardHeader>
                   <Skeleton className="h-6 w-32" />
                 </CardHeader>
@@ -474,7 +473,7 @@ export default function PointsPage() {
                 </CardContent>
               </Card>
             </div>
-            <Card className="bg-clayGlass shadow-clay rounded-3xl">
+            <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
               <CardHeader>
                 <Skeleton className="h-6 w-48" />
               </CardHeader>
@@ -492,13 +491,12 @@ export default function PointsPage() {
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
         <div className="p-3 md:p-6">
           <div className="max-w-xl mx-auto text-center">
-            <Card className="bg-clayGlass shadow-clay rounded-3xl border-destructive">
+            <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl border-destructive">
               <CardHeader>
                 <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
                 <CardTitle className="text-destructive">Error Loading Points</CardTitle>
@@ -517,9 +515,8 @@ export default function PointsPage() {
   const breakdown = getPointsBreakdown();
   const totalPossibleToday = 100;
   const achievedAllGoals = breakdown.every(item => item.achieved);
-
   return (
-    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300 transition-all duration-500">
+    <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
       <div className="p-3 md:p-6">
         <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
           {/* Header */}
@@ -661,12 +658,16 @@ export default function PointsPage() {
                   >
                     <div className="backdrop-blur-sm border rounded-2xl p-5 shadow-lg bg-clayGlass border-white/40 transition-all duration-500">
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">
-                          <div className={cn(
+                        <div className="flex items-center">                          <div className={cn(
                             "w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg",
                             item.achieved 
                               ? "bg-green-100 ring-2 ring-green-200" 
-                              : item.bgColor || "bg-gray-100"
+                              : item.color === 'text-orange-500' ? "bg-orange-50" :
+                                item.color === 'text-blue-500' ? "bg-blue-50" :
+                                item.color === 'text-green-500' ? "bg-green-50" :
+                                item.color === 'text-purple-500' ? "bg-purple-50" :
+                                item.color === 'text-red-500' ? "bg-red-50" :
+                                "bg-gray-50"
                           )}>
                             <item.icon className={cn(
                               "w-6 h-6",
@@ -690,10 +691,14 @@ export default function PointsPage() {
                       
                       {item.points >= 0 && (
                         <div className="mb-4">
-                          <div className="w-full h-3 rounded-full bg-gray-200 shadow-clayInset">
-                            <motion.div 
+                          <div className="w-full h-3 rounded-full bg-gray-200 shadow-clayInset">                            <motion.div 
                               className={cn(
-                                item.achieved ? "bg-green-400" : item.progressColor || "bg-gray-400",
+                                item.achieved ? "bg-green-400" : 
+                                item.color === 'text-orange-500' ? "bg-orange-400" :
+                                item.color === 'text-blue-500' ? "bg-blue-400" :
+                                item.color === 'text-green-500' ? "bg-green-400" :
+                                item.color === 'text-purple-500' ? "bg-purple-400" :
+                                "bg-gray-400",
                                 "h-3 rounded-full transition-all duration-500 shadow-sm"
                               )}
                               initial={{ width: 0 }}
@@ -734,11 +739,7 @@ export default function PointsPage() {
                     </div>
                   </motion.div>
                 ))}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Perfect Day Bonus */}
+              </CardContent>            </Card>          </motion.div>          {/* Perfect Day Bonus */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -750,49 +751,48 @@ export default function PointsPage() {
             className="animate-fade-in"
             style={{ animationDelay: '400ms' }}
           >
-            <Card className={cn(
-              "backdrop-blur-sm border-0 transition-all duration-500 rounded-3xl shadow-lg",
-              achievedAllGoals 
-                ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-green-300 shadow-clayStrong" 
-                : "bg-clayGlass shadow-clay hover:shadow-clayStrong"
-            )}>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
+              <Card className={cn(
+                "backdrop-blur-sm border-0 transition-all duration-500 rounded-3xl shadow-lg animate-fade-in",
+                achievedAllGoals 
+                  ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-green-300 shadow-clayStrong" 
+                  : "bg-clayGlass shadow-clay hover:shadow-clayStrong"
+              )} style={{ animationDelay: '400ms' }}>
+                <CardContent className="p-4 md:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={cn(
+                        "w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg",
+                        achievedAllGoals 
+                          ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-clayInset" 
+                          : "bg-gradient-to-br from-gray-100 to-gray-200 shadow-clayInset"
+                      )}>
+                        {achievedAllGoals ? (
+                          <Star className="w-6 h-6 text-white" />
+                        ) : (
+                          <Trophy className="w-6 h-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-gray-800">Perfect Day Bonus</h3>
+                        <p className="text-sm font-medium text-gray-600">
+                          {achievedAllGoals 
+                            ? "🎉 All goals completed! Bonus awarded!" 
+                            : "Complete all goals to earn bonus"
+                          }
+                        </p>
+                      </div>
+                    </div>
                     <div className={cn(
-                      "w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg",
+                      "text-white px-4 py-2 rounded-2xl shadow-lg",
                       achievedAllGoals 
-                        ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-clayInset" 
-                        : "bg-gradient-to-br from-gray-100 to-gray-200 shadow-clayInset"
-                    )}>
-                      {achievedAllGoals ? (
-                        <Star className="w-6 h-6 text-white" />
-                      ) : (
-                        <Trophy className="w-6 h-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-800">Perfect Day Bonus</h3>
-                      <p className="text-sm font-medium text-gray-600">
-                        {achievedAllGoals 
-                          ? "🎉 All goals completed! Bonus awarded!" 
-                          : "Complete all goals to earn bonus"
-                        }
-                      </p>
+                        ? "bg-gradient-to-r from-green-400 to-green-500" 
+                        : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"                    )}>
+                      <span className="text-sm font-bold">+{achievedAllGoals ? 10 : 0} pts</span>
                     </div>
                   </div>
-                  <div className={cn(
-                    "text-white px-4 py-2 rounded-2xl shadow-lg",
-                    achievedAllGoals 
-                      ? "bg-gradient-to-r from-green-400 to-green-500" 
-                      : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"
-                  )}>
-                    <span className="text-sm font-bold">+{achievedAllGoals ? 10 : 0} pts</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
         </div>
       </div>
     </div>

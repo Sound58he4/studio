@@ -558,25 +558,23 @@ export default function WorkoutPlansPage() {
                 </motion.div>
             </div>
         );
-    }
-
-    // Main component render
+    }    // Main component render
     return (
         <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 transition-all duration-500">
-            <div className="container mx-auto px-4 py-6 max-w-6xl space-y-6">
+            <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl space-y-4 sm:space-y-6">
                 {/* Header Section */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="flex flex-col gap-4"
                 >
-                    <div className="backdrop-blur-sm p-6 border shadow-lg rounded-3xl mb-6 transition-all duration-300 bg-white/90 border-gray-200/50 text-center w-full">
-                        <div className="mb-6">
-                            <h1 className="text-3xl font-bold mb-2 text-gray-900">
+                    <div className="backdrop-blur-sm p-4 sm:p-6 border shadow-lg rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 transition-all duration-300 bg-white/90 border-gray-200/50 text-center w-full">
+                        <div className="mb-4 sm:mb-6">
+                            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900">
                                 Workout Plans
                             </h1>
-                            <p className="text-lg text-gray-600">
+                            <p className="text-base sm:text-lg text-gray-600">
                                 Plan and track your fitness journey
                             </p>
                         </div>
@@ -586,37 +584,35 @@ export default function WorkoutPlansPage() {
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="flex items-center justify-center gap-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200 mb-4"
+                                className="flex items-center justify-center gap-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200 mb-4 mx-auto max-w-fit"
                             >
-                                <AlertCircle className="h-4 w-4" />
+                                <AlertCircle className="h-4 w-4 flex-shrink-0" />
                                 <span className="text-sm font-medium">Unsaved changes</span>
                             </motion.div>
                         )}
                     </div>
-                </motion.div>
-
-                {/* Action Bar */}
+                </motion.div>                {/* Action Bar */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.6 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-1"
                 >
                     <Button 
                         onClick={handleGeneratePlan} 
                         disabled={isGeneratingPlan || isSaving || !!isGeneratingSimple} 
                         size="lg" 
-                        className="w-full py-4 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
+                        className="w-full py-3 sm:py-4 text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
                     >
                         {isGeneratingPlan ? (
                             <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Generating...
+                                <Loader2 className="mr-2 h-4 sm:h-5 w-4 sm:w-5 animate-spin" />
+                                <span className="truncate">Generating...</span>
                             </>
                         ) : (
                             <>
-                                <Sparkles className="mr-2 h-5 w-5" />
-                                Generate AI Plan
+                                <Sparkles className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
+                                <span className="truncate">Generate AI Plan</span>
                             </>
                         )}
                     </Button>
@@ -626,86 +622,82 @@ export default function WorkoutPlansPage() {
                         disabled={!hasUnsavedChanges || isSaving || isGeneratingPlan || !!isGeneratingSimple} 
                         size="lg" 
                         variant={hasUnsavedChanges ? "default" : "outline"}
-                        className={cn("w-full py-4 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]", 
+                        className={cn("w-full py-3 sm:py-4 text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]", 
                             hasUnsavedChanges ? "bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white" : "border-gray-300/50 bg-gray-100/50 text-gray-600 hover:bg-gray-200/50")}
                     >
                         {isSaving ? (
                             <>
-                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                Saving...
+                                <Loader2 className="mr-2 h-4 sm:h-5 w-4 sm:w-5 animate-spin" />
+                                <span className="truncate">Saving...</span>
                             </>
                         ) : (
                             <>
-                                <Save className="mr-2 h-5 w-5" />
-                                {hasUnsavedChanges ? "Save Changes" : "No Changes"}
+                                <Save className="mr-2 h-4 sm:h-5 w-4 sm:w-5" />
+                                <span className="truncate">{hasUnsavedChanges ? "Save Changes" : "No Changes"}</span>
                             </>
                         )}
                     </Button>
-                </motion.div>
-
-                {/* Error Display */}
+                </motion.div>                {/* Error Display */}
                 {error && !error.includes("Profile not found") && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.3 }}
+                        className="px-1"
                     >
-                        <Card className="border-red-200 bg-red-50 shadow-lg rounded-3xl">
+                        <Card className="border-red-200 bg-red-50 shadow-lg rounded-2xl sm:rounded-3xl">
                             <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                                <p className="text-red-600 font-medium text-sm sm:text-base break-words">{error}</p>
+                                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
+                                <p className="text-red-600 font-medium text-xs sm:text-base break-words leading-relaxed">{error}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
-                )}
-
-                {/* Enhanced Day Selector */}
+                )}{/* Enhanced Day Selector */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.6 }}
                 >
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                         {/* Week Calendar */}
-                        <Card className="backdrop-blur-sm border shadow-lg rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="flex items-center text-xl text-gray-900">
-                                    <Calendar className="w-5 h-5 mr-2" />
+                        <Card className="backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
+                            <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
+                                <CardTitle className="flex items-center text-lg sm:text-xl text-gray-900">
+                                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                     This Week
                                 </CardTitle>
                                 {activeDay && (
-                                    <div className="flex items-center gap-2 sm:gap-3 mt-4">
+                                    <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4">
                                         <Button
                                             onClick={() => navigateDay('prev')}
                                             variant="outline"
                                             size="sm"
-                                            className="h-8 w-8 p-0 rounded-full"
+                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full"
                                         >
-                                            <ChevronLeft className="h-4 w-4" />
+                                            <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
                                         </Button>
-                                        <span className="text-sm font-medium min-w-[80px] text-center">
+                                        <span className="text-xs sm:text-sm font-medium min-w-[70px] sm:min-w-[80px] text-center">
                                             {activeDay}
                                         </span>
                                         <Button
                                             onClick={() => navigateDay('next')}
                                             variant="outline"
                                             size="sm"
-                                            className="h-8 w-8 p-0 rounded-full"
+                                            className="h-7 w-7 sm:h-8 sm:w-8 p-0 rounded-full"
                                         >
-                                            <ChevronRight className="h-4 w-4" />
+                                            <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
                                         </Button>
                                     </div>
                                 )}
                             </CardHeader>
-                            <CardContent className="space-y-2">
+                            <CardContent className="space-y-2 p-4 sm:p-6 pt-0">
                                 {daysOfWeekOrder.map((day, index) => {
                                     const exercises = editablePlan[day] || [];
                                     const isRestDay = exercises.length === 1 && exercises[0].exercise.toLowerCase() === 'rest';
                                     const isToday = day === todayDayName;
                                     const isActive = activeDay === day;
 
-                                    return (
-                                        <motion.button
+                                    return (                                        <motion.button
                                             key={day}
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -717,16 +709,16 @@ export default function WorkoutPlansPage() {
                                                 setEditingExerciseState(null);
                                             }}
                                             className={cn(
-                                                "w-full p-3 rounded-xl text-left transition-all duration-300",
+                                                "w-full p-2 sm:p-3 rounded-lg sm:rounded-xl text-left transition-all duration-300",
                                                 isActive && "bg-gradient-to-br from-blue-400 to-purple-500 text-white shadow-lg",
                                                 !isActive && isToday && "bg-blue-100/50 text-blue-700",
                                                 !isActive && !isToday && "bg-gray-100/50 text-gray-700 hover:bg-gray-200/50",
                                                 isRestDay && !isActive && "bg-emerald-100/50 text-emerald-700"
                                             )}
                                         >
-                                            <div className="font-medium">{day}</div>
+                                            <div className="font-medium text-sm sm:text-base">{day}</div>
                                             <div className={cn(
-                                                "text-sm",
+                                                "text-xs sm:text-sm",
                                                 isActive && "text-white/80",
                                                 !isActive && isToday && "text-blue-600",
                                                 !isActive && !isToday && "text-gray-500"
@@ -738,23 +730,21 @@ export default function WorkoutPlansPage() {
                                                         {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
                                                     </span>
                                                 )}
-                                                {isToday && ' (Today)'}
+                                                {isToday && <span className="block sm:inline"> (Today)</span>}
                                             </div>
                                         </motion.button>
                                     );
                                 })}
                             </CardContent>
-                        </Card>
-
-                        {/* Main Content Layout */}
-                        <div className="md:col-span-2 space-y-6">
+                        </Card>                        {/* Main Content Layout */}
+                        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                             {activeDay && (
                                 <motion.div
                                     key={activeDay}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5 }}
-                                    className="space-y-6"
+                                    className="space-y-4 sm:space-y-6"
                                 >
                                     {/* Exercise Form */}
                                     <AnimatePresence>
@@ -764,39 +754,35 @@ export default function WorkoutPlansPage() {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -20 }}
                                                 transition={{ duration: 0.4 }}
+                                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                                                onClick={(e) => {
+                                                    if (e.target === e.currentTarget) {
+                                                        handleCancelEdit();
+                                                    }
+                                                }}
                                             >
-                                                <Card className="border-2 border-blue-200 shadow-xl bg-white/95 backdrop-blur-lg rounded-3xl">
-                                                    <CardHeader className="pb-4">
-                                                        <CardTitle className="flex items-center gap-2 text-gray-900">
-                                                            <Edit className="h-5 w-5" />
-                                                            {editingExerciseState.exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}
-                                                        </CardTitle>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <AddEditExerciseForm
-                                                            key={editingExerciseState.exercise.id}
-                                                            exercise={editingExerciseState.exercise}
-                                                            day={activeDay}
-                                                            onSave={handleSaveEditedExercise}
-                                                            onCancel={handleCancelEdit}
-                                                            onChange={(field, value) => handleExerciseChange(activeDay, editingExerciseState.exercise.id, field, value)}
-                                                        />
-                                                    </CardContent>
-                                                </Card>
+                                                <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                                                    <AddEditExerciseForm
+                                                        key={editingExerciseState.exercise.id}
+                                                        exercise={editingExerciseState.exercise}
+                                                        day={activeDay}
+                                                        onSave={handleSaveEditedExercise}
+                                                        onCancel={handleCancelEdit}
+                                                        onChange={(field, value) => handleExerciseChange(activeDay, editingExerciseState.exercise.id, field, value)}
+                                                    />
+                                                </div>
                                             </motion.div>
                                         )}
-                                    </AnimatePresence>
-
-                                    {/* Day Content */}
-                                    <Card className="backdrop-blur-sm border shadow-lg rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
-                                        <CardHeader className="pb-4">
+                                    </AnimatePresence>                                    {/* Day Content */}
+                                    <Card className="backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
+                                        <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-xl text-gray-900">
+                                                <CardTitle className="text-lg sm:text-xl text-gray-900">
                                                     <div className="flex items-center">
-                                                        <Dumbbell className="w-5 h-5 mr-2" />
-                                                        {activeDay} Workout
+                                                        <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                                                        <span className="truncate">{activeDay} Workout</span>
                                                     </div>
-                                                    <div className="text-sm font-normal mt-1 text-gray-600">
+                                                    <div className="text-xs sm:text-sm font-normal mt-1 text-gray-600">
                                                         {activeDay === todayDayName ? "Today's workout" : "Plan your workout"}
                                                         {editablePlan[activeDay]?.length > 0 && (
                                                             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
@@ -808,10 +794,9 @@ export default function WorkoutPlansPage() {
                                             </div>
                                         </CardHeader>
 
-                                        <CardContent className="space-y-4 pt-0">
-                                            {/* Quick Actions */}
+                                        <CardContent className="space-y-3 sm:space-y-4 pt-0 p-4 sm:p-6">                                            {/* Quick Actions */}
                                             <motion.div 
-                                                className="space-y-4"
+                                                className="space-y-3 sm:space-y-4"
                                                 initial={{ opacity: 0, scale: 0.8 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: 0.3 }}
@@ -819,47 +804,45 @@ export default function WorkoutPlansPage() {
                                                 {/* Primary Actions */}
                                                 <Button
                                                     onClick={() => handleAddExerciseClick(activeDay)}
-                                                    className="w-full py-4 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
+                                                    className="w-full py-3 sm:py-4 text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white"
                                                 >
-                                                    <PlusCircle className="w-5 h-5 mr-3" />
-                                                    Add Exercise
+                                                    <PlusCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
+                                                    <span className="truncate">Add Exercise</span>
                                                 </Button>
 
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                                                     <Button
                                                         onClick={() => handleSuggestSimpleWorkout(activeDay)}
                                                         disabled={!!isGeneratingSimple}
                                                         variant="outline"
-                                                        className="py-4 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80"
+                                                        className="py-3 sm:py-4 text-sm sm:text-lg rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80"
                                                     >
                                                         {isGeneratingSimple === activeDay ? (
-                                                            <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                                                            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 animate-spin" />
                                                         ) : (
-                                                            <Sparkles className="w-5 h-5 mr-3" />
+                                                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3" />
                                                         )}
-                                                        AI Suggest
+                                                        <span className="truncate">AI Suggest</span>
                                                     </Button>
                                                     <Button
                                                         onClick={() => handleSetRestDay(activeDay)}
                                                         variant="outline"
-                                                        className="py-4 text-lg rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm border-gray-300/50 bg-gray-100/50 text-gray-600 hover:bg-gray-200/50"
+                                                        className="py-3 sm:py-4 text-sm sm:text-lg rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] backdrop-blur-sm border-gray-300/50 bg-gray-100/50 text-gray-600 hover:bg-gray-200/50"
                                                     >
-                                                        Set Rest Day
+                                                        <span className="truncate">Set Rest Day</span>
                                                     </Button>
-                                                </div>
-
-                                                {/* PDF Workout Integration - Compact Design */}
-                                                <Card className="bg-gradient-to-r from-orange-50/50 to-red-50/30 border-orange-200/50 rounded-2xl">
-                                                    <CardContent className="p-3">
-                                                        <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                                                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                                                </div>                                                {/* PDF Workout Integration - Compact Design */}
+                                                <Card className="bg-gradient-to-r from-orange-50/50 to-red-50/30 border-orange-200/50 rounded-xl sm:rounded-2xl">
+                                                    <CardContent className="p-3 sm:p-4">
+                                                        <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                                                            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                                                <FileText className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 text-orange-600" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <h3 className="text-xs sm:text-sm font-semibold text-orange-900 truncate">
+                                                                <h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-orange-900 truncate">
                                                                     PDF Workout Plans
                                                                 </h3>
-                                                                <p className="text-[10px] sm:text-xs text-orange-700/70 truncate">
+                                                                <p className="text-[8px] sm:text-[10px] md:text-xs text-orange-700/70 truncate">
                                                                     Power, Light, Max & Xtreme
                                                                 </p>
                                                             </div>
@@ -895,10 +878,8 @@ export default function WorkoutPlansPage() {
                                                         ))}
                                                     </div>
                                                 </div>
-                                            )}
-
-                                            {/* Exercise List */}
-                                            <div className="space-y-3 sm:space-y-4">
+                                            )}                                            {/* Exercise List */}
+                                            <div className="space-y-2 sm:space-y-3 md:space-y-4">
                                                 <AnimatePresence>
                                                     {editablePlan[activeDay]?.length > 0 ? (
                                                         editablePlan[activeDay].map((exercise, index) => (
@@ -912,42 +893,42 @@ export default function WorkoutPlansPage() {
                                                                     whileHover={{ scale: 1.02 }}
                                                                     className="group"
                                                                 >
-                                                                    <div className="backdrop-blur-sm rounded-2xl p-4 transition-all duration-500 bg-white/40 border border-gray-200/30 hover:bg-white/60 hover:shadow-lg">
-                                                                        <div className="flex items-center justify-between mb-3">
-                                                                            <h3 className="font-semibold text-lg text-gray-900">
+                                                                    <div className="backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-all duration-500 bg-white/40 border border-gray-200/30 hover:bg-white/60 hover:shadow-lg">
+                                                                        <div className="flex items-start justify-between mb-2 sm:mb-3">
+                                                                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 pr-2 leading-tight">
                                                                                 {exercise.exercise}
                                                                             </h3>
-                                                                            <div className="flex space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                                                            <div className="flex space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
                                                                                 <Button
                                                                                     variant="ghost"
                                                                                     size="sm"
                                                                                     onClick={() => handleEditExerciseClick(activeDay, exercise)}
-                                                                                    className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
+                                                                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-blue-600 hover:bg-blue-50 p-0"
                                                                                 >
-                                                                                    <Edit className="w-4 h-4" />
+                                                                                    <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                                                                                 </Button>
                                                                                 <Button
                                                                                     variant="ghost"
                                                                                     size="sm"
                                                                                     onClick={() => handleRemoveExercise(activeDay, exercise.id)}
-                                                                                    className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                                                                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-red-600 hover:bg-red-50 p-0"
                                                                                 >
-                                                                                    <Trash2 className="w-4 h-4" />
+                                                                                    <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                                                                                 </Button>
                                                                             </div>
                                                                         </div>
                                                                         
-                                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                                                                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3">
                                                                             {exercise.sets && (
                                                                                 <div className="text-center p-2 rounded-lg bg-gray-100/50">
                                                                                     <div className="text-xs font-medium text-gray-500">Sets</div>
-                                                                                    <div className="text-lg font-bold text-gray-900">{exercise.sets}</div>
+                                                                                    <div className="text-sm sm:text-lg font-bold text-gray-900">{exercise.sets}</div>
                                                                                 </div>
                                                                             )}
                                                                             {exercise.reps && (
                                                                                 <div className="text-center p-2 rounded-lg bg-gray-100/50">
                                                                                     <div className="text-xs font-medium text-gray-500">Reps</div>
-                                                                                    <div className="text-lg font-bold text-gray-900">{exercise.reps}</div>
+                                                                                    <div className="text-sm sm:text-lg font-bold text-gray-900">{exercise.reps}</div>
                                                                                 </div>
                                                                             )}
                                                                             {exercise.youtubeLink && (
@@ -955,21 +936,21 @@ export default function WorkoutPlansPage() {
                                                                                     href={exercise.youtubeLink}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
-                                                                                    className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors col-span-full text-center justify-center p-2 rounded-lg bg-red-50"
+                                                                                    className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors col-span-full sm:col-span-1 text-center justify-center p-2 rounded-lg bg-red-50"
                                                                                     whileHover={{ scale: 1.05 }}
                                                                                 >
-                                                                                    <Youtube className="h-4 w-4" />
-                                                                                    <span>Watch Video</span>
+                                                                                    <Youtube className="h-3 w-3 sm:h-4 sm:w-4" />
+                                                                                    <span className="text-xs sm:text-sm">Video</span>
                                                                                 </motion.a>
                                                                             )}
                                                                         </div>
                                                                         
-                                                                        <div className="flex items-center justify-between text-sm">
+                                                                        <div className="flex items-center justify-between text-xs sm:text-sm">
                                                                             <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                                                                                 Exercise
                                                                             </span>
                                                                             {exercise.notes && (
-                                                                                <span className="text-xs text-gray-500 italic line-clamp-2 break-words">
+                                                                                <span className="text-xs text-gray-500 italic line-clamp-2 break-words max-w-[60%] text-right">
                                                                                     {exercise.notes}
                                                                                 </span>
                                                                             )}
@@ -978,12 +959,11 @@ export default function WorkoutPlansPage() {
                                                                 </motion.div>
                                                             )
                                                         ))
-                                                    ) : (
-                                                        <motion.div
+                                                    ) : (                                                        <motion.div
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
                                                             transition={{ duration: 0.5 }}
-                                                            className="text-center py-12 rounded-2xl bg-gray-100/30"
+                                                            className="text-center py-8 sm:py-12 rounded-xl sm:rounded-2xl bg-gray-100/30"
                                                         >
                                                             <motion.div
                                                                 animate={{ 
@@ -996,28 +976,28 @@ export default function WorkoutPlansPage() {
                                                                     ease: "easeInOut"
                                                                 }}
                                                             >
-                                                                <Dumbbell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                                                                <Dumbbell className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
                                                             </motion.div>
-                                                            <p className="text-lg font-medium mb-2 text-gray-600">
+                                                            <p className="text-base sm:text-lg font-medium mb-2 text-gray-600">
                                                                 No exercises planned for {activeDay}
                                                             </p>
-                                                            <p className="text-sm text-gray-500 mb-4 sm:mb-6 px-4">
+                                                            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-6 px-4">
                                                                 Add some exercises to get started with your workout
                                                             </p>
                                                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center px-4">
                                                                 <Button
                                                                     onClick={() => handleAddExerciseClick(activeDay)}
-                                                                    className="gap-2 text-xs sm:text-sm h-9 sm:h-10 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white rounded-xl"
+                                                                    className="gap-2 text-xs sm:text-sm h-8 sm:h-10 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 text-white rounded-xl"
                                                                     size="sm"
                                                                 >
                                                                     <PlusCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                                                                    Add Exercise
+                                                                    <span className="truncate">Add Exercise</span>
                                                                 </Button>
                                                                 <Button
                                                                     onClick={() => handleSuggestSimpleWorkout(activeDay)}
                                                                     disabled={!!isGeneratingSimple}
                                                                     variant="outline"
-                                                                    className="gap-2 text-xs sm:text-sm h-9 sm:h-10 border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80 rounded-xl"
+                                                                    className="gap-2 text-xs sm:text-sm h-8 sm:h-10 border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80 rounded-xl"
                                                                     size="sm"
                                                                 >
                                                                     {isGeneratingSimple === activeDay ? (
@@ -1047,10 +1027,10 @@ export default function WorkoutPlansPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.5 }}
-                                    className="text-center py-8 sm:py-12 px-4"
+                                    className="text-center py-6 sm:py-12 px-4"
                                 >
-                                    <CalendarDays className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                                    <h3 className="text-base sm:text-lg font-semibold text-gray-600 mb-2">
+                                    <CalendarDays className="h-10 w-10 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-2 sm:mb-4" />
+                                    <h3 className="text-sm sm:text-lg font-semibold text-gray-600 mb-2">
                                         Select a day to view or edit workouts
                                     </h3>
                                     <p className="text-xs sm:text-sm text-gray-500">
@@ -1077,17 +1057,10 @@ const validateExerciseInput = (exercise: ExerciseDetail): EditableExercise => {
         displayReps = 'To failure';
     }
     
-    // Ensure calorie burn is within reasonable range
-    let caloriesBurned = exercise.caloriesBurned || 15;
-    if (typeof caloriesBurned === 'number') {
-        caloriesBurned = Math.max(6, Math.min(30, caloriesBurned));
-    }
-    
     return {
         ...exercise,
         reps: displayReps,
-        caloriesBurned: caloriesBurned,
-        id: generateUniqueId('temp'), // Will be replaced with proper ID
+        id: `temp-${Date.now()}-${Math.random().toString(16).slice(2)}`, // Will be replaced with proper ID
         isNew: true
     };
 };

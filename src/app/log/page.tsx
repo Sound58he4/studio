@@ -550,99 +550,138 @@ export default function LogFoodPage() {
         setIsLoading(false); 
     }
   };
-
   if (authLoading) {
-       return <div className="flex justify-center items-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>;
-   }
-   if (!userId && !authLoading) {
-        return <div className="text-center p-10">Please log in to access this page.</div>;
-   }  return (
-    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200">
-      <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6">
-        
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <div className="backdrop-blur-sm rounded-3xl shadow-clay border p-4 sm:p-6 md:p-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
-            {/* Decorative elements */}            <div className="absolute top-2 right-2 md:top-4 md:right-4 w-12 h-12 md:w-20 md:h-20 rounded-full blur-xl bg-clayBlue/30"></div>
-            <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 w-10 h-10 md:w-16 md:h-16 rounded-full blur-xl bg-clayPurple/30"></div>
-            
-            <div className="relative z-10">
-              <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-3 md:mb-4">                <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
-                  <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                </div>
-                <div className="text-center">                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight text-gray-800">
-                    Log Your Meal
-                  </h1>
-                  <div className="flex items-center justify-center space-x-2 mt-1 md:mt-2">
-                    <Brain className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                    <span className="font-semibold text-xs md:text-sm text-purple-600">AI-Powered Nutrition</span>
-                  </div>
-                </div>
-              </div>              <p className="text-center max-w-2xl mx-auto leading-relaxed text-sm sm:text-base md:text-lg px-2 text-gray-600">
-                Transform your nutrition tracking with intelligent meal logging. Use text descriptions, photos, or voice commands.
-              </p>
-              
-              {/* Stats Pills */}
-              <div className="flex justify-center space-x-2 md:space-x-3 mt-4 md:mt-6">                <div className="backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 shadow-lg border bg-clayGlass shadow-clay">
-                  <span className="text-xs md:text-sm font-semibold text-gray-700">🎯 Smart Detection</span>
-                </div>
-                <div className="backdrop-blur-sm rounded-full px-3 py-1.5 md:px-4 md:py-2 shadow-lg border bg-clayGlass shadow-clay">
-                  <span className="text-xs md:text-sm font-semibold text-gray-700">⚡ Instant Analysis</span>
+    return (
+      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+        <div className="p-3 md:p-6">
+          <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+                <CardContent className="p-4 md:p-6 flex justify-center items-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-600"/>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }  if (!userId && !authLoading) {
+    return (
+      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+        <div className="p-3 md:p-6">
+          <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+                <CardContent className="p-4 md:p-6 text-center">
+                  <h2 className="text-xl font-bold text-gray-800 mb-2">Authentication Required</h2>
+                  <p className="text-gray-600">Please log in to access this page.</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }return (    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+      <div className="p-3 md:p-6">
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+          {/* Header */}
+        <motion.div 
+          className="mb-6 md:mb-8"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="backdrop-blur-sm rounded-3xl shadow-clayStrong border-0 p-4 md:p-6 text-center bg-clay-100/70 transition-all duration-500">
+            <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-3 md:mb-4">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg">
+                <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 text-gray-800">
+                  Log Your Meal
+                </h1>
+                <div className="flex items-center justify-center space-x-2">
+                  <Brain className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
+                  <span className="text-sm md:text-base text-purple-600 font-semibold">AI-Powered Nutrition</span>
                 </div>
               </div>
             </div>
+            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+              Transform your nutrition tracking with intelligent meal logging using text, photos, or voice commands.
+            </p>
           </div>
-        </div>
-
-        {/* Tab Navigation */}        <div className="backdrop-blur-sm rounded-2xl shadow-clay border overflow-hidden mb-6 md:mb-8 transition-all duration-500 bg-clayGlass">
-          <div className="flex relative p-2">
-            {/* Active Tab Indicator */}            <div 
-              className={`absolute top-2 bottom-2 rounded-xl shadow-clayInset transition-all duration-500 ease-in-out bg-gradient-to-r from-purple-500 to-purple-600 ${
-                activeTab === 'manual' ? 'left-2 w-[calc(33.33%-0.5rem)]' :
-                activeTab === 'image' ? 'left-[33.33%] w-[calc(33.33%-0.5rem)]' :
-                'left-[66.66%] w-[calc(33.33%-0.5rem)]'
-              }`}
-            ></div>
-            
-            <button
-              onClick={() => setActiveTab('manual')}
-              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
-                activeTab === 'manual' 
-                  ? 'text-white' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <FileText className="w-4 h-4 md:w-6 md:h-6" />
-              <span className="text-xs sm:text-sm md:text-lg">Text</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('image')}
-              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
-                activeTab === 'image' 
-                  ? 'text-white' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <Camera className="w-4 h-4 md:w-6 md:h-6" />
-              <span className="text-xs sm:text-sm md:text-lg">Photo</span>
-            </button>            <button
-              onClick={() => setActiveTab('voice')}
-              className={`flex-1 py-3 md:py-5 px-2 md:px-6 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-3 relative z-10 rounded-xl ${
-                activeTab === 'voice' 
-                  ? 'text-white' 
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <Mic className="w-4 h-4 md:w-6 md:h-6" />
-              <span className="text-xs sm:text-sm md:text-lg">Voice</span>
-            </button>
-          </div>
-        </div>        {/* Content Area */}        <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 sm:p-6 md:p-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
-          {/* Background elements */}
-          <div className="absolute top-0 right-0 w-20 h-20 md:w-32 md:h-32 rounded-full blur-2xl md:blur-3xl bg-clayBlue/20"></div>
-          <div className="absolute bottom-0 left-0 w-16 h-16 md:w-24 md:h-24 rounded-full blur-2xl md:blur-3xl bg-clayPurple/20"></div>
-          
-          <div className="relative z-10">            {/* Manual Tab Content */}
+        </motion.div>        {/* Tab Navigation */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl overflow-hidden mb-6 md:mb-8">
+            <div className="flex relative p-2 bg-white/20">
+              {/* Active Tab Indicator */}
+              <div 
+                className={`absolute top-2 bottom-2 rounded-xl shadow-lg transition-all duration-500 ease-in-out bg-gradient-to-r from-purple-500 to-purple-600 ${
+                  activeTab === 'manual' ? 'left-2 right-[66.66%]' :
+                  activeTab === 'image' ? 'left-[33.33%] right-[33.33%]' :
+                  'left-[66.66%] right-2'
+                }`}
+              ></div>
+              
+              <button
+                onClick={() => setActiveTab('manual')}
+                className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
+                  activeTab === 'manual' 
+                    ? 'text-white shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                }`}
+              >
+                <FileText className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm md:text-base font-semibold">Text</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('image')}
+                className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
+                  activeTab === 'image' 
+                    ? 'text-white shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                }`}
+              >
+                <Camera className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm md:text-base font-semibold">Photo</span>
+              </button>
+              
+              <button
+                onClick={() => setActiveTab('voice')}
+                className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
+                  activeTab === 'voice' 
+                    ? 'text-white shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                }`}
+              >
+                <Mic className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                <span className="text-xs sm:text-sm md:text-base font-semibold">Voice</span>
+              </button>
+            </div>
+          </Card>
+        </motion.div>{/* Content Area */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+            <CardContent className="p-4 md:p-6">{/* Manual Tab Content */}
             {activeTab === 'manual' && (
               <div className="space-y-6 md:space-y-8">
                 <div>                  <div className="flex items-center space-x-3 mb-4 md:mb-6">
@@ -650,8 +689,7 @@ export default function LogFoodPage() {
                       <FileText className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Describe Your Meal</h3>
-                  </div>
-                    <div className="backdrop-blur-sm rounded-2xl shadow-lg border p-4 md:p-6 transition-all duration-300 bg-clayGlass shadow-clayInset">
+                  </div>                  <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-lg border bg-clay-100/40">
                     <Textarea
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
@@ -660,92 +698,10 @@ export default function LogFoodPage() {
                       disabled={isLoading}
                     />
                   </div>
-                </div>
-
-                {/* AI Suggestions Section */}                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg relative overflow-hidden transition-all duration-300 bg-clayBlue/30 shadow-clay">                  <div className="absolute top-0 right-0 w-16 h-16 md:w-20 md:h-20 rounded-full blur-2xl bg-clayPurple/20"></div>
-                  <div className="relative z-10">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
-                      <div className="flex items-center space-x-3">                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
-                          <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                        </div>
-                        <div>                          <span className="text-sm sm:text-base md:text-lg font-bold text-gray-800">AI-Powered Smart Suggestions</span>
-                          <p className="text-xs md:text-sm text-gray-600">Personalized recommendations just for you</p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchSuggestions}                        className="backdrop-blur-sm border transition-all duration-200 shadow-lg rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-clayGlass text-gray-700 shadow-clay hover:bg-white/80"
-                        disabled={!userId || isSuggesting}
-                      >
-                        <Target className="w-3 h-3 md:w-4 md:h-4 mr-2" />
-                        {isSuggesting ? "Getting..." : "Get Suggestions"}
-                      </Button>
-                    </div>                    <p className="leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
-                      Get intelligent food recommendations tailored to your dietary preferences, nutritional goals, and eating patterns.
-                    </p>
-                    
-                    {/* AI Suggestions Display */}
-                    <div className="mt-4">
-                      {isSuggesting ? (
-                        <div className="flex flex-wrap gap-2 animate-pulse">
-                          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />)}
-                        </div>
-                      ) : suggestionError ? (
-                        <p className="text-xs text-destructive">{suggestionError}</p>
-                      ) : aiSuggestions.length > 0 ? (
-                        <TooltipProvider delayDuration={100}>
-                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                            {aiSuggestions.slice(0, 8).map((suggestion, index) => (
-                              <Tooltip key={index}>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className={`text-xs rounded-lg border-dashed hover:bg-primary/10 hover:border-primary/50 h-8 px-2 sm:px-3 group relative overflow-hidden shadow-sm transition-all duration-300 ease-out animate-in fade-in zoom-in-95 flex-shrink-0`}
-                                    onClick={() => {
-                                      const textToSet = suggestion.quantity
-                                        ? `${suggestion.suggestionName} (${suggestion.quantity})`
-                                        : suggestion.suggestionName;
-                                      setManualInput(textToSet);
-                                    }}
-                                    title={`Add "${suggestion.suggestionName}" to input`}
-                                  >
-                                    <span className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
-                                    <span className="relative z-10 truncate max-w-[120px] sm:max-w-none">{suggestion.suggestionName}</span>
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="p-2 sm:p-3 max-w-xs bg-popover text-popover-foreground border shadow-lg rounded-md text-xs z-50">
-                                  <p className="font-semibold text-sm mb-1">{suggestion.suggestionName}</p>
-                                  <p className="text-muted-foreground mb-2 italic text-xs">{suggestion.reason}</p>
-                                  {suggestion.quantity && (
-                                    <p className="text-muted-foreground mb-2 flex items-center gap-1 text-xs">
-                                      <Scale size={12} /> Quantity: <span className="font-medium text-foreground/90">{suggestion.quantity}</span>
-                                    </p>
-                                  )}
-                                  <Separator className="my-2" />
-                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 tabular-nums text-xs">
-                                    <span>Calories:</span><span className="font-medium">{suggestion.estimatedNutrition.calories.toFixed(0)} kcal</span>
-                                    <span>Protein:</span><span className="font-medium">{suggestion.estimatedNutrition.protein.toFixed(1)} g</span>
-                                    <span>Carbs:</span><span className="font-medium">{suggestion.estimatedNutrition.carbohydrates.toFixed(1)} g</span>
-                                    <span>Fat:</span><span className="font-medium">{suggestion.estimatedNutrition.fat.toFixed(1)} g</span>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            ))}
-                          </div>
-                        </TooltipProvider>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic py-1">Click "Get Suggestions" to see personalized food recommendations based on your eating habits.</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Main Action Button */}                <Button
+                </div>                {/* Main Action Button */}
+                <Button
                   onClick={handleManualSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-clay hover:shadow-clayStrong"
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                   disabled={!manualInput.trim() || isLoading}
                 >
                   {isLoading ? (
@@ -761,6 +717,237 @@ export default function LogFoodPage() {
                     </>
                   )}
                 </Button>
+
+                {/* AI Analysis Section */}
+                {pendingResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
+                          <div className="flex items-center space-x-3 md:space-x-4">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                              <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                                AI Analysis Complete ({pendingResults.length} items)
+                              </h3>
+                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearAllPending}
+                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                            <span>Clear All</span>
+                          </Button>
+                        </div>
+                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                          <div className="flex items-center space-x-2 md:space-x-3 mb-2">
+                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                          </div>
+                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                            Our AI has analyzed your meal and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
+                          </p>
+                        </div>                        {/* Items Display - Mobile Cards & Desktop Table */}
+                        <div className="mt-6">
+                          {/* Mobile Card View */}
+                          <div className="block md:hidden space-y-3">
+                            {pendingResults.map((item, index) => (
+                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    {item.originalDescription && (
+                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                        From: {item.originalDescription.substring(0, 25)}...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(item.id)}
+                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 text-center">
+                                  <div className="bg-purple-50 rounded-lg p-2">
+                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
+                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  </div>
+                                  <div className="bg-blue-50 rounded-lg p-2">
+                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
+                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-green-50 rounded-lg p-2">
+                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
+                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-orange-50 rounded-lg p-2">
+                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
+                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Desktop Table View */}
+                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                  <tr>
+                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                  {pendingResults.map((item, index) => (
+                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                      <td className="py-3 md:py-5 px-3 md:px-6">
+                                        <div>
+                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          {item.originalDescription && (
+                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                              From: {item.originalDescription.substring(0, 30)}...
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeItem(item.id)}
+                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                        </Button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Confirm Button */}
+                        <Button
+                          onClick={confirmAndLogFood}
+                          className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl mt-6 md:mt-8 flex items-center justify-center space-x-2 md:space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong text-sm sm:text-base md:text-lg bg-green-500 hover:bg-green-600 text-white"
+                          disabled={pendingResults.length === 0 || isLoading}
+                        >
+                          <Target className="w-4 h-4 md:w-6 md:h-6" />
+                          <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
+                          <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* AI Suggestions Section */}
+                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg bg-clay-100/40">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600">
+                        <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                      </div>
+                      <div>
+                        <span className="text-sm sm:text-base md:text-lg font-bold text-gray-800">AI-Powered Smart Suggestions</span>
+                        <p className="text-xs md:text-sm text-gray-600">Personalized recommendations just for you</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchSuggestions}
+                      className="backdrop-blur-sm rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto border-0 bg-white/80 text-gray-700 shadow-lg hover:bg-white/90 hover:shadow-clayStrong"
+                      disabled={!userId || isSuggesting}
+                    >
+                      <Target className="w-3 h-3 md:w-4 md:h-4 mr-2" />
+                      {isSuggesting ? "Getting..." : "Get Suggestions"}
+                    </Button>
+                  </div>                  <p className="leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
+                    Get intelligent food recommendations tailored to your dietary preferences, nutritional goals, and eating patterns.
+                  </p>
+                  
+                  {/* AI Suggestions Display */}
+                  <div className="mt-4">
+                    {isSuggesting ? (
+                      <div className="flex flex-wrap gap-2 animate-pulse">
+                        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-md bg-muted/50" />)}
+                      </div>
+                    ) : suggestionError ? (
+                      <p className="text-xs text-destructive">{suggestionError}</p>
+                    ) : aiSuggestions.length > 0 ? (
+                      <TooltipProvider delayDuration={100}>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                          {aiSuggestions.slice(0, 8).map((suggestion, index) => (
+                            <Tooltip key={index}>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className={`text-xs rounded-lg border-dashed hover:bg-primary/10 hover:border-primary/50 h-8 px-2 sm:px-3 group relative overflow-hidden shadow-sm transition-all duration-300 ease-out animate-in fade-in zoom-in-95 flex-shrink-0`}
+                                  onClick={() => {
+                                    const textToSet = suggestion.quantity
+                                      ? `${suggestion.suggestionName} (${suggestion.quantity})`
+                                      : suggestion.suggestionName;
+                                    setManualInput(textToSet);
+                                  }}
+                                  title={`Add "${suggestion.suggestionName}" to input`}
+                                >
+                                  <span className="absolute inset-0 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                                  <span className="relative z-10 truncate max-w-[120px] sm:max-w-none">{suggestion.suggestionName}</span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="p-2 sm:p-3 max-w-xs bg-popover text-popover-foreground border shadow-lg rounded-md text-xs z-50">
+                                <p className="font-semibold text-sm mb-1">{suggestion.suggestionName}</p>
+                                <p className="text-muted-foreground mb-2 italic text-xs">{suggestion.reason}</p>
+                                {suggestion.quantity && (
+                                  <p className="text-muted-foreground mb-2 flex items-center gap-1 text-xs">
+                                    <Scale size={12} /> Quantity: <span className="font-medium text-foreground/90">{suggestion.quantity}</span>
+                                  </p>
+                                )}
+                                <Separator className="my-2" />
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-1 tabular-nums text-xs">
+                                  <span>Calories:</span><span className="font-medium">{suggestion.estimatedNutrition.calories.toFixed(0)} kcal</span>
+                                  <span>Protein:</span><span className="font-medium">{suggestion.estimatedNutrition.protein.toFixed(1)} g</span>
+                                  <span>Carbs:</span><span className="font-medium">{suggestion.estimatedNutrition.carbohydrates.toFixed(1)} g</span>
+                                  <span>Fat:</span><span className="font-medium">{suggestion.estimatedNutrition.fat.toFixed(1)} g</span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          ))}
+                        </div>
+                      </TooltipProvider>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic py-1">Click "Get Suggestions" to see personalized food recommendations based on your eating habits.</p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}            {/* Image Tab Content */}
             {activeTab === 'image' && (
@@ -770,9 +957,9 @@ export default function LogFoodPage() {
                     </div>
                     <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Upload Meal Photo</h3>
                   </div>
-                
-                {/* Image Upload Area */}
-                <div className="text-center space-y-4 md:space-y-6">                  <div className="relative border-2 border-dashed rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] transition-colors duration-200 group overflow-hidden border-gray-300 hover:border-purple-400 bg-gray-50/50">
+                  {/* Image Upload Area */}
+                <div className="text-center space-y-4 md:space-y-6">
+                  <div className="relative border-2 border-dashed rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] transition-colors duration-200 group overflow-hidden border-gray-300 hover:border-purple-400 bg-clay-100/30">
                     <Input 
                       ref={imageInputRef} 
                       type="file" 
@@ -786,7 +973,8 @@ export default function LogFoodPage() {
                           src={imagePreview} 
                           alt="Meal preview" 
                           width={150} 
-                          height={150}                          className="max-h-32 sm:max-h-40 w-auto rounded-2xl object-contain shadow-clay border"
+                          height={150}
+                          className="max-h-32 sm:max-h-40 w-auto rounded-2xl object-contain shadow-lg border"
                         />
                         <Button 
                           variant="destructive" 
@@ -802,14 +990,17 @@ export default function LogFoodPage() {
                           <Trash2 className="h-3 w-3"/> 
                         </Button>
                       </div>
-                    ) : (                      <Camera className="h-16 w-16 md:h-20 md:h-20 mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10 text-gray-400" />
+                    ) : (
+                      <Camera className="h-16 w-16 md:h-20 md:h-20 mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10 text-gray-400" />
                     )}
-                    <div>                      <h4 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-800">Upload your meal photo</h4>
+                    <div>
+                      <h4 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-800">Upload your meal photo</h4>
                       <p className="mb-4 md:mb-6 max-w-md mx-auto leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
                         Take a clear photo of your meal for instant AI analysis
                       </p>
                       <Button
-                        onClick={triggerImageUpload}                        className="flex items-center space-x-2 mx-auto shadow-clay rounded-xl px-6 md:px-8 py-2 md:py-3 font-semibold text-sm md:text-base bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                        onClick={triggerImageUpload}
+                        className="flex items-center space-x-2 mx-auto shadow-clayStrong rounded-xl px-6 md:px-8 py-2 md:py-3 font-semibold text-sm md:text-base bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                         disabled={isLoading}
                       >
                         <Upload className="w-4 h-4 md:w-5 md:h-5" />
@@ -817,11 +1008,10 @@ export default function LogFoodPage() {
                       </Button>
                     </div>
                   </div>
-                </div>
-
-                {/* Add from Image Button */}                <Button
+                </div>                {/* Add from Image Button */}
+                <Button
                   onClick={handleImageSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white hover:shadow-clayStrong"
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                   disabled={!imagePreview || isLoading}
                 >
                   {isLoading ? (
@@ -847,14 +1037,14 @@ export default function LogFoodPage() {
                     <Mic className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
                   <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Voice Recording</h3>
-                </div>
-                  <div className="rounded-3xl p-6 md:p-10 shadow-clayInset relative overflow-hidden transition-all duration-300 bg-clay-200/50">
-                  <div className="flex flex-col items-center space-y-6 md:space-y-8 relative z-10">
+                </div>                  <div className="rounded-3xl p-6 md:p-10 shadow-lg bg-clay-100/40 transition-all duration-300">
+                  <div className="flex flex-col items-center space-y-6 md:space-y-8">
                     
                     {/* Voice Interface */}
-                    <div className="relative">                      <button
+                    <div className="relative">
+                      <button
                         onClick={isRecording ? stopRecording : startRecording}
-                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clay ${
+                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clayStrong ${
                           isRecording
                             ? 'bg-red-400 hover:bg-red-500 scale-110'
                             : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
@@ -870,9 +1060,8 @@ export default function LogFoodPage() {
                           <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
                         )}
                       </button>
-                    </div>
-
-                    {/* Timer Display */}                    <div className="px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clay bg-gray-700">
+                    </div>                    {/* Timer Display */}
+                    <div className="px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong bg-gray-700">
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
                         <span className="text-2xl md:text-3xl font-mono font-bold text-white">
@@ -915,11 +1104,10 @@ export default function LogFoodPage() {
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Action Button */}                <Button
+                </div>                {/* Action Button */}
+                <Button
                   onClick={handleVoiceSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white hover:shadow-clayStrong"
+                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                   disabled={!audioBlob || isLoading || isRecording}
                 >
                   {isLoading ? (
@@ -936,11 +1124,10 @@ export default function LogFoodPage() {
                   )}
                 </Button>
               </div>
-            )}
-
-            {/* Bottom Information */}
+            )}            {/* Bottom Information */}
             {pendingResults.length === 0 && !isLoading && (
-              <div className="text-center mt-8 md:mt-10 pt-6 md:pt-8 border-t border-opacity-20">                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clay transition-all duration-300 bg-clayBlue/30">
+              <div className="text-center mt-8 md:mt-10 pt-6 md:pt-8 border-t border-opacity-20">
+                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-clay-100/40">
                   <div className="flex items-center justify-center space-x-2 md:space-x-3 mb-2 md:mb-3">
                     <Target className="w-5 h-5 md:w-6 md:h-6 text-purple-600" />
                     <h4 className="text-base md:text-lg font-bold text-gray-800">Ready to Transform Your Nutrition?</h4>
@@ -951,109 +1138,27 @@ export default function LogFoodPage() {
                 </div>
               </div>
             )}
-          </div>
-        </div>        {/* Error Display */}
-        {error && (          <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 md:p-6 mb-6 md:mb-8 transition-all duration-500 bg-red-100/60">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
-              <p className="text-sm md:text-base font-medium text-red-700">
-                {error}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Review Added Items Section */}
-        {pendingResults.length > 0 && (          <div className="backdrop-blur-sm rounded-2xl shadow-clay border p-4 sm:p-6 md:p-8 mt-6 md:mt-8 relative overflow-hidden transition-all duration-500 bg-clayGlass">
-            {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-20 h-20 md:w-28 md:h-28 rounded-full blur-2xl md:blur-3xl bg-green-300/20"></div>            <div className="absolute bottom-0 left-0 w-16 h-16 md:w-20 md:h-20 rounded-full blur-2xl md:blur-3xl bg-clayPurple/20"></div>
-            
-            <div className="relative z-10"><div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
-                  <div className="flex items-center space-x-3 md:space-x-4">
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
-                      <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                        AI Analysis Complete ({pendingResults.length} items)
-                      </h3>
-                      <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
-                    </div>
-                  </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearAllPending}                  className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clay rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-clayGlass text-red-600 hover:bg-red-50"
-                >
-                  <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                  <span>Clear All</span>
-                </Button>
-              </div>
-                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clay transition-all duration-300 bg-green-100/60">
-                <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                  <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                  <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+            </CardContent>
+          </Card>
+        </motion.div>        {/* Error Display */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <Card className="backdrop-blur-sm border-0 bg-red-100/70 shadow-clayStrong rounded-3xl mb-6 md:mb-8">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
+                  <p className="text-sm md:text-base font-medium text-red-700">
+                    {error}
+                  </p>
                 </div>
-                <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
-                  Our AI has analyzed your meal and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
-                </p>
-              </div>
-
-              {/* Items Table */}              <div className="overflow-hidden rounded-2xl border shadow-clay backdrop-blur-sm mt-6 transition-all duration-300 bg-clayGlass">
-                <div className="overflow-x-auto">
-                  <table className="w-full">                    <thead className="backdrop-blur-sm bg-clay-300/50">
-                      <tr>                        <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
-                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Cal</th>
-                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Pro</th>
-                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carb</th>
-                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
-                        <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
-                      </tr>
-                    </thead>                    <tbody className="backdrop-blur-sm bg-clayGlass">
-                      {pendingResults.map((item, index) => (                        <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
-                          <td className="py-3 md:py-5 px-3 md:px-6">
-                            <div>
-                              <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
-                              {item.originalDescription && (
-                                <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clay border bg-clayGlass text-gray-600">
-                                  From: {item.originalDescription.substring(0, 30)}...
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
-                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.protein.toFixed(1)}g</td>
-                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.carbohydrates.toFixed(1)}g</td>
-                          <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-gray-700">{item.fat.toFixed(1)}g</td>
-                          <td className="text-center py-3 md:py-5 px-2 md:px-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeItem(item.id)}
-                              className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clay text-gray-500 hover:text-red-500 hover:bg-red-50 hover:shadow-clayStrong"
-                            >
-                              <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Confirm Button */}              <Button
-                onClick={confirmAndLogFood}
-                className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl mt-6 md:mt-8 flex items-center justify-center space-x-2 md:space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clay text-sm sm:text-base md:text-lg bg-green-500 hover:bg-green-600 text-white hover:shadow-clayStrong"
-                disabled={pendingResults.length === 0 || isLoading}
-              >
-                <Target className="w-4 h-4 md:w-6 md:h-6" />
-                <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
-                <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-              </Button>
-            </div>
-          </div>
+              </CardContent>
+            </Card>          </motion.div>
         )}
+        </div>
       </div>
     </div>
   );
