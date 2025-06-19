@@ -103,7 +103,7 @@ export async function generateProgressReport(input: ProgressReportInput): Promis
 
 const progressReportPrompt = ai.definePrompt({
   name: 'progressReportPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', 
+  model: 'googleai/gemini-2.5-flash', 
   input: { schema: ProgressReportInputSchema },
   output: { schema: ProgressReportOutputSchema }, 
   prompt: `You are Bago, an expert nutrition and fitness coach AI. Generate a detailed {{reportType}} progress report for the user based on their logs and DAILY targets for the period {{startDate}} to {{endDate}}. The user's fitness goal is {{#if fitnessGoal}}{{fitnessGoal}}{{else}}not specified{{/if}}.

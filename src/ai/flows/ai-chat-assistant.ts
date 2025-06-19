@@ -130,7 +130,7 @@ export async function askAIChatAssistant(input: AskAIChatInput): Promise<AskAICh
 
 const aiChatPrompt = ai.definePrompt({
     name: 'aiChatAssistantPrompt',
-    model: 'googleai/gemini-2.5-flash-preview-04-17', 
+    model: 'googleai/gemini-2.5-flash', 
     input: { schema: PromptContextSchema },
     output: { schema: AskAIChatOutputSchema },
     prompt: `You are Bago, a friendly, knowledgeable, and supportive AI fitness and nutrition assistant. Your primary goal is to provide helpful, personalized, moderately detailed, and safe advice to the user based on their FULL profile, recent activity logs, the ongoing conversation history, and any provided multimodal input (voice recording or image).

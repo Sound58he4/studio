@@ -30,7 +30,7 @@ export async function suggestCalorieAdjustment(input: SuggestCalorieAdjustmentIn
 
 const suggestCalorieAdjustmentPrompt = ai.definePrompt({
   name: 'suggestCalorieAdjustmentPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', 
+  model: 'googleai/gemini-2.5-flash', 
   input: { schema: SuggestCalorieAdjustmentInputSchema },
   output: { schema: SuggestCalorieAdjustmentOutputSchema },
   prompt: `You are Bago, an encouraging AI fitness coach. Your task is to analyze the user's current daily calorie balance and provide a clear, actionable suggestion to help them meet their *overall daily calorie target* for TODAY. The user has a separate *daily target for calories to burn from exercise*.

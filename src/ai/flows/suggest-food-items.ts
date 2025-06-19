@@ -85,7 +85,7 @@ export async function suggestFoodItems(input: SuggestFoodItemsInput): Promise<Su
 // Define the Genkit prompt
 const suggestFoodPrompt = ai.definePrompt({
   name: 'suggestFoodPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Use faster model
+  model: 'googleai/gemini-2.5-flash', // Use faster model
   input: { schema: FlowInputSchema }, // Input is the profile context
   output: { schema: SuggestFoodItemsOutputSchema },
   prompt: `You are a helpful and knowledgeable nutrition assistant AI specializing in suggesting healthy and goal-oriented food options tailored to user profiles.

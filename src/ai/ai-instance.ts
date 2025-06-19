@@ -9,5 +9,5 @@ export const ai = genkit({
       apiKey: process.env.GOOGLE_GENAI_API_KEY, // Use environment variable
     }),
   ],
-  model: 'googleai/gemini-2.5-flash-preview-05-20'//efault model
+  model: 'googleai/gemini-2.5-flash'//efault model
 });

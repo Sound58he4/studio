@@ -60,7 +60,7 @@ export async function identifyFoodFromText(input: IdentifyFoodInput): Promise<Id
 // Define the Genkit prompt
 const identifyFoodPrompt = ai.definePrompt({
   name: 'identifyFoodPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Use Flash model for faster identification
+  model: 'googleai/gemini-2.5-flash', // Use Flash model for faster identification
   input: { schema: IdentifyFoodInputSchema },
   output: { schema: IdentifyFoodOutputSchema },
   prompt: `You are an AI assistant specialized in food recognition from text. Given the user's description of a food item or meal, identify the single, most concise, and standardized name for that food item.

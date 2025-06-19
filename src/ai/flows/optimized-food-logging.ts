@@ -45,7 +45,7 @@ export type OptimizedFoodLoggingOutput = z.infer<typeof OptimizedFoodLoggingOutp
 // Optimized AI prompt that combines identification and nutrition estimation
 const optimizedFoodPrompt = ai.definePrompt({
   name: 'optimizedFoodPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: OptimizedFoodLoggingInputSchema },
   output: { schema: OptimizedFoodLoggingOutputSchema },
   prompt: `You are an expert AI nutritionist that efficiently identifies food items and estimates their nutritional content in a single analysis.

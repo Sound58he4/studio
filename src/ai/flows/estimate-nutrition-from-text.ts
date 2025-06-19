@@ -63,7 +63,7 @@ export async function estimateNutritionFromText(input: EstimateNutritionInput): 
 // Define the Genkit prompt
 const estimateNutritionPrompt = ai.definePrompt({
   name: 'estimateNutritionPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Use Flash model
+  model: 'googleai/gemini-2.5-flash', // Use Flash model
   input: { schema: EstimateNutritionInputSchema },
   output: { schema: EstimateNutritionOutputSchema },
   prompt: `You are a highly accurate nutritional analysis AI. Given the following description of a food item or meal, and potentially the user's local food style, estimate its TOTAL nutritional content (calories, protein, carbohydrates, fat).

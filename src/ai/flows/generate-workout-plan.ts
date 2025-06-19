@@ -186,7 +186,7 @@ const EXERCISE_LIST_REFERENCE = `
 // Define the Genkit prompt
 const generateWorkoutPlanPrompt = ai.definePrompt({
   name: 'generateWorkoutPlanPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17',
+  model: 'googleai/gemini-2.5-flash',
   input: { schema: GenerateWorkoutPlanInputSchema },
   output: { schema: GenerateWorkoutPlanOutputSchema },
   prompt: `You are an expert fitness coach AI specializing in creating personalized, effective, and safe weekly **gym-based** workout plans.

@@ -54,7 +54,7 @@ export async function foodImageRecognition(input: FoodImageRecognitionInput): Pr
 // Define the Genkit prompt
 const foodImageRecognitionPrompt = ai.definePrompt({
   name: 'foodImageRecognitionPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Ensure Flash model is used
+  model: 'googleai/gemini-2.5-flash', // Ensure Flash model is used
   input: { schema: FoodImageRecognitionInputSchema },
   output: { schema: FoodImageRecognitionOutputSchema }, // AI should output the final structure directly
   prompt: `You are a highly accurate food recognition and nutrition analysis expert AI.

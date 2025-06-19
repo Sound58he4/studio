@@ -50,7 +50,7 @@ export async function generateSimpleWorkout(input: SimpleWorkoutInput): Promise<
 // Define the Genkit prompt
 const generateSimpleWorkoutPrompt = ai.definePrompt({
   name: 'generateSimpleWorkoutPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Use faster model
+  model: 'googleai/gemini-2.5-flash', // Use faster model
   input: { schema: SimpleWorkoutInputSchema },
   output: { schema: SimpleWorkoutOutputSchema },
   prompt: `You are a fitness assistant AI creating short, simple workout suggestions for users on their rest days or for light activity. The focus is on **home-friendly, bodyweight exercises** or light cardio.

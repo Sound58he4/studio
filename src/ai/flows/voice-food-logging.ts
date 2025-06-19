@@ -54,7 +54,7 @@ export async function voiceFoodLogging(input: VoiceFoodLoggingInput): Promise<Vo
 // Define the Genkit prompt
 const voiceFoodPrompt = ai.definePrompt({
   name: 'voiceFoodPrompt',
-  model: 'googleai/gemini-2.5-flash-preview-04-17', // Ensure Flash model is used
+  model: 'googleai/gemini-2.5-flash', // Ensure Flash model is used
   input: { schema: VoiceFoodLoggingInputSchema },
   output: { schema: VoiceFoodLoggingOutputSchema }, // AI outputs the final structure
   prompt: `You are an AI assistant expert in analyzing voice recordings of meal descriptions to accurately identify food items and estimate their nutrition.
