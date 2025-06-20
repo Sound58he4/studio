@@ -70,26 +70,31 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
         if (messageInputRef.current) {
             messageInputRef.current.focus();
         }
-    }, []);
-
-    const scrollToBottom = useCallback((force = false) => {
+    }, []);    const scrollToBottom = useCallback((force = false) => {
         if (!scrollAreaRef.current) return;
         
         const scrollContainer = scrollAreaRef.current;
-        const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100;
         
-        if (force || shouldAutoScroll || isNearBottom) {
-            setTimeout(() => {
+        if (force) {
+            // Always scroll to bottom when explicitly requested
+            requestAnimationFrame(() => {
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
-            }, 50);
+            });
+        } else if (shouldAutoScroll) {
+            // Only auto-scroll if user is near bottom
+            const isNearBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100;
+            if (isNearBottom) {
+                requestAnimationFrame(() => {
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                });
+            }
         }
-    }, [shouldAutoScroll]);
-
-    const handleScroll = useCallback(() => {
+    }, [shouldAutoScroll]);    const handleScroll = useCallback(() => {
         if (!scrollAreaRef.current) return;
         
         const scrollContainer = scrollAreaRef.current;
-        const isAtBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 10;
+        // Check if user is near the bottom (within 100px)
+        const isAtBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 100;
         setShouldAutoScroll(isAtBottom);
     }, []);
 
@@ -153,9 +158,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
         sendMessage: async (text: string, voiceUri?: string, imageUri?: string) => {
             await handleSendMessage(text, voiceUri, imageUri);
         }
-    }));
-
-    const triggerAIChat = useCallback(async (
+    }));    const triggerAIChat = useCallback(async (
         historyForAI: ChatMessage[], 
         userMessageText?: string,
         voiceUri?: string,
@@ -163,13 +166,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
     ) => {
          if (!isAISelected || !currentUserId) return;
          setIsAIChatting(true);
-         const thinkingAIMessage: ChatMessage = {
-             id: `temp-ai-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: "Bago is thinking...",
-             timestamp: new Date().toISOString(), isAI: true,
-         };
-         // Add thinking message to aiLocalMessages directly
-         setAiLocalMessages(prev => [...prev, thinkingAIMessage]);
-         scrollToBottom(true); // Force scroll for AI thinking message
+         scrollToBottom(true); // Force scroll when AI starts processing
 
          try {
              const aiInput: AskAIChatInput = {
@@ -189,8 +186,8 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                 id: `ai-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: aiResponse.response,
                 timestamp: new Date().toISOString(), isAI: true,
              };
-             // Replace thinking message with actual response in aiLocalMessages
-             setAiLocalMessages(prev => [...prev.filter(msg => msg.id !== thinkingAIMessage.id), finalAIMessage]);
+             // Add the actual AI response to aiLocalMessages
+             setAiLocalMessages(prev => [...prev, finalAIMessage]);
          } catch (aiError: any) {
              console.error("[ChatInterface] AI chat flow error:", aiError);
              const errorMessageText = `Sorry, I encountered an error: ${aiError.message}. Please try again.`;
@@ -198,8 +195,8 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                 id: `ai-error-${Date.now()}`, senderId: AI_ASSISTANT_ID, text: errorMessageText,
                 timestamp: new Date().toISOString(), isAI: true,
              };
-             // Replace thinking message with error message
-             setAiLocalMessages(prev => [...prev.filter(msg => msg.id !== thinkingAIMessage.id), errorAIMessage]);
+             // Add error message to aiLocalMessages
+             setAiLocalMessages(prev => [...prev, errorAIMessage]);
          } finally { 
             setIsAIChatting(false); 
             scrollToBottom(true); // Force scroll for AI response
@@ -273,16 +270,37 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                 document.documentElement.removeAttribute('data-chat-minimized');
             }
         };
-    }, [friend]);    return (
+    }, [friend]);    // Auto-scroll when new AI messages are added (only for new messages, not when loading)
+    useEffect(() => {
+        if (isAISelected && aiLocalMessages.length > 1) { // More than just the initial greeting
+            // Only auto-scroll if user is near bottom or it's a new user/AI message
+            const lastMessage = aiLocalMessages[aiLocalMessages.length - 1];
+            if (lastMessage && (lastMessage.senderId === currentUserId || shouldAutoScroll)) {
+                scrollToBottom(false); // Use gentle auto-scroll
+            }
+        }
+    }, [aiLocalMessages.length, scrollToBottom, isAISelected, currentUserId, shouldAutoScroll]);
+
+    // Auto-scroll when new friend messages are added (only for new messages)
+    useEffect(() => {
+        if (!isAISelected && messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage && (lastMessage.senderId === currentUserId || shouldAutoScroll)) {
+                scrollToBottom(false); // Use gentle auto-scroll
+            }
+        }
+    }, [messages.length, scrollToBottom, isAISelected, currentUserId, shouldAutoScroll]);
+
+    return (
         <div className="flex flex-col h-full w-full overflow-hidden relative">
             {friend ? (
-                <>
-                    {/* Messages Area - Scrollable */}
-                    <div className="flex-1 min-h-0 overflow-hidden">                          <div 
-                            ref={scrollAreaRef}
-                            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth p-2 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 break-words pb-4"
-                            onScroll={handleScroll}
-                        >
+                <>                    {/* Messages Area - Fixed scrolling with proper height */}
+                    <div 
+                        ref={scrollAreaRef}
+                        className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth p-3 sm:p-4 lg:p-6 custom-scrollbar chat-messages-container"
+                        onScroll={handleScroll}
+                    >
+                        <div className="space-y-4 sm:space-y-5 break-words pb-8">
                             <MessageList
                                 messages={isAISelected ? aiLocalMessages : messages}
                                 currentUserId={currentUserId}
@@ -291,21 +309,26 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                                 friend={friend}
                                 isAISelected={isAISelected}
                                 scrollAreaRef={scrollAreaRef}
+                                isAIProcessing={isAIChatting}
                             />
                         </div>
-                    </div>
-                      {/* Auto-scroll button when not at bottom */}
+                    </div>                    {/* Auto-scroll button when not at bottom - Always visible when not at bottom */}
                     <AnimatePresence>
                         {!shouldAutoScroll && (
                             <motion.button
-                                className="absolute bottom-24 right-3 z-30 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                                className="absolute bottom-4 right-4 z-30 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border border-white/20 backdrop-blur-sm"
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0, opacity: 0 }}
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => scrollToBottom(true)}
-                                title="Scroll to bottom"
+                                title="Scroll to latest message"
                             >
-                                <ArrowLeft size={14} className="rotate-90" />
+                                <div className="flex flex-col items-center">
+                                    <ArrowLeft size={16} className="rotate-90" />
+                                    <span className="text-xs font-medium mt-0.5">Latest</span>
+                                </div>
                             </motion.button>
                         )}
                     </AnimatePresence>

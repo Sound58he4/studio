@@ -24,10 +24,15 @@ export default function AIAssistantPage() {
     const chatInterfaceRef = useRef<ChatInterfaceHandle>(null);
     const [isClient, setIsClient] = useState(false);    const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isAIProcessing, setIsAIProcessing] = useState(false); // Track AI processing state
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isRecording, setIsRecording] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
 
     useEffect(() => {
         setIsClient(true);
@@ -91,6 +96,7 @@ export default function AIAssistantPage() {
         if (!message.trim() || isSending || !chatInterfaceRef.current) return;
         
         setIsSending(true);
+        setIsAIProcessing(true); // Start AI processing indicator
         try {
             // Use the ChatInterface's sendMessage method to handle AI chat
             await chatInterfaceRef.current.sendMessage(message.trim());
@@ -99,6 +105,8 @@ export default function AIAssistantPage() {
             console.error("[AI Assistant Page] Error sending message:", error);
         } finally {
             setIsSending(false);
+            // Keep AI processing indicator for a bit longer to show the thinking state
+            setTimeout(() => setIsAIProcessing(false), 1000);
         }
     }, [message, isSending]);
 
@@ -135,22 +143,43 @@ export default function AIAssistantPage() {
         }
     }, []);
 
-    // Handle microphone/voice functionality
+    // Clean up audio URL on unmount
+    useEffect(() => {
+        return () => {
+            if (audioUrl) {
+                URL.revokeObjectURL(audioUrl);
+            }
+        };
+    }, [audioUrl]);
+
+    // Voice recording logic
     const handleMicClick = useCallback(async () => {
         if (isRecording) {
             // Stop recording
             setIsRecording(false);
-            // Note: Actual voice recording implementation would go here
-            console.log('Stopping voice recording...');
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+            }
         } else {
-            // Start recording
             try {
-                // Check for microphone permission
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(track => track.stop()); // Stop the test stream
+                const mediaRecorder = new window.MediaRecorder(stream);
+                audioChunksRef.current = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                    setAudioBlob(audioBlob);
+                    const url = URL.createObjectURL(audioBlob);
+                    setAudioUrl(url);
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                mediaRecorderRef.current = mediaRecorder;
+                mediaRecorder.start();
                 setIsRecording(true);
-                console.log('Starting voice recording...');
-                // Note: Actual voice recording implementation would go here
             } catch (error) {
                 console.error('Microphone access denied:', error);
                 alert('Microphone access is required for voice messages.');
@@ -158,27 +187,51 @@ export default function AIAssistantPage() {
         }
     }, [isRecording]);
 
-    // Enhanced send message handler to include image
+    // Send audio message to assistant
+    const handleSendAudio = useCallback(async () => {
+        if (!audioBlob || isSending || !chatInterfaceRef.current) return;
+        setIsSending(true);        try {
+            // Convert audioBlob to a data URL
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const audioDataUrl = reader.result as string;
+                if (chatInterfaceRef.current) {
+                    await chatInterfaceRef.current.sendMessage('[Voice message]', undefined, audioDataUrl);
+                }
+                setAudioBlob(null);
+                if (audioUrl) {
+                    URL.revokeObjectURL(audioUrl);
+                    setAudioUrl(null);
+                }
+                setIsSending(false);
+            };
+            reader.readAsDataURL(audioBlob);
+        } catch (error) {
+            console.error('[AI Assistant Page] Error sending audio message:', error);
+            setIsSending(false);
+        }
+    }, [audioBlob, isSending, audioUrl]);    // Handle sending message with media (text, image, or audio)
     const handleSendMessageWithMedia = useCallback(async () => {
         if ((!message.trim() && !imagePreview) || isSending || !chatInterfaceRef.current) return;
-        
         setIsSending(true);
+        setIsAIProcessing(true); // Start AI processing indicator
         try {
-            // Use the ChatInterface's sendMessage method to handle AI chat with media
             await chatInterfaceRef.current.sendMessage(message.trim(), undefined, imagePreview || undefined);
-            setMessage(''); // Clear the input after successful send
-            setImagePreview(null); // Clear the image after successful send
+            setMessage('');
+            setImagePreview(null);
             if (fileInputRef.current) {
                 fileInputRef.current.value = '';
             }
         } catch (error) {
-            console.error("[AI Assistant Page] Error sending message:", error);
+            console.error('[AI Assistant Page] Error sending message:', error);
         } finally {
             setIsSending(false);
+            // Keep AI processing indicator for a bit longer to show the thinking state
+            setTimeout(() => setIsAIProcessing(false), 1000);
         }
     }, [message, imagePreview, isSending]);
 
-    // Update key press handler to use the new send function
+    // Key press handler for input (send on Enter)
     const handleKeyPressWithMedia = useCallback((e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -371,55 +424,68 @@ export default function AIAssistantPage() {
             </motion.div>
         );
     }    return (
-        <div className="min-h-screen flex flex-col transition-all duration-500 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative">            {/* Main Container - Fixed height to ensure proper layout */}
+        <div className="min-h-screen flex flex-col transition-all duration-500 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative">            {/* Main Container - Fixed height with improved spacing */}
             <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col px-2 sm:px-4 lg:px-6 pb-32 md:pb-28 h-[calc(100vh-80px)]">
         
-                {/* Chat Header - Responsive padding and text sizes */}
-                <div className="backdrop-blur-sm p-3 sm:p-4 lg:p-6 border shadow-lg rounded-b-2xl sm:rounded-b-3xl mx-2 sm:mx-4 lg:mx-6 mt-2 sm:mt-4 transition-all duration-300 flex-shrink-0 bg-white/90 border-gray-200/50">
+                {/* Chat Header - Enhanced visual appeal */}
+                <div className="backdrop-blur-sm p-4 sm:p-5 lg:p-6 border shadow-xl rounded-b-2xl sm:rounded-b-3xl mx-2 sm:mx-4 lg:mx-6 mt-3 sm:mt-4 transition-all duration-300 flex-shrink-0 bg-white/95 border-gray-200/60">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2 sm:space-x-3">
-                            <div className="flex items-center space-x-2 sm:space-x-3">
+                        <div className="flex items-center space-x-3 sm:space-x-4">
+                            <div className="flex items-center space-x-3 sm:space-x-4">
                                 <div className="relative">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-purple-500">
-                                        <Bot className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-white" />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-400 to-purple-500">
+                                        <Bot className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
                                     </div>
-                                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
                                 </div>
                                 <div>
-                                    <h2 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900">Bago AI</h2>
-                                    <p className="text-xs sm:text-sm text-green-600">Active now</p>
+                                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Bago AI</h2>
+                                    <p className="text-sm sm:text-base text-green-600 font-medium">Active now</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>                {/* Messages Container - Takes remaining space with explicit height */}
-                <div className="flex-1 mx-2 sm:mx-4 lg:mx-6 min-h-0 max-h-full overflow-y-auto overflow-x-hidden border border-gray-200 rounded-2xl bg-white/50">
-                    <div className="h-full min-h-[400px] max-h-[calc(100vh-300px)]">
-                        <ChatInterface 
-                            friend={aiFriendProfile} 
-                            currentUserId={userId} 
-                            chatId={chatId} 
-                            ref={chatInterfaceRef}
-                        />
-                    </div>
+                </div>                {/* Messages Container - Fixed height for proper scrolling */}
+                <div className="flex-1 mx-2 sm:mx-4 lg:mx-6 min-h-0 overflow-hidden border border-gray-200/60 rounded-2xl bg-white/60 backdrop-blur-sm shadow-lg mt-3">
+                    <ChatInterface 
+                        friend={aiFriendProfile} 
+                        currentUserId={userId} 
+                        chatId={chatId} 
+                        ref={chatInterfaceRef}
+                    />
                 </div>
-            </div>
-
-            {/* Combined Actions and Input Card - Fixed positioning */}
+            </div>            {/* Combined Actions and Input Card - Enhanced styling */}
             <div className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50">
                 <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
-                    <div className="backdrop-blur-sm p-3 sm:p-4 lg:p-6 shadow-lg mx-2 sm:mx-4 lg:mx-6 rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border border-gray-200/50">                        {/* Quick Actions - Above input */}
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-4">                            <Button 
+                    <div className="backdrop-blur-lg p-4 sm:p-5 lg:p-6 shadow-2xl mx-2 sm:mx-4 lg:mx-6 rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/95 border border-gray-200/60">                        {/* Quick Actions - Improved spacing and styling */}
+                        <div className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-5">                            {/* AI Processing Status Indicator */}
+                            {(isSending || isAIProcessing) && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/60 rounded-full px-4 py-2 shadow-lg"
+                                >
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                        className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">
+                                        {isSending ? "Sending..." : "🤖 AI is thinking..."}
+                                    </span>
+                                </motion.div>
+                            )}<Button 
                                 variant="outline" 
                                 size="sm" 
-                                className={`text-xs sm:text-sm rounded-full px-2.5 sm:px-3 lg:px-4 py-1 sm:py-1.5 h-auto backdrop-blur-sm flex-1 sm:flex-none min-w-0 transition-all duration-300 ${
+                                className={`text-sm rounded-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 h-auto backdrop-blur-sm flex-1 sm:flex-none min-w-0 transition-all duration-300 font-medium ${
                                     showSuggestions 
-                                        ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700' 
-                                        : 'bg-blue-50/80 border-blue-200/50 text-blue-700 hover:bg-blue-100/80'
+                                        ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 shadow-lg' 
+                                        : 'bg-blue-50/90 border-blue-200/60 text-blue-700 hover:bg-blue-100/90 shadow-md'
                                 }`}
                                 onClick={() => setShowSuggestions(!showSuggestions)}
                             >
-                                <Sparkles className="w-3 h-3 mr-1 flex-shrink-0" />
+                                <Sparkles className="w-4 h-4 mr-2 flex-shrink-0" />
                                 <span className="truncate">{showSuggestions ? 'Hide Suggestions' : 'Show AI Suggestions'}</span>
                             </Button></div>
                         
@@ -468,31 +534,41 @@ export default function AIAssistantPage() {
                             </motion.div>
                         )}
                         
-                        {/* Input Area - Below quick actions */}
-                        <div className="flex items-center space-x-2 sm:space-x-3">
+                        {/* Audio Preview */}
+                        {audioUrl && (
+                            <div className="mb-3 sm:mb-4 flex items-center space-x-3">
+                                <audio controls src={audioUrl} className="h-8" />
+                                <Button size="sm" variant="link" onClick={() => { setAudioBlob(null); if (audioUrl) { URL.revokeObjectURL(audioUrl); setAudioUrl(null); } }}>Clear</Button>
+                                <Button size="sm" onClick={handleSendAudio} disabled={isSending} className="bg-gradient-to-br from-blue-400 to-purple-500 text-white">Send Voice</Button>
+                            </div>
+                        )}
+                          {/* Input Area - Enhanced styling */}
+                        <div className="flex items-center space-x-3 sm:space-x-4">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 sm:h-10 sm:w-10 rounded-full transition-all duration-300 flex-shrink-0 text-gray-500 hover:text-purple-600 hover:bg-purple-50/80"
+                                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 text-gray-500 hover:text-purple-600 hover:bg-purple-50/90 shadow-md hover:shadow-lg"
                                 onClick={handleCameraClick}
                             >
-                                <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
+                                <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
                             </Button>                            <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full transition-all duration-300 flex-shrink-0 ${isRecording ? 'text-red-600 bg-red-50' : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50/80'}`}
+                                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 shadow-md hover:shadow-lg ${isRecording ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50/90'}`}
                                 onClick={handleMicClick}
+                                disabled={isSending}
                             >
-                                <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
+                                <Mic className="w-5 h-5 sm:w-6 sm:h-6" />
+                                {isRecording && <span className="sr-only">Recording...</span>}
                             </Button>
                             <div className="flex-1 relative min-w-0">
                                 <Input
                                     placeholder="Type a message..."
-                                    className="pr-10 sm:pr-12 border-0 rounded-full h-8 sm:h-10 text-xs sm:text-sm focus:ring-2 focus:ring-purple-200/50 transition-all backdrop-blur-sm bg-gray-100/80 focus:bg-white/80"
+                                    className="pr-12 sm:pr-14 border-0 rounded-full h-10 sm:h-12 text-sm sm:text-base focus:ring-2 focus:ring-purple-200/60 transition-all backdrop-blur-sm bg-gray-100/90 focus:bg-white/95 shadow-md focus:shadow-lg font-medium"
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onKeyDown={handleKeyPressWithMedia}
-                                />                                {/* File input for image selection */}
+                                />{/* File input for image selection */}
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -501,15 +577,13 @@ export default function AIAssistantPage() {
                                     className="hidden"
                                     aria-label="Select image from camera or gallery"
                                     title="Select image"
-                                />
-
-                                <Button
+                                />                                <Button
                                     onClick={handleSendMessageWithMedia}
                                     disabled={!message.trim() && !imagePreview || isSending}
                                     size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100"
                                 >
-                                    <Send className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                                    <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                 </Button>
                             </div>
                         </div>
