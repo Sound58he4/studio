@@ -99,24 +99,10 @@ export default function LogFoodPage() {
 
   // Check voice recording support on mount
   useEffect(() => {
-    const checkVoiceSupport = () => {
-      const hasSecureContext = window.isSecureContext;
-      const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-      const hasMediaRecorder = !!window.MediaRecorder;
-      
-      const isSupported = hasSecureContext && hasMediaDevices && hasMediaRecorder;
-      setIsVoiceSupported(isSupported);
-      
-      if (!isSupported) {
-        console.warn('Voice recording not supported:', {
-          hasSecureContext,
-          hasMediaDevices,
-          hasMediaRecorder
-        });
-      }
-    };
-    
-    checkVoiceSupport();
+    // Only check for browser support, not protocol
+    const hasMediaDevices = typeof navigator !== 'undefined' && !!navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function';
+    const hasMediaRecorder = typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined';
+    setIsVoiceSupported(hasMediaDevices && hasMediaRecorder);
   }, []);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -214,17 +200,6 @@ export default function LogFoodPage() {
       }
   };   const startRecording = async () => {
     try {
-        // Check if we're in a secure context (HTTPS or localhost)
-        if (!window.isSecureContext) {
-            setError("Voice recording requires HTTPS. Please use the text or photo upload options instead.");
-            toast({ 
-                title: "HTTPS Required", 
-                description: "Voice recording needs a secure connection. Try text or photo upload instead.", 
-                variant: "destructive"
-            });
-            return;
-        }
-
         // Check if MediaDevices API is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             setError("Voice recording is not supported in this browser. Please try text or photo upload instead.");
@@ -1229,7 +1204,7 @@ export default function LogFoodPage() {
                           <div>
                             <h4 className="text-sm font-bold text-yellow-800 mb-1">Voice Recording Unavailable</h4>
                             <p className="text-xs text-yellow-700 leading-relaxed">
-                              Voice recording requires HTTPS and microphone permissions. Please try the <strong>Text</strong> or <strong>Photo</strong> options instead.
+                              Voice recording requires browser support and microphone permissions. Please try the <strong>Text</strong> or <strong>Photo</strong> options instead.
                             </p>
                           </div>
                         </div>
@@ -1277,7 +1252,7 @@ export default function LogFoodPage() {
                       </h4>
                       <p className="leading-relaxed text-sm md:text-base max-w-md text-gray-600">
                         {isVoiceSupported === false
-                          ? 'Your browser or connection doesn\'t support voice recording. Please use the Text or Photo upload options above.'
+                          ? 'Your browser doesn\'t support voice recording. Please use the Text or Photo upload options above.'
                           : isRecording 
                           ? 'Speak clearly about your meal. Tap again when finished.' 
                           : 'Tap the microphone to start recording your meal description'
@@ -1310,13 +1285,22 @@ export default function LogFoodPage() {
                 </div>                {/* Action Button */}
                 <Button
                   onClick={handleVoiceSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
-                  disabled={!audioBlob || isLoading || isRecording}
+                  className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg ${
+                    isVoiceSupported === false
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                      : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+                  }`}
+                  disabled={!audioBlob || isLoading || isRecording || isVoiceSupported === false}
                 >
                   {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
                       <span>Processing...</span>
+                    </>
+                  ) : isVoiceSupported === false ? (
+                    <>
+                      <AlertCircle className="w-4 h-4 md:w-6 md:h-6" />
+                      <span>Voice Recording Not Available</span>
                     </>
                   ) : (
                     <>
