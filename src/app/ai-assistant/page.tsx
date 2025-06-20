@@ -543,7 +543,7 @@ export default function AIAssistantPage() {
                             </div>
                         )}
                           {/* Input Area - Enhanced styling */}
-                        <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="flex items-end space-x-2 sm:space-x-3">
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
@@ -561,7 +561,7 @@ export default function AIAssistantPage() {
                                 <Mic className="w-5 h-5 sm:w-6 sm:h-6" />
                                 {isRecording && <span className="sr-only">Recording...</span>}
                             </Button>
-                            <div className="flex-1 relative min-w-0">
+                            <div className="flex-1 relative min-w-0 flex items-end">
                                 <Input
                                     placeholder="Type a message..."
                                     className="pr-12 sm:pr-14 border-0 rounded-full h-10 sm:h-12 text-sm sm:text-base focus:ring-2 focus:ring-purple-200/60 transition-all backdrop-blur-sm bg-gray-100/90 focus:bg-white/95 shadow-md focus:shadow-lg font-medium"
@@ -581,7 +581,7 @@ export default function AIAssistantPage() {
                                     onClick={handleSendMessageWithMedia}
                                     disabled={!message.trim() && !imagePreview || isSending}
                                     size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100"
+                                    className="absolute right-1 bottom-1 top-auto translate-y-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100"
                                 >
                                     <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                 </Button>
