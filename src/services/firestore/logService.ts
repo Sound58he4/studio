@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase/exports';
 import {
   collection, query, where, getDocs, addDoc, deleteDoc,
   orderBy, Timestamp, writeBatch, limit, doc, runTransaction,
-  serverTimestamp,
+  serverTimestamp, updateDoc, getDoc,
   increment, // Direct import for modular SDK
   documentId // For querying by document ID
 } from 'firebase/firestore';
@@ -56,14 +56,60 @@ export async function getFoodLogs(userId: string, startDate: Date, endDate: Date
 
 export const addFoodLog = async (userId: string, logData: FirestoreFoodLogData): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, 'users', userId, 'foodLog'), {
-      ...logData,
-      userId,
-      createdAt: serverTimestamp(),
+    const result = await runTransaction(db, async (transaction) => {
+      // First, add the food log entry
+      const foodLogRef = collection(db, 'users', userId, 'foodLog');
+      const newLogRef = doc(foodLogRef);
+      
+      const dataToStore = {
+        ...logData,
+        userId,
+        createdAt: serverTimestamp(),
+      };
+      
+      transaction.set(newLogRef, dataToStore);
+      
+      // Check if this is today's log to update user profile
+      const logTimestamp = logData.timestamp instanceof Date ? logData.timestamp : parseISO(logData.timestamp);
+      const isLogForToday = dateFnsIsToday(logTimestamp);
+      
+      if (isLogForToday) {
+        // Update the user profile's today totals
+        const userProfileRef = doc(db, 'users', userId);
+        
+        const calories = Number(logData.calories ?? 0);
+        const protein = Number(logData.protein ?? 0);
+        const carbohydrates = Number(logData.carbohydrates ?? 0);
+        const fat = Number(logData.fat ?? 0);
+        
+        transaction.update(userProfileRef, {
+          todayCalories: increment(calories),
+          todayProtein: increment(protein),
+          todayCarbohydrates: increment(carbohydrates),
+          todayFat: increment(fat),
+          todayEntryCount: increment(1),
+          todayLastUpdated: serverTimestamp()
+        });
+        
+        // Also update/create the daily nutrition summary
+        const todayDateStr = format(logTimestamp, 'yyyy-MM-dd');
+        const summaryDocRef = doc(db, 'users', userId, 'dailyNutritionSummaries', todayDateStr);
+        
+        transaction.set(summaryDocRef, {
+          totalCalories: increment(calories),
+          totalProtein: increment(protein),
+          totalCarbohydrates: increment(carbohydrates),
+          totalFat: increment(fat),
+          entryCount: increment(1),
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      }
+      
+      return newLogRef.id;
     });
     
-    console.log(`[LogService] Food log added with ID: ${docRef.id}`);
-    return docRef.id;
+    console.log(`[LogService] Food log added with ID: ${result}`);
+    return result;
   } catch (error) {
     console.error('[LogService] Error adding food log:', error);
     throw error;

@@ -248,14 +248,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                             </Button>
                                         </div>
                                     </div>
-                                );                            })}
-
-                            {/* Edit Plan Button at the bottom */}
+                                );                            })}                            {/* Edit Plan Button at the bottom */}
                             <div className="mt-6 pt-4 border-t border-gray-200/50">
                                 <Link href="/workout-plans" className="block">
                                     <Button 
                                         variant="outline" 
-                                        className="w-full rounded-2xl text-sm shadow-lg transition-all duration-200 hover:scale-[1.02] text-blue-600 border-blue-200/50 bg-white/40 backdrop-blur-sm hover:bg-white/60" 
+                                        className="w-full rounded-2xl text-sm shadow-lg text-blue-600 border-blue-200/50 bg-white/40 backdrop-blur-sm" 
                                     >
                                         <Edit size={16} className="mr-2" />
                                         Edit Plan
@@ -280,37 +278,72 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         </div>
                     )}
                 </div>
-            </motion.div>
-
-            {/* Log Workout Modal */}
+            </motion.div>            {/* Log Workout Modal - Calisthenics Theme */}
             <AlertDialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
-                <AlertDialogContent className="rounded-3xl border-0 shadow-2xl backdrop-blur-sm bg-white/95">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-semibold text-gray-800">Log Workout Calories</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-600">
-                            {exerciseToLog && `How many calories did you burn doing ${exerciseToLog.exercise}?`}
+                <AlertDialogContent className="rounded-3xl border-0 shadow-2xl backdrop-blur-sm bg-gradient-to-br from-white/95 via-blue-50/80 to-purple-50/80 max-w-md mx-auto">
+                    {/* Header with Flame Icon */}
+                    <AlertDialogHeader className="text-center space-y-4 pt-6">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-r from-orange-400 to-red-500 flex items-center justify-center shadow-lg">
+                            <Flame className="w-8 h-8 text-white" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                            Log Workout Calories
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-gray-600 leading-relaxed px-2">
+                            {exerciseToLog && (
+                                <div className="space-y-2">
+                                    <p className="font-medium text-gray-800">{exerciseToLog.exercise}</p>
+                                    <p className="text-sm">Track your calorie burn to monitor your fitness progress</p>
+                                </div>
+                            )}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-4">
-                        <Label htmlFor="calories" className="text-sm font-medium text-gray-700">Calories Burned</Label>
-                        <Input
-                            id="calories"
-                            type="number"
-                            placeholder="Enter calories (leave empty for AI estimate)"
-                            value={caloriesBurnedInput}
-                            onChange={(e) => setCaloriesBurnedInput(e.target.value)}
-                            className="mt-2 rounded-xl border-gray-200 focus:border-purple-500 focus:ring-purple-500"
-                        />
+                    
+                    {/* Input Section with Enhanced Design */}
+                    <div className="py-6 px-6">
+                        <div className="relative">
+                            <Label htmlFor="calories" className="text-sm font-semibold text-gray-700 mb-3 block">
+                                Calories Burned 🔥
+                            </Label>
+                            <div className="relative">
+                                <Input
+                                    id="calories"
+                                    type="number"
+                                    placeholder="Enter calories (leave empty for AI estimate)"
+                                    value={caloriesBurnedInput}
+                                    onChange={(e) => setCaloriesBurnedInput(e.target.value)}
+                                    className="rounded-2xl border-2 border-gray-200/50 bg-white/70 backdrop-blur-sm focus:border-purple-400 focus:ring-purple-400 focus:ring-2 focus:ring-opacity-20 pl-4 pr-16 py-3 text-lg font-medium placeholder:text-gray-400 transition-all duration-300 shadow-sm"
+                                />
+                                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium text-sm">
+                                    kcal
+                                </div>
+                            </div>
+                            {/* Helpful hint */}
+                            <div className="mt-3 p-3 rounded-xl bg-blue-50/50 border border-blue-200/30">
+                                <div className="flex items-start gap-2">
+                                    <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                                    <p className="text-xs text-blue-700 leading-relaxed">
+                                        <strong>Tip:</strong> Leave empty to let our AI estimate calories based on your exercise intensity and duration
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <AlertDialogFooter className="flex gap-3">
-                        <AlertDialogCancel className="rounded-xl border-gray-200 hover:bg-gray-50">Cancel</AlertDialogCancel>
+                    
+                    {/* Footer with Enhanced Buttons */}
+                    <AlertDialogFooter className="flex gap-3 px-6 pb-6">
+                        <AlertDialogCancel className="rounded-2xl border-2 border-gray-200 bg-white/70 backdrop-blur-sm hover:bg-gray-50/80 text-gray-700 font-medium px-6 py-3 transition-all duration-200 flex-1">
+                            Cancel
+                        </AlertDialogCancel>
                         <AlertDialogAction 
                             onClick={handleConfirmLogWorkout}
-                            className="rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                            className="rounded-2xl bg-gradient-to-r from-purple-500 via-purple-600 to-blue-500 hover:from-purple-600 hover:via-purple-700 hover:to-blue-600 text-white font-semibold px-6 py-3 shadow-lg hover:shadow-xl transition-all duration-200 flex-1 transform hover:scale-[1.02]"
                         >
+                            <Flame className="w-4 h-4 mr-2" />
                             {caloriesBurnedInput ? 'Log Calories' : 'AI Estimate & Log'}
                         </AlertDialogAction>
-                    </AlertDialogFooter>                </AlertDialogContent>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
             </AlertDialog>
         </div>
     );
