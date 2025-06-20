@@ -57,6 +57,7 @@ export default function LogFoodPage() {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);  const [recordingTime, setRecordingTime] = useState(0);  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [isVoiceSupported, setIsVoiceSupported] = useState<boolean | null>(null);
 
   // Always use light theme (clay design)
   
@@ -87,7 +88,6 @@ export default function LogFoodPage() {
           setManualInput("");
       }
   }, []);
-
   useEffect(() => {
       if (activeTab !== 'text') {
         setAiSuggestions([]);
@@ -96,6 +96,28 @@ export default function LogFoodPage() {
       }
       resetInputState(activeTab);
   }, [activeTab, resetInputState]);
+
+  // Check voice recording support on mount
+  useEffect(() => {
+    const checkVoiceSupport = () => {
+      const hasSecureContext = window.isSecureContext;
+      const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      const hasMediaRecorder = !!window.MediaRecorder;
+      
+      const isSupported = hasSecureContext && hasMediaDevices && hasMediaRecorder;
+      setIsVoiceSupported(isSupported);
+      
+      if (!isSupported) {
+        console.warn('Voice recording not supported:', {
+          hasSecureContext,
+          hasMediaDevices,
+          hasMediaRecorder
+        });
+      }
+    };
+    
+    checkVoiceSupport();
+  }, []);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -190,16 +212,25 @@ export default function LogFoodPage() {
       } finally { 
           setIsLoading(false); 
       }
-  };
-
-   const startRecording = async () => {
+  };   const startRecording = async () => {
     try {
+        // Check if we're in a secure context (HTTPS or localhost)
+        if (!window.isSecureContext) {
+            setError("Voice recording requires HTTPS. Please use the text or photo upload options instead.");
+            toast({ 
+                title: "HTTPS Required", 
+                description: "Voice recording needs a secure connection. Try text or photo upload instead.", 
+                variant: "destructive"
+            });
+            return;
+        }
+
         // Check if MediaDevices API is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            setError("Voice recording is not supported in this browser or requires HTTPS.");
+            setError("Voice recording is not supported in this browser. Please try text or photo upload instead.");
             toast({ 
                 title: "Voice Recording Unavailable", 
-                description: "Please use a modern browser with HTTPS or try manual input.", 
+                description: "Your browser doesn't support voice recording. Try the text or photo options.", 
                 variant: "destructive"
             });
             return;
@@ -1027,6 +1058,156 @@ export default function LogFoodPage() {
                     </>
                   )}
                 </Button>
+
+                {/* AI Analysis Section for Image */}
+                {pendingResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
+                          <div className="flex items-center space-x-3 md:space-x-4">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                              <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                                AI Analysis Complete ({pendingResults.length} items)
+                              </h3>
+                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearAllPending}
+                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                            <span>Clear All</span>
+                          </Button>
+                        </div>
+                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                          <div className="flex items-center space-x-2 md:space-x-3 mb-2">
+                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                          </div>
+                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                            Our AI has analyzed your meal photo and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
+                          </p>
+                        </div>
+
+                        {/* Items Display - Mobile Cards & Desktop Table */}
+                        <div className="mt-6">
+                          {/* Mobile Card View */}
+                          <div className="block md:hidden space-y-3">
+                            {pendingResults.map((item, index) => (
+                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    {item.originalDescription && (
+                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                        From: {item.originalDescription.substring(0, 25)}...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(item.id)}
+                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 text-center">
+                                  <div className="bg-purple-50 rounded-lg p-2">
+                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
+                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  </div>
+                                  <div className="bg-blue-50 rounded-lg p-2">
+                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
+                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-green-50 rounded-lg p-2">
+                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
+                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-orange-50 rounded-lg p-2">
+                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
+                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Desktop Table View */}
+                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                  <tr>
+                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                  {pendingResults.map((item, index) => (
+                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                      <td className="py-3 md:py-5 px-3 md:px-6">
+                                        <div>
+                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          {item.originalDescription && (
+                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                              From: {item.originalDescription.substring(0, 30)}...
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeItem(item.id)}
+                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                        </Button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Confirm Button */}
+                        <Button
+                          onClick={confirmAndLogFood}
+                          className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl mt-6 md:mt-8 flex items-center justify-center space-x-2 md:space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong text-sm sm:text-base md:text-lg bg-green-500 hover:bg-green-600 text-white"
+                          disabled={pendingResults.length === 0 || isLoading}
+                        >
+                          <Target className="w-4 h-4 md:w-6 md:h-6" />
+                          <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
+                          <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
               </div>
             )}
 
@@ -1040,16 +1221,33 @@ export default function LogFoodPage() {
                 </div>                  <div className="rounded-3xl p-6 md:p-10 shadow-lg bg-clay-100/40 transition-all duration-300">
                   <div className="flex flex-col items-center space-y-6 md:space-y-8">
                     
+                    {/* Voice Support Check */}
+                    {isVoiceSupported === false && (
+                      <div className="w-full mb-4 p-4 rounded-2xl bg-yellow-100/80 border border-yellow-200 shadow-sm">
+                        <div className="flex items-start space-x-3">
+                          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <h4 className="text-sm font-bold text-yellow-800 mb-1">Voice Recording Unavailable</h4>
+                            <p className="text-xs text-yellow-700 leading-relaxed">
+                              Voice recording requires HTTPS and microphone permissions. Please try the <strong>Text</strong> or <strong>Photo</strong> options instead.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Voice Interface */}
                     <div className="relative">
                       <button
                         onClick={isRecording ? stopRecording : startRecording}
                         className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clayStrong ${
-                          isRecording
+                          isVoiceSupported === false 
+                            ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                            : isRecording
                             ? 'bg-red-400 hover:bg-red-500 scale-110'
                             : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
                         }`}
-                        disabled={isLoading}
+                        disabled={isLoading || isVoiceSupported === false}
                       >
                         {isRecording ? (
                           <div className="flex items-center space-x-1">
@@ -1060,7 +1258,7 @@ export default function LogFoodPage() {
                           <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
                         )}
                       </button>
-                    </div>                    {/* Timer Display */}
+                    </div>{/* Timer Display */}
                     <div className="px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong bg-gray-700">
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
@@ -1068,14 +1266,19 @@ export default function LogFoodPage() {
                           {formatTime(recordingTime)}
                         </span>
                       </div>
-                    </div>
-
-                    {/* Status */}
+                    </div>                    {/* Status */}
                     <div className="text-center space-y-3 md:space-y-4">                      <h4 className="text-lg md:text-xl font-bold text-gray-800">
-                        {isRecording ? 'Recording...' : 'Tap to record'}
+                        {isVoiceSupported === false 
+                          ? 'Voice Recording Unavailable'
+                          : isRecording 
+                          ? 'Recording...' 
+                          : 'Tap to record'
+                        }
                       </h4>
                       <p className="leading-relaxed text-sm md:text-base max-w-md text-gray-600">
-                        {isRecording 
+                        {isVoiceSupported === false
+                          ? 'Your browser or connection doesn\'t support voice recording. Please use the Text or Photo upload options above.'
+                          : isRecording 
                           ? 'Speak clearly about your meal. Tap again when finished.' 
                           : 'Tap the microphone to start recording your meal description'
                         }
@@ -1123,8 +1326,158 @@ export default function LogFoodPage() {
                     </>
                   )}
                 </Button>
+
+                {/* AI Analysis Section for Voice */}
+                {pendingResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
+                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
+                          <div className="flex items-center space-x-3 md:space-x-4">
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                              <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                            </div>
+                            <div>
+                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                                AI Analysis Complete ({pendingResults.length} items)
+                              </h3>
+                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearAllPending}
+                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                            <span>Clear All</span>
+                          </Button>
+                        </div>
+                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                          <div className="flex items-center space-x-2 md:space-x-3 mb-2">
+                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                          </div>
+                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                            Our AI has analyzed your voice recording and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
+                          </p>
+                        </div>
+
+                        {/* Items Display - Mobile Cards & Desktop Table */}
+                        <div className="mt-6">
+                          {/* Mobile Card View */}
+                          <div className="block md:hidden space-y-3">
+                            {pendingResults.map((item, index) => (
+                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    {item.originalDescription && (
+                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                        From: {item.originalDescription.substring(0, 25)}...
+                                      </div>
+                                    )}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(item.id)}
+                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2 text-center">
+                                  <div className="bg-purple-50 rounded-lg p-2">
+                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
+                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  </div>
+                                  <div className="bg-blue-50 rounded-lg p-2">
+                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
+                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-green-50 rounded-lg p-2">
+                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
+                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  </div>
+                                  <div className="bg-orange-50 rounded-lg p-2">
+                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
+                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Desktop Table View */}
+                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                            <div className="overflow-x-auto">
+                              <table className="w-full">
+                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                  <tr>
+                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
+                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                  {pendingResults.map((item, index) => (
+                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                      <td className="py-3 md:py-5 px-3 md:px-6">
+                                        <div>
+                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          {item.originalDescription && (
+                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                              From: {item.originalDescription.substring(0, 30)}...
+                                            </div>
+                                          )}
+                                        </div>
+                                      </td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className="text-center py-3 md:py-5 px-2 md:px-4">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => removeItem(item.id)}
+                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                        >
+                                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                        </Button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                        {/* Confirm Button */}
+                        <Button
+                          onClick={confirmAndLogFood}
+                          className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl mt-6 md:mt-8 flex items-center justify-center space-x-2 md:space-x-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong text-sm sm:text-base md:text-lg bg-green-500 hover:bg-green-600 text-white"
+                          disabled={pendingResults.length === 0 || isLoading}
+                        >
+                          <Target className="w-4 h-4 md:w-6 md:h-6" />
+                          <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
+                          <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
               </div>
-            )}            {/* Bottom Information */}
+            )}{/* Bottom Information */}
             {pendingResults.length === 0 && !isLoading && (
               <div className="text-center mt-8 md:mt-10 pt-6 md:pt-8 border-t border-opacity-20">
                 <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-clay-100/40">
