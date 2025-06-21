@@ -578,17 +578,7 @@ export default function WorkoutPlansPage() {
                             </p>
                         </div>
                         
-                        {/* Unsaved changes indicator */}
-                        {hasUnsavedChanges && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="flex items-center justify-center gap-2 bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200 mb-4 mx-auto max-w-fit"
-                            >
-                                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                                <span className="text-sm font-medium">Unsaved changes</span>
-                            </motion.div>
-                        )}
+                       
                     </div>
                 </motion.div>                {/* Action Bar */}
                 <motion.div

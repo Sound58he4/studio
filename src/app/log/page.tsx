@@ -428,7 +428,6 @@ export default function LogFoodPage() {
           const input: OptimizedFoodLoggingInput = { foodDescription: description };
           const output: OptimizedFoodLoggingOutput = await optimizedFoodLogging(input);
           
-          // Handle the first food item from the array
           if (!output.foodItems || output.foodItems.length === 0) {
               setError("AI could not identify any food items from the description.");
               toast({ title: "No Items Found", description: "Try rephrasing your description.", variant: "destructive" });
@@ -436,31 +435,38 @@ export default function LogFoodPage() {
               return;
           }
 
-          const firstItem = output.foodItems[0];
-          
-          // Try to cache the result, but don't fail if caching doesn't work
+          // Map all returned items
+          const processedResults: ProcessedFoodResult[] = output.foodItems.map((item, index) => ({
+            id: `manual-${Date.now()}-${index}`,
+            identifiedFoodName: item.identifiedFoodName,
+            originalDescription: description,
+            calories: item.nutrition.calories,
+            protein: item.nutrition.protein,
+            carbohydrates: item.nutrition.carbohydrates,
+            fat: item.nutrition.fat,
+            source: 'manual',
+            confidence: item.confidence
+          }));
+
+          // Cache the first item for performance (if needed)
           try {
               await foodLogCache.cacheAIEstimate(description, {
-                  identifiedFoodName: firstItem.identifiedFoodName,
-                  nutrition: firstItem.nutrition,
-                  confidence: firstItem.confidence
+                  identifiedFoodName: processedResults[0].identifiedFoodName,
+                  nutrition: {
+                      calories: processedResults[0].calories,
+                      protein: processedResults[0].protein,
+                      carbohydrates: processedResults[0].carbohydrates,
+                      fat: processedResults[0].fat
+                  },
+                  confidence: processedResults[0].confidence
               });
           } catch (cacheError) {
               console.warn("Failed to cache result, but continuing:", cacheError);
-              // Continue without caching
           }
-          
-          const processedResult: ProcessedFoodResult = {
-              id: `manual-${Date.now()}-0`, 
-              identifiedFoodName: firstItem.identifiedFoodName,
-              originalDescription: description, 
-              ...firstItem.nutrition,
-              source: 'manual',
-              confidence: firstItem.confidence
-          };
-          setPendingResults(prev => [...prev, processedResult].sort((a,b) => b.calories - a.calories));
+
+          setPendingResults(prev => [...prev, ...processedResults].sort((a, b) => b.calories - a.calories));
           setManualInput("");
-          toast({ title: "Food Processed", description: `Added "${firstItem.identifiedFoodName}" for review.` });
+          toast({ title: "Food Processed", description: `${processedResults.length} item(s) added for review.` });
       } catch (err: any) {
           console.error("Manual logging AI error:", err); 
           setError(`Processing failed: ${err.message}.`);

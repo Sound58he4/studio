@@ -104,17 +104,11 @@ export default function QuickLogPage() {
       const startDate = startOfDay(subDays(endDate, 6));
       const allLogs = await getFoodLogs(userId, startDate, endDate);
 
-      const uniqueItemsMap = new Map<string, StoredFoodLogEntry>();
-      allLogs.forEach(log => {
-        const key = log.foodItem.toLowerCase();
-        if (!uniqueItemsMap.has(key)) {
-          uniqueItemsMap.set(key, log);
-        }
-      });
-      const uniqueSortedLogs = Array.from(uniqueItemsMap.values())
-                                   .sort((a,b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime())
-                                   .slice(0, 20);
-      setHistoryLogItems(uniqueSortedLogs);
+      // Replace dedupe logic with showing all logs sorted by timestamp
+      const sortedLogs = allLogs
+        .sort((a, b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime())
+        .slice(0, 20);
+      setHistoryLogItems(sortedLogs);
     } catch (error:any) {
       setHistoryError("Failed to load food history.");
       if(isClient) toast({ variant: "destructive", title: "History Error", description: error.message });
