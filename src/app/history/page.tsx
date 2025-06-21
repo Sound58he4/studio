@@ -221,9 +221,7 @@ export default function HistoryPage() {
                       <X className="h-4 w-4 text-gray-500" />
                     </Button>
                   )}
-                </div>
-
-                {/* Sort */}
+                </div>                {/* Sort and Clear Controls */}
                 <div className="flex items-center space-x-2">
                   <SlidersHorizontal className="w-4 h-4 text-purple-600" />
                   <Select value={sortOrder} onValueChange={(value) => setSortOrder(value as SortOption)}>
@@ -235,36 +233,36 @@ export default function HistoryPage() {
                       <SelectItem value="oldest">Oldest</SelectItem>
                     </SelectContent>
                   </Select>
+                  
+                  {/* Clear History */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 px-4 rounded-lg transition-all duration-300 hover:scale-105 bg-white/80 border-gray-200 text-gray-600 hover:text-red-500 hover:bg-red-50"
+                        disabled={(activeTab === 'food' && allFoodLogs.length === 0) || (activeTab === 'exercise' && allExerciseLogs.length === 0)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Clear
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Clear {activeTab === 'food' ? 'Food' : 'Exercise'} History?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete all your {activeTab} log entries from the database.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => clearAllHistory(activeTab)} className={buttonVariants({ variant: "destructive" })}>
+                          Yes, Clear All
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-
-                {/* Clear History */}
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-11 px-4 rounded-lg transition-all duration-300 hover:scale-105 bg-white/80 border-gray-200 text-gray-600 hover:text-red-500 hover:bg-red-50"
-                      disabled={(activeTab === 'food' && allFoodLogs.length === 0) || (activeTab === 'exercise' && allExerciseLogs.length === 0)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Clear
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Clear {activeTab === 'food' ? 'Food' : 'Exercise'} History?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete all your {activeTab} log entries from the database.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => clearAllHistory(activeTab)} className={buttonVariants({ variant: "destructive" })}>
-                        Yes, Clear All
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </div>
           </motion.div>
@@ -296,21 +294,19 @@ export default function HistoryPage() {
                 </TabsList>
               </Tabs>
             </div>
-          </motion.div>
-
-          {/* Content */}
+          </motion.div>          {/* Content */}
           <motion.div
             className="space-y-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <div className="backdrop-blur-sm rounded-xl shadow-lg border-0 p-4 transition-all duration-300 bg-white/70 shadow-lg border border-gray-200">
-              <div className="flex items-center mb-4">
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center mr-3 shadow-lg bg-blue-100">
-                  <Target className="w-4 h-4 text-blue-600" />
+            <div className="backdrop-blur-sm rounded-xl shadow-lg border-0 p-3 md:p-4 transition-all duration-300 bg-white/70 shadow-lg border border-gray-200">
+              <div className="flex items-center mb-3 md:mb-4">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center mr-3 shadow-lg bg-blue-100">
+                  <Target className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800">Today's Entries</h3>
+                <h3 className="text-base md:text-lg font-semibold text-gray-800">Your History</h3>
               </div>
 
               <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LogType)}>
@@ -344,25 +340,24 @@ function LogDisplay({ logs, logType, isLoading, searchTerm, handleDelete, format
   const hasLogs = logs.some(group => group.logs.length > 0);
 
   return (
-    <ScrollArea className="h-[calc(100vh-500px)] min-h-[40vh]">
+    <ScrollArea className="h-[calc(100vh-450px)] md:h-[calc(100vh-500px)] min-h-[50vh]">
       <div className="pb-4">
         <AnimatePresence mode="wait">
           {hasLogs ? (
             logs.map((group, groupIndex) => (
               <motion.div
                 key={group.date}
-                className="mb-4 last:mb-0"
+                className="mb-3 md:mb-4 last:mb-0"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, delay: groupIndex * 0.05 }}
               >
                 {/* Date Header */}
-                <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-sm px-4 py-3 border-b border-gray-200 shadow-sm rounded-lg mb-3">
-                  <h3 className="font-semibold text-blue-700 text-base tracking-wide">{formatDateGroup(group.date)}</h3>
-                </div>
-                {group.logs.length > 0 ? (
-                  <div className="space-y-3">
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm px-3 md:px-4 py-2 md:py-3 border-b border-gray-200 shadow-sm rounded-lg mb-2 md:mb-3">
+                  <h3 className="font-semibold text-blue-700 text-sm md:text-base tracking-wide">{formatDateGroup(group.date)}</h3>
+                </div>                {group.logs.length > 0 ? (
+                  <div className="space-y-2 md:space-y-3">
                     {group.logs.map((log, logIndex) => (
                       logType === 'food' ? (
                         <motion.div
@@ -396,29 +391,28 @@ function LogDisplay({ logs, logType, isLoading, searchTerm, handleDelete, format
                     ))}
                   </div>
                 ) : (
-                  <p className="px-4 py-6 text-base text-gray-500 text-center italic">No {logType} logs found for this day.</p>
+                  <p className="px-3 md:px-4 py-4 md:py-6 text-sm md:text-base text-gray-500 text-center italic">No {logType} logs found for this day.</p>
                 )}
               </motion.div>
             ))
-          ) : (
-            // Empty state
+          ) : (            // Empty state
             <motion.div
-              className="flex flex-col items-center justify-center min-h-[40vh] text-center text-gray-500 p-6"
+              className="flex flex-col items-center justify-center min-h-[50vh] text-center text-gray-500 p-4 md:p-6"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
             >
-              <HistoryIcon className="h-20 w-20 mb-6 text-gray-300" />
-              <p className="font-semibold text-xl text-gray-700 mb-3">No {logType === 'food' ? 'Food' : 'Exercise'} History Yet</p>
-              <p className="text-base max-w-sm mb-6">
+              <HistoryIcon className="h-16 w-16 md:h-20 md:w-20 mb-4 md:mb-6 text-gray-300" />
+              <p className="font-semibold text-lg md:text-xl text-gray-700 mb-2 md:mb-3">No {logType === 'food' ? 'Food' : 'Exercise'} History Yet</p>
+              <p className="text-sm md:text-base max-w-sm mb-4 md:mb-6 leading-relaxed">
                 {searchTerm
                   ? "No logs match your search. Try different keywords."
                   : `Your logged ${logType === 'food' ? 'meals' : 'workouts'} will appear here. Start logging to build your history!`}
               </p>
               {!searchTerm && (
                 <Link href={logType === 'food' ? '/log' : '/log-exercise'}>
-                  <Button variant="outline" size="lg" className="h-12 px-8 text-base rounded-lg">
+                  <Button variant="outline" size="lg" className="h-10 md:h-12 px-6 md:px-8 text-sm md:text-base rounded-lg">
                     Log {logType === 'food' ? 'Food' : 'Exercise'}
                   </Button>
                 </Link>
@@ -437,27 +431,27 @@ function FoodLogItem({ log, onDelete, index }: FoodLogItemProps) {
   return (
     <Card className="backdrop-blur-sm border-0 rounded-xl transition-all duration-300 hover:scale-[1.01] bg-white/80 border border-gray-200 hover:shadow-lg shadow-md" 
           style={{ animationDelay: `${index * 100}ms` }}>
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-4">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex items-start space-x-3 md:space-x-4">
           {/* Icon */}
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-blue-100">
-            <Utensils className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-blue-100">
+            <Utensils className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
           </div>
           {/* Details */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold truncate text-gray-800">{log.foodItem}</h4>
-              <div className="flex items-center gap-2">
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-semibold text-sm md:text-base text-gray-800 leading-tight pr-2">{log.foodItem}</h4>
+              <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                 {log.logMethod && (
-                  <span className="text-xs px-2 py-1 rounded-full shadow-sm text-blue-600 bg-blue-100">
+                  <span className="text-xs px-2 py-1 rounded-full shadow-sm text-blue-600 bg-blue-100 hidden sm:inline-block">
                     {log.logMethod}
                   </span>
                 )}
                 {/* Delete Button */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150">
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 md:h-8 md:w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150">
+                      <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -473,7 +467,7 @@ function FoodLogItem({ log, onDelete, index }: FoodLogItemProps) {
                 </AlertDialog>
               </div>
             </div>
-            <div className="flex items-center space-x-4 text-sm mb-3 text-gray-600">
+            <div className="flex items-center space-x-3 md:space-x-4 text-xs md:text-sm mb-2 md:mb-3 text-gray-600">
               <span className="flex items-center">
                 <Clock className="w-3 h-3 mr-1" />
                 {format(parseISO(log.timestamp), 'p')}
@@ -482,15 +476,20 @@ function FoodLogItem({ log, onDelete, index }: FoodLogItemProps) {
                 <Flame className="w-3 h-3 mr-1" />
                 {log.calories?.toFixed(0) ?? 'N/A'} kcal
               </span>
+              {log.logMethod && (
+                <span className="text-xs px-2 py-1 rounded-full shadow-sm text-blue-600 bg-blue-100 sm:hidden">
+                  {log.logMethod}
+                </span>
+              )}
             </div>
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="flex items-center space-x-1 px-2 py-1 rounded-lg shadow-sm bg-blue-100">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 text-xs md:text-sm">
+              <div className="flex items-center justify-center px-2 py-1 rounded-lg shadow-sm bg-blue-100">
                 <span className="font-medium text-blue-700">P: {log.protein?.toFixed(1) ?? 'N/A'}g</span>
               </div>
-              <div className="flex items-center space-x-1 px-2 py-1 rounded-lg shadow-sm bg-purple-100">
+              <div className="flex items-center justify-center px-2 py-1 rounded-lg shadow-sm bg-purple-100">
                 <span className="font-medium text-purple-700">C: {log.carbohydrates?.toFixed(1) ?? 'N/A'}g</span>
               </div>
-              <div className="flex items-center space-x-1 px-2 py-1 rounded-lg shadow-sm bg-green-100">
+              <div className="flex items-center justify-center px-2 py-1 rounded-lg shadow-sm bg-green-100">
                 <span className="font-medium text-green-700">F: {log.fat?.toFixed(1) ?? 'N/A'}g</span>
               </div>
             </div>
@@ -506,25 +505,25 @@ function ExerciseLogItem({ log, onDelete, index }: ExerciseLogItemProps) {
   return (
     <Card className="backdrop-blur-sm border-0 rounded-xl transition-all duration-300 hover:scale-[1.01] bg-white/80 border border-gray-200 hover:shadow-lg shadow-md" 
           style={{ animationDelay: `${index * 100}ms` }}>
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-4">
+      <CardContent className="p-3 md:p-4">
+        <div className="flex items-start space-x-3 md:space-x-4">
           {/* Icon */}
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-purple-100">
-            <Dumbbell className="w-5 h-5 text-purple-600" />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg bg-purple-100">
+            <Dumbbell className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
           </div>
           {/* Details */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-semibold text-gray-800">{log.exerciseName}</h4>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-1 rounded-full shadow-sm text-purple-600 bg-purple-100">
+            <div className="flex items-start justify-between mb-2">
+              <h4 className="font-semibold text-sm md:text-base text-gray-800 leading-tight pr-2">{log.exerciseName}</h4>
+              <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+                <span className="text-xs px-2 py-1 rounded-full shadow-sm text-purple-600 bg-purple-100 hidden sm:inline-block">
                   {log.exerciseType}
                 </span>
                 {/* Delete Button */}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150">
-                      <Trash2 className="h-4 w-4" />
+                    <Button variant="ghost" size="icon" className="h-7 w-7 md:h-8 md:w-8 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors duration-150">
+                      <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -540,7 +539,7 @@ function ExerciseLogItem({ log, onDelete, index }: ExerciseLogItemProps) {
                 </AlertDialog>
               </div>
             </div>
-            <div className="flex items-center space-x-4 text-sm mb-3 text-gray-600">
+            <div className="flex items-center space-x-3 md:space-x-4 text-xs md:text-sm mb-2 md:mb-3 text-gray-600">
               <span className="flex items-center">
                 <Clock className="w-3 h-3 mr-1" />
                 {format(parseISO(log.timestamp), 'p')}
@@ -551,23 +550,26 @@ function ExerciseLogItem({ log, onDelete, index }: ExerciseLogItemProps) {
                   {log.estimatedCaloriesBurned.toFixed(0)} kcal
                 </span>
               )}
+              <span className="text-xs px-2 py-1 rounded-full shadow-sm text-purple-600 bg-purple-100 sm:hidden">
+                {log.exerciseType}
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+            <div className="grid grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm mb-2 md:mb-3">
               {log.duration !== undefined && (
-                <div className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-sm bg-purple-100">
+                <div className="flex items-center justify-center space-x-1 md:space-x-2 px-2 md:px-3 py-1 md:py-2 rounded-lg shadow-sm bg-purple-100">
                   <Clock className="w-3 h-3 text-purple-500" />
                   <span className="font-medium text-purple-700">{log.duration} min</span>
                 </div>
               )}
               {log.sets !== undefined && (
-                <div className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow-sm bg-blue-100">
+                <div className="flex items-center justify-center space-x-1 md:space-x-2 px-2 md:px-3 py-1 md:py-2 rounded-lg shadow-sm bg-blue-100">
                   <Target className="w-3 h-3 text-blue-500" />
                   <span className="font-medium text-blue-700">{log.sets} sets</span>
                 </div>
               )}
             </div>
             {log.notes && (
-              <div className="text-sm p-3 rounded-xl shadow-sm text-gray-600 bg-gray-100">
+              <div className="text-xs md:text-sm p-2 md:p-3 rounded-xl shadow-sm text-gray-600 bg-gray-100">
                 <span className="font-medium text-gray-700">Notes:</span> {log.notes}
               </div>
             )}

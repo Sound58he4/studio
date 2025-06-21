@@ -103,8 +103,7 @@ export default function WorkoutPlansPage() {
     const [editablePlan, setEditablePlan] = useState<Record<DayOfWeek, EditableExercise[]>>(createInitialEditablePlan(null));
     const [isLoadingPlan, setIsLoadingPlan] = useState(true);
     const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
-    const [isGeneratingSimple, setIsGeneratingSimple] = useState<DayOfWeek | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingSimple, setIsGeneratingSimple] = useState<DayOfWeek | null>(null);    const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     // State to manage which exercise is currently being edited or added
     const [editingExerciseState, setEditingExerciseState] = useState<{ day: DayOfWeek; exercise: EditableExercise } | null>(null);
@@ -745,35 +744,7 @@ export default function WorkoutPlansPage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5 }}
                                     className="space-y-4 sm:space-y-6"
-                                >
-                                    {/* Exercise Form */}
-                                    <AnimatePresence>
-                                        {editingExerciseState?.day === activeDay && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -20 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -20 }}
-                                                transition={{ duration: 0.4 }}
-                                                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-                                                onClick={(e) => {
-                                                    if (e.target === e.currentTarget) {
-                                                        handleCancelEdit();
-                                                    }
-                                                }}
-                                            >
-                                                <div className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden">
-                                                    <AddEditExerciseForm
-                                                        key={editingExerciseState.exercise.id}
-                                                        exercise={editingExerciseState.exercise}
-                                                        day={activeDay}
-                                                        onSave={handleSaveEditedExercise}
-                                                        onCancel={handleCancelEdit}
-                                                        onChange={(field, value) => handleExerciseChange(activeDay, editingExerciseState.exercise.id, field, value)}
-                                                    />
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>                                    {/* Day Content */}
+                                >                                    {/* Day Content */}
                                     <Card className="backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
                                         <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
                                             <div className="flex items-center justify-between">
@@ -1044,7 +1015,44 @@ export default function WorkoutPlansPage() {
 
                 {/* Main Content Layout - Continue from where original design left off */}
                 {/* ...existing code... */}
-            </div>
+            </div>            {/* Add Exercise Form Modal - Mobile-Responsive */}
+            <AnimatePresence>
+                {editingExerciseState && (
+                    <motion.div
+                        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {/* Backdrop */}
+                        <motion.div
+                            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={handleCancelEdit}
+                        />
+                        
+                        {/* Modal Content */}
+                        <motion.div
+                            className="relative z-10 w-full max-w-2xl h-full max-h-[97vh] sm:max-h-[95vh] overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            transition={{ duration: 0.3, type: "spring", damping: 25, stiffness: 300 }}
+                        >
+                            <AddEditExerciseForm
+                                exercise={editingExerciseState.exercise}
+                                day={editingExerciseState.day}
+                                onSave={handleSaveEditedExercise}
+                                onCancel={handleCancelEdit}
+                                onChange={(field, value) => handleExerciseChange(editingExerciseState.day, editingExerciseState.exercise.id, field, value)}
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
