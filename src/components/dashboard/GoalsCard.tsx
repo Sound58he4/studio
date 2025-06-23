@@ -28,6 +28,7 @@ export interface GoalsCardProps {
   actualBurnForDisplay: number;
   isLoadingSuggestion: boolean;
   calorieAdjustmentSuggestion: SuggestCalorieAdjustmentOutput | null;
+  isDark: boolean; // Add dark theme prop
 }
 
 const GoalsCard: React.FC<GoalsCardProps> = ({
@@ -43,7 +44,8 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
   actualBurnForDisplay,
   isLoadingSuggestion,
   calorieAdjustmentSuggestion,
-}) => {  const calculatePercentage = (current: number, target: number) => {
+  isDark,
+}) => {const calculatePercentage = (current: number, target: number) => {
     if (!target || target <= 0) {
       console.log(`[GoalsCard] Zero or invalid target detected: current=${current}, target=${target}`);
       return 0;
@@ -109,31 +111,31 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
           const percentage = calculatePercentage(item.current, item.target);
           const safePercentage = Math.max(0, Math.min(percentage, 100));
           const IconComponent = item.icon;
-          return (
-            <div key={index} className="backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border transition-all duration-300 bg-white/50 border-white/30">
+          return (            <div key={index} className={`backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg border transition-all duration-300 ${isDark ? 'bg-[#1a1a1a] border-[#3a3a3a]' : 'bg-white/50 border-white/30'}`}>
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="flex items-center space-x-2 sm:space-x-3">
                   <IconComponent className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                    item.color === 'blue' ? 'text-blue-500' : 
-                    item.color === 'orange' ? 'text-orange-500' : 
-                    item.color === 'green' ? 'text-emerald-500' : 
-                    'text-purple-500'
+                    item.color === 'blue' ? isDark ? 'text-blue-400' : 'text-blue-500' : 
+                    item.color === 'orange' ? isDark ? 'text-orange-400' : 'text-orange-500' : 
+                    item.color === 'green' ? isDark ? 'text-emerald-400' : 'text-emerald-500' : 
+                    isDark ? 'text-purple-400' : 'text-purple-500'
                   }`} />
-                  <span className="text-sm sm:text-base font-medium text-gray-700">{item.name}</span>
+                  <span className={`text-sm sm:text-base font-medium ${isDark ? 'text-white' : 'text-gray-700'}`}>{item.name}</span>
                 </div>
                 <div className={`text-lg sm:text-xl font-bold ${
-                  item.color === 'blue' ? 'text-blue-600' : 
-                  item.color === 'orange' ? 'text-orange-600' : 
-                  item.color === 'green' ? 'text-emerald-600' : 
-                  'text-purple-600'
+                  item.color === 'blue' ? isDark ? 'text-blue-400' : 'text-blue-600' : 
+                  item.color === 'orange' ? isDark ? 'text-orange-400' : 'text-orange-600' : 
+                  item.color === 'green' ? isDark ? 'text-emerald-400' : 'text-emerald-600' : 
+                  isDark ? 'text-purple-400' : 'text-purple-600'
                 }`}>
                   {safePercentage}%
                 </div>
               </div>
               <div className="mb-3">
-                <div className="text-sm sm:text-base mb-2 text-gray-600">
+                <div className={`text-sm sm:text-base mb-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   {(item.current || 0).toFixed(item.unit === 'g' ? 1 : 0)} / {(item.target || 0).toFixed(item.unit === 'g' ? 1 : 0)}{item.unit}
-                </div>                <div className="w-full rounded-full h-2.5 sm:h-3 shadow-lg bg-gray-200/50">
+                </div>
+                <div className={`w-full rounded-full h-2.5 sm:h-3 shadow-lg ${isDark ? 'bg-[#333]' : 'bg-gray-200/50'}`}>
                   <div 
                     className={`h-2.5 sm:h-3 rounded-full transition-all duration-500 shadow-lg ${
                       item.color === 'blue' ? 'bg-gradient-to-r from-blue-400 to-blue-500' : 
@@ -159,27 +161,31 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
 
   return (
     <div className={cn("space-y-4 sm:space-y-6", className)}>      {/* Nutritional Targets Card */}
-      <div className="backdrop-blur-sm rounded-3xl shadow-lg border-0 p-4 sm:p-6 md:p-8 animate-scale-in transition-all duration-500 bg-white/70 shadow-lg border border-blue-100/50">
+      <div className={`backdrop-blur-sm rounded-3xl border-0 p-4 sm:p-6 md:p-8 animate-scale-in transition-all duration-500 ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-white/70 shadow-lg border border-blue-100/50'}`}>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center space-x-3 sm:space-x-4">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-blue-500">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-[#8b5cf6] text-white' : 'bg-gradient-to-br from-blue-400 to-blue-500'}`}>
               <Target className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Nutritional Targets</h3>
-              <p className="text-sm sm:text-base text-gray-600">Track daily nutrition</p>
+              <h3 className={`text-lg sm:text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Nutritional Targets</h3>
+              <p className={`text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Track daily nutrition</p>
             </div>
           </div>
         </div>
         
         {/* Goals Tabs - Mobile Optimized */}
-        <div className="flex mb-6 sm:mb-8 backdrop-blur-sm rounded-xl p-1 shadow-lg max-w-lg bg-gray-100/50">
+        <div className={`flex mb-6 sm:mb-8 backdrop-blur-sm rounded-xl p-1 shadow-lg max-w-lg ${isDark ? 'bg-[#1a1a1a]' : 'bg-gray-100/50'}`}>
           <button 
             onClick={() => setActivePeriodTab('daily')} 
             className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${
               activePeriodTab === 'daily' 
-                ? 'bg-white shadow-lg text-gray-800'
-                : 'text-gray-600 hover:text-gray-800'
+                ? isDark 
+                  ? 'bg-[#8b5cf6] text-white shadow-lg' 
+                  : 'bg-white shadow-lg text-gray-800'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             Today
@@ -188,8 +194,12 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
             onClick={() => setActivePeriodTab('weekly')} 
             className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${
               activePeriodTab === 'weekly' 
-                ? 'bg-white shadow-lg text-gray-800'
-                : 'text-gray-600 hover:text-gray-800'
+                ? isDark 
+                  ? 'bg-[#8b5cf6] text-white shadow-lg' 
+                  : 'bg-white shadow-lg text-gray-800'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
             }`}
           >
             Week
@@ -198,11 +208,14 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
             onClick={() => {
               setActivePeriodTab('ai-targets');
               onRecalculateAiTargets();
-            }} 
-            className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${
+            }}            className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg transition-all duration-200 ${
               activePeriodTab === 'ai-targets' 
-                ? 'bg-white shadow-lg text-gray-800'
-                : 'text-gray-600 hover:text-gray-800'
+                ? isDark 
+                  ? 'bg-[#8b5cf6] text-white shadow-lg' 
+                  : 'bg-white shadow-lg text-gray-800'
+                : isDark 
+                  ? 'text-gray-400 hover:text-white' 
+                  : 'text-gray-600 hover:text-gray-800'
             }`}
             disabled={isLoadingTargets}
           >
@@ -217,19 +230,18 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
         ) : dailyTargets && (dailyTargets.targetCalories ?? 0) > 0 ? (
           <>
             {activePeriodTab === 'daily' && renderNutritionCards(false)}
-            {activePeriodTab === 'weekly' && renderNutritionCards(true)}
-            {activePeriodTab === 'ai-targets' && (
+            {activePeriodTab === 'weekly' && renderNutritionCards(true)}            {activePeriodTab === 'ai-targets' && (
               <div className="text-center py-8 sm:py-10">
                 <div className="flex items-center justify-center space-x-2 mb-4">
-                  <Sparkles className="w-6 h-6 text-blue-500" />
-                  <span className="text-lg font-semibold text-gray-800">AI-Powered Targets</span>
+                  <Sparkles className={`w-6 h-6 ${isDark ? 'text-purple-400' : 'text-blue-500'}`} />
+                  <span className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>AI-Powered Targets</span>
                 </div>
-                <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">
+                <p className={`text-sm mb-6 max-w-md mx-auto ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                   Your nutritional targets have been calculated using AI based on your profile, fitness goals, and activity level.
                 </p>
                 {renderNutritionCards(false)}
-                <div className="mt-6 pt-4 border-t border-gray-200/50">
-                  <p className="text-xs text-blue-600 flex items-center justify-center gap-1">
+                <div className={`mt-6 pt-4 border-t ${isDark ? 'border-[#3a3a3a]' : 'border-gray-200/50'}`}>
+                  <p className={`text-xs flex items-center justify-center gap-1 ${isDark ? 'text-purple-400' : 'text-blue-600'}`}>
                     <Target size={14} /> Targets updated with AI analysis
                   </p>
                 </div>
@@ -237,7 +249,7 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
             )}
           </>
         ) : (
-          <div className="text-center py-8 sm:py-10 text-gray-500 italic">
+          <div className={`text-center py-8 sm:py-10 italic ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
             <p className="text-sm">Set your profile and targets to see progress.</p>
             <Link href="/profile">
               <Button variant="link" size="sm" className="mt-2 text-blue-600">Go to Profile</Button>
@@ -274,49 +286,47 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
             <p className="text-xs text-gray-500 italic">Daily activity suggestions available in 'Today's Goals' view.</p>
           </div>
         )}
-      </div>
-
-      {/* Today's Exercise Burn Goal - New Design Implementation */}
+      </div>      {/* Today's Exercise Burn Goal - X Reference Design Implementation */}
       {activePeriodTab === 'daily' && (
-        <div className="backdrop-blur-sm rounded-3xl shadow-lg border p-4 sm:p-6 md:p-8 animate-fade-in transition-all duration-500 bg-gradient-to-br from-amber-50/80 to-orange-50/80 border-white/30">
+        <div className={`backdrop-blur-sm rounded-3xl shadow-lg border p-4 sm:p-6 md:p-8 animate-fade-in transition-all duration-500 ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-gradient-to-br from-amber-50/80 to-orange-50/80 border-white/30'}`}>
           <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-3 sm:mb-4">
-              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
-              <span className="font-semibold text-base sm:text-lg text-amber-700">
-                {calorieAdjustmentSuggestion?.actionTitle || "Today's Exercise Goal"}
+              <Sparkles className={`w-5 h-5 sm:w-6 sm:h-6 ${isDark ? 'text-amber-400' : 'text-amber-500'}`} />
+              <span className={`font-semibold text-base sm:text-lg ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
+                {calorieAdjustmentSuggestion?.actionTitle || "Room for More"}
               </span>
             </div>
-            <p className="text-sm sm:text-base italic mb-4 sm:mb-6 text-gray-600">
+            <p className={`text-sm sm:text-base italic mb-4 sm:mb-6 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {calorieAdjustmentSuggestion?.motivationalTip || "Your journey is unique"}
             </p>
             
             <div className="mb-4 sm:mb-6">
-              <p className="text-sm sm:text-base font-medium mb-3 text-gray-700">
-                Today's Exercise Burn Goal:
+              <p className={`text-sm sm:text-base font-medium mb-3 ${isDark ? 'text-white' : 'text-gray-700'}`}>
+                Exercise Burn Goal:
               </p>
               {targetActivityCaloriesToday !== null && targetActivityCaloriesToday > 0 ? (
-                <>                  <div className="w-full rounded-full h-3 sm:h-4 mb-2 sm:mb-3 shadow-lg bg-amber-200/50">
+                <>
+                  <div className={`w-full rounded-full h-3 sm:h-4 mb-2 sm:mb-3 shadow-lg ${isDark ? 'bg-[#333]' : 'bg-amber-200/50'}`}>
                     <div 
                       className="bg-gradient-to-r from-amber-400 to-orange-500 h-3 sm:h-4 rounded-full transition-all duration-500 shadow-lg" 
                       style={{ width: `${Math.min(burnGoalProgress, 100)}%` }}
                     />
                   </div>
-                  <p className="text-sm sm:text-base text-gray-600">
+                  <p className={`text-sm sm:text-base ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     {actualBurnForDisplay.toFixed(0)} / {targetActivityCaloriesToday.toFixed(0)} kcal
                   </p>
                   {burnGoalReached && (
-                    <p className="text-xs text-green-600 flex items-center justify-center gap-1 animate-pulse mt-2">
+                    <p className={`text-xs flex items-center justify-center gap-1 animate-pulse mt-2 ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                       <CheckCircle size={14}/> Burn Goal Reached!
                     </p>
                   )}
                 </>
               ) : (
-                <p className="text-sm text-gray-500 italic">Set an activity burn goal in your profile.</p>
+                <p className={`text-sm text-gray-500 italic ${isDark ? 'text-gray-400' : ''}`}>Set an activity burn goal in your profile.</p>
               )}
             </div>
-            
-            <Link href="/log">
-              <Button className="rounded-full shadow-lg transition-all duration-200 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base hover:scale-105 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white">
+              <Link href="/log">
+              <Button className={`rounded-full shadow-lg transition-all duration-200 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base hover:scale-105 text-white ${isDark ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' : 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600'}`}>
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Log Food / Activity
               </Button>

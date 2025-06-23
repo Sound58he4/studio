@@ -350,6 +350,16 @@ const batchGetDashboardData = async (request: BatchDataRequest): Promise<Dashboa
 };
 
 export function DashboardMainPage() {
+    // Detect dark mode via HTML class (from settings page)
+    const [isDark, setIsDark] = useState<boolean>(false);
+    useEffect(() => {
+        const updateDark = () => setIsDark(document.documentElement.classList.contains('dark'));
+        updateDark();
+        const observer = new MutationObserver(updateDark);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }, []);
+
     const router = useRouter();
     const { toast } = useToast();
     const { userId, loading: authLoading } = useAuth();
@@ -1124,15 +1134,12 @@ export function DashboardMainPage() {
     }
 
     const targetActivityCaloriesToday = dailyTargets?.targetCalories ? Math.round(dailyTargets.targetCalories / 4) : null;
-    const actualBurnForDisplay = (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') ? periodTotals.caloriesBurned : allWeeklyExerciseLogs.reduce((sum, log) => sum + (Number(log.estimatedCaloriesBurned) || 0), 0);
-
-
-    return (
-        <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 transition-all duration-500">
+    const actualBurnForDisplay = (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') ? periodTotals.caloriesBurned : allWeeklyExerciseLogs.reduce((sum, log) => sum + (Number(log.estimatedCaloriesBurned) || 0), 0);    return (
+        <div className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${isDark ? 'bg-[#1a1a1a]' : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 text-gray-800'}`}>
             {/* Animated Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <motion.div
-                    className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/10 to-purple-400/10 rounded-full blur-3xl"
+                    className={`absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl ${isDark ? 'bg-gradient-to-br from-purple-400/10 to-blue-400/10' : 'bg-gradient-to-br from-blue-400/10 to-purple-400/10'}`}
                     animate={{ 
                         scale: [1, 1.2, 1],
                         rotate: [0, 180, 360],
@@ -1145,7 +1152,7 @@ export function DashboardMainPage() {
                     }}
                 />
                 <motion.div
-                    className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/10 to-blue-400/10 rounded-full blur-3xl"
+                    className={`absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl ${isDark ? 'bg-gradient-to-tr from-blue-400/10 to-indigo-400/10' : 'bg-gradient-to-tr from-indigo-400/10 to-blue-400/10'}`}
                     animate={{ 
                         scale: [1.2, 1, 1.2],
                         rotate: [360, 180, 0],
@@ -1157,9 +1164,7 @@ export function DashboardMainPage() {
                         ease: "linear"
                     }}
                 />
-            </div>
-
-            <AnimatePresence>
+            </div>            <AnimatePresence>
                 {isFirstTimeAITargetCalculation && (
                     <motion.div 
                         className="fixed inset-0 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center z-[100]"
@@ -1174,17 +1179,16 @@ export function DashboardMainPage() {
                             exit={{ opacity: 0, scale: 0.8, y: 50 }}
                             transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
                         >
-                            <Card className="bg-clay-100/95 backdrop-blur-lg p-6 sm:p-8 rounded-3xl shadow-clayStrong text-center max-w-sm mx-4 border border-white/50">
+                            <Card className={`backdrop-blur-lg p-6 sm:p-8 rounded-3xl text-center max-w-sm mx-4 border transition-all duration-500 ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-clay-100/95 border-white/50 text-gray-800'}`}>
                                 <motion.div 
                                     className="flex justify-center items-center mb-5"
                                     initial={{ rotate: 0 }}
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                 >
-                                    <Loader2 className="h-12 w-12 text-blue-500" />
-                                </motion.div>
-                                <motion.p 
-                                    className="text-lg sm:text-xl font-semibold text-gray-800 mb-2"
+                                    <Loader2 className={`h-12 w-12 ${isDark ? 'text-purple-400' : 'text-blue-500'}`} />
+                                </motion.div>                                <motion.p 
+                                    className={`text-lg sm:text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-800'}`}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.2 }}
@@ -1192,7 +1196,7 @@ export function DashboardMainPage() {
                                     Personalizing Your Targets...
                                 </motion.p>
                                 <motion.p 
-                                    className="text-sm text-gray-600"
+                                    className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.4 }}
@@ -1214,30 +1218,28 @@ export function DashboardMainPage() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
-                    >
-                        <div className="backdrop-blur-sm rounded-3xl shadow-lg border-0 p-4 sm:p-6 md:p-8 bg-white/70 border border-blue-100/50 transition-all duration-500">
+                    >                        <div className={`backdrop-blur-sm rounded-3xl border-0 p-4 sm:p-6 md:p-8 transition-all duration-500 ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-white/70 border border-blue-100/50 shadow-lg'}`}>
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div className="flex items-center space-x-3 sm:space-x-4">
                                     <div className="relative">
-                                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-purple-500">
+                                        <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shadow-lg ${isDark ? 'bg-[#8b5cf6] text-white' : 'bg-gradient-to-br from-blue-400 to-purple-500'}`}>
                                             <User className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-white" />
                                         </div>
                                         <div className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-emerald-400 rounded-full border-2 border-white animate-pulse shadow-sm"></div>
                                     </div>
                                     <div>
-                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-1 text-gray-800">
+                                        <h1 className={`text-2xl sm:text-3xl md:text-4xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-800'}`}>
                                             Dashboard
                                         </h1>
-                                        <div className="flex items-center space-x-2 text-gray-600">
+                                        <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                             <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
                                             <span className="text-sm sm:text-base md:text-lg">Track your daily progress</span>
                                         </div>
-                                    </div>
-                                </div>
+                                    </div>                                </div>
                                 
                                 <div className="text-left sm:text-right">
-                                    <div className="text-lg sm:text-xl font-semibold mb-1 text-gray-700">{getDayName()}</div>
-                                    <div className="text-xs sm:text-sm text-gray-500">{new Date().toLocaleDateString()}</div>
+                                    <div className={`text-lg sm:text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-700'}`}>{getDayName()}</div>
+                                    <div className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{new Date().toLocaleDateString()}</div>
                                 </div>
                             </div>
                         </div>
@@ -1263,6 +1265,7 @@ export function DashboardMainPage() {
                                 isLoadingTotals={isLoadingInitialData}
                                 calorieAdjustmentSuggestion={calorieAdjustmentSuggestion} isLoadingSuggestion={isLoadingSuggestion}
                                 targetActivityCaloriesToday={targetActivityCaloriesToday ?? 0}
+                                isDark={isDark}
                             />
                         </motion.div>
                         
@@ -1272,8 +1275,7 @@ export function DashboardMainPage() {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.6, delay: 0.4 }}
-                        >
-                            <DashboardSidebar 
+                        >                            <DashboardSidebar 
                                 weeklyWorkoutPlan={weeklyWorkoutPlan}
                                 isGeneratingPlan={isGeneratingPlan} 
                                 completedWorkouts={completedWorkouts}
@@ -1283,14 +1285,14 @@ export function DashboardMainPage() {
                                 canRegenerateWorkoutPlan={canRegenerateWorkoutPlan}
                                 isEstimatingCalories={isEstimatingCalories} 
                                 estimateAndLogCalories={estimateAndLogCalories}
+                                isDark={isDark}
                             />
                         </motion.div>
                     </motion.div>
                 </div>
             </div>
-            
-            <motion.footer 
-                className="mt-12 pt-8 text-center text-xs text-gray-500 border-t border-blue-100/30 relative z-10"
+              <motion.footer 
+                className={`mt-12 pt-8 text-center text-xs border-t relative z-10 ${isDark ? 'text-gray-400 border-[#3a3a3a]' : 'text-gray-500 border-blue-100/30'}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.8 }}
