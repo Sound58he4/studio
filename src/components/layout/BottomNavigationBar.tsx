@@ -51,6 +51,7 @@ interface BottomNavigationBarProps {
   handleLogout: () => void;
   isSheetOpen: boolean;
   setIsSheetOpen: (open: boolean) => void;
+  isDark?: boolean;
 }
 
 // Main navigation items
@@ -120,26 +121,17 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
   navLinks,
   handleLogout,
   isSheetOpen,
-  setIsSheetOpen
+  setIsSheetOpen,
+  isDark = false
 }) => {
-  const pathname = usePathname();  const router = useRouter();
+  const pathname = usePathname();
+  const router = useRouter();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  const [lightTheme, setLightTheme] = useState(true);
-
   useEffect(() => {
     setIsClient(true);
-    const handleStorageChange = () => {
-      // Keep light theme only as requested
-      setLightTheme(true);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  const isDark = false; // Always light theme
 
   // Memoize the current path to prevent unnecessary re-renders
   const currentPath = useMemo(() => pathname, [pathname]);
@@ -225,8 +217,14 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         </div>      </nav>      {/* Mobile 'More' Menu */}
       {isClient && showMobileMenu && (
         <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobileMenu(false)}>
-          <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-lg p-4">
-            <h3 className="text-lg font-semibold mb-4">Menu</h3>
+          <div className={cn(
+            "fixed bottom-0 left-0 right-0 rounded-t-lg p-4 transition-colors duration-200",
+            isDark ? "bg-gray-800" : "bg-white"
+          )}>
+            <h3 className={cn(
+              "text-lg font-semibold mb-4",
+              isDark ? "text-gray-100" : "text-gray-900"
+            )}>Menu</h3>
             {moreMenuItems.map((item) => {
               const IconComponent = item.icon;
               return (
@@ -236,7 +234,12 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                     router.push(item.route);
                     setShowMobileMenu(false);
                   }}
-                  className="flex items-center space-x-3 w-full p-3 hover:bg-gray-100 rounded"
+                  className={cn(
+                    "flex items-center space-x-3 w-full p-3 rounded transition-colors duration-200",
+                    isDark 
+                      ? "hover:bg-gray-700 text-gray-200" 
+                      : "hover:bg-gray-100 text-gray-900"
+                  )}
                 >
                   <IconComponent size={20} />
                   <span>{item.title}</span>
@@ -248,7 +251,12 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                 handleLogout();
                 setShowMobileMenu(false);
               }}
-              className="flex items-center space-x-3 w-full p-3 hover:bg-gray-100 rounded text-red-600"
+              className={cn(
+                "flex items-center space-x-3 w-full p-3 rounded transition-colors duration-200",
+                isDark 
+                  ? "hover:bg-gray-700 text-red-400" 
+                  : "hover:bg-gray-100 text-red-600"
+              )}
             >
               <LogOut size={20} />
               <span>Logout</span>

@@ -277,6 +277,88 @@
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgb(100, 116, 139);
   }
+
+  /* Dark theme enhancements */
+  .dark .page-subtitle {
+    @apply text-gray-400;
+  }
+  
+  .dark .card-interactive {
+    @apply hover:shadow-gray-900/50;
+  }
+  
+  /* Smooth theme transitions */
+  * {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  /* Theme-aware utilities */
+  .bg-surface {
+    @apply bg-card border border-border;
+  }
+  
+  .bg-surface-elevated {
+    @apply bg-card border border-border shadow-sm;
+  }
+  
+  .text-surface {
+    @apply text-card-foreground;
+  }
+  
+  .border-surface {
+    @apply border-border;
+  }
+
+  /* Clay Design System with dark mode support */
+  .bg-clayGlass {
+    @apply bg-card/70 backdrop-blur-lg;
+  }
+  
+  .shadow-clay {
+    @apply shadow-lg;
+  }
+  
+  .shadow-clayStrong {
+    @apply shadow-xl;
+  }
+  
+  .shadow-clayInset {
+    @apply shadow-inner;
+  }
+  
+  /* Dark theme specific clay colors */
+  .dark .bg-clayGlass {
+    @apply bg-gray-800/70;
+  }
+  
+  .dark .shadow-clay {
+    @apply shadow-gray-900/50;
+  }
+  
+  .dark .shadow-clayStrong {
+    @apply shadow-gray-900/80;
+  }
+
+  /* Clay color system that adapts to theme */
+  .bg-clay-100 {
+    @apply bg-muted/50;
+  }
+  
+  .bg-clayBlue {
+    @apply bg-primary/10;
+  }
+  
+  .from-clay-100 {
+    @apply from-muted/50;
+  }
+  
+  .via-clayBlue {
+    @apply via-primary/10;
+  }
+  
+  .to-clay-200 {
+    @apply to-muted/30;
+  }
 }
 
 /* Consistent keyframes for all animations */

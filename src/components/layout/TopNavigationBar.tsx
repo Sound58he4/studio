@@ -41,9 +41,10 @@ interface TopNavigationBarProps {
     navLinks: NavLink[];
     handleLogout: () => void;
     pathname: string;
+    isDark?: boolean;
 }
 
-const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLogout, pathname }) => {
+const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLogout, pathname, isDark = false }) => {
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(true); // Start with true to prevent flash
 
@@ -123,20 +124,28 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <Link href={link.href}>
-                                <Button
+                            <Link href={link.href}>                                <Button
                                     variant={isActive ? "secondary" : "ghost"}
                                     size="sm"
                                     className={cn(
                                         "text-sm font-medium transition-all duration-200 ease-out group relative overflow-hidden",
-                                        "min-w-0 px-3 lg:px-4",
-                                        isActive ? "text-primary font-semibold bg-primary/10" : "hover:bg-accent/50 hover:text-accent-foreground",
-                                        "transform hover:scale-105"
+                                        "min-w-0 px-3 lg:px-4 transform hover:scale-105",
+                                        isActive 
+                                            ? isDark 
+                                                ? "text-blue-400 font-semibold bg-blue-500/20 hover:bg-blue-500/30" 
+                                                : "text-primary font-semibold bg-primary/10 hover:bg-primary/20"
+                                            : isDark 
+                                                ? "hover:bg-gray-700/50 hover:text-gray-100 text-gray-300" 
+                                                : "hover:bg-accent/50 hover:text-accent-foreground"
                                     )}
-                                >
-                                    {isActive && (
+                                >                                    {isActive && (
                                         <motion.div
-                                            className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5"
+                                            className={cn(
+                                                "absolute inset-0",
+                                                isDark 
+                                                    ? "bg-gradient-to-r from-blue-500/20 to-blue-500/10" 
+                                                    : "bg-gradient-to-r from-primary/10 to-primary/5"
+                                            )}
                                             layoutId="activeTopTab"
                                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                         />
@@ -169,38 +178,34 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
             >
-                <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>
-                    <DropdownMenuTrigger asChild>
+                <DropdownMenu open={isMoreMenuOpen} onOpenChange={setIsMoreMenuOpen}>                    <DropdownMenuTrigger asChild>
                         <Button 
                             variant="ghost" 
                             size="sm"
                             className={cn(
                                 "text-sm font-medium transition-all duration-200 ease-out group relative overflow-hidden",
-                                "min-w-0 px-3 lg:px-4",
-                                "hover:bg-accent/50 hover:text-accent-foreground transform hover:scale-105"
+                                "min-w-0 px-3 lg:px-4 transform hover:scale-105",
+                                isDark 
+                                    ? "hover:bg-gray-700/50 hover:text-gray-100 text-gray-300" 
+                                    : "hover:bg-accent/50 hover:text-accent-foreground"
                             )}
                         >
-                            <motion.div className="flex items-center relative z-10 gap-1.5 lg:gap-2">
-                                <motion.div
-                                    animate={{ rotate: isMoreMenuOpen ? 90 : 0 }}
-                                    transition={{ duration: 0.2 }}
-                                    whileHover={{ 
-                                        scale: 1.1,
-                                        transition: { type: "spring", stiffness: 400 }
-                                    }}
-                                >
-                                    <MoreHorizontal className="h-4 w-4 flex-shrink-0" />
-                                </motion.div>
+                            <div className="flex items-center relative z-10 gap-1.5 lg:gap-2">
+                                <MoreHorizontal className="h-4 w-4 flex-shrink-0" />
                                 <span className="hidden lg:inline whitespace-nowrap">More</span>
-                            </motion.div>
+                            </div>
                         </Button>
                     </DropdownMenuTrigger>
-                    
-                    <DropdownMenuContent 
+                      <DropdownMenuContent 
                         align="end" 
-                        className="w-56 bg-card/95 backdrop-blur-lg border shadow-lg"
+                        className={cn(
+                            "w-56 backdrop-blur-lg border shadow-lg transition-colors duration-200",
+                            isDark 
+                                ? "bg-gray-800/95 border-gray-600/50" 
+                                : "bg-card/95"
+                        )}
                         sideOffset={5}
-                    >                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
+                    ><DropdownMenuLabel className="text-xs font-semibold text-muted-foreground">
                             Additional Options
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />

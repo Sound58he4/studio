@@ -31,13 +31,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
-  const { user, userId } = useAuth();
-  const [themeApplied, setThemeApplied] = useState(false);
+  const { user, userId } = useAuth();  const [themeApplied, setThemeApplied] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
   const [isNavbarMinimized, setIsNavbarMinimized] = useState(false); // Desktop navbar minimize state
+  const [isDark, setIsDark] = useState(false); // Track current theme state
 
   useEffect(() => {
     setIsClient(true);
@@ -56,13 +56,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('orientationchange', checkMobile);
     };
   }, []);
-
   useEffect(() => {
     const applyThemeFromFirestore = async () => {
       if (!isClient || !userId) {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add('light'); // Default to light theme
+        setIsDark(false);
         setThemeApplied(true);
         if (!userId) console.log("[Layout] User not logged in, applying default light theme.");
         return;
@@ -98,6 +98,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
+        setIsDark(theme === 'dark');
         console.log(`[Layout] Applied theme: ${theme}`);
         setThemeApplied(true);
       } catch (error) {
@@ -105,6 +106,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add('light'); // Default to light theme on error
+        setIsDark(false);
         setThemeApplied(true);
       }
     };
@@ -124,9 +126,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       console.log("[Layout] Firebase sign-out successful.");
       document.cookie = 'isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       document.cookie = 'userDisplayName=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-      console.log("[Layout] Cleared authentication cookies.");
-
-      if (isClient) {
+      console.log("[Layout] Cleared authentication cookies.");      if (isClient) {
         if (currentUserId) {
             localStorage.removeItem(`${LOCAL_STORAGE_PROFILE_KEY_PREFIX}${currentUserId}`);
             console.log(`[Layout] Cleared cached profile for user: ${currentUserId}`);
@@ -138,6 +138,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         root.classList.remove('light', 'dark');
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         root.classList.add(systemTheme);
+        setIsDark(systemTheme === 'dark');
         console.log(`[Layout] Reset theme to system default: ${systemTheme}`);
       }
 
@@ -223,28 +224,35 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         router.prefetch(route);
       });
     }
-  }, [isClient, router]);
-  return (
+  }, [isClient, router]);  return (
     <div 
       className={cn(
-        "min-h-screen flex flex-col bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200",
+        "min-h-screen flex flex-col transition-colors duration-300",
+        isDark 
+          ? "bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800" 
+          : "bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200",
         !themeApplied ? 'opacity-0' : 'opacity-100'
       )}
     >      {/* Top Navigation - Desktop Only */}
       {shouldShowTopNav && (
         <header 
-          className="bg-clayGlass backdrop-blur-lg border-b border-white/20 sticky top-0 z-50 shadow-clay animate-slide-down hidden md:block"
+          className={cn(
+            "sticky top-0 z-50 shadow-lg animate-slide-down hidden md:block transition-colors duration-300",
+            isDark 
+              ? "bg-gray-900/95 backdrop-blur-lg border-b border-gray-700/50" 
+              : "bg-clayGlass backdrop-blur-lg border-b border-white/20"
+          )}
         >
           <div className={cn(
             "container mx-auto flex justify-between items-center max-w-7xl gap-4",
             isNavbarMinimized ? "px-1 sm:px-2" : "px-2 sm:px-4 lg:px-6 xl:px-8"
           )}
             style={{ minHeight: isNavbarMinimized ? '40px' : '60px' }}
-          >
-            <div>
+          >            <div>
               <Link href="/dashboard" className={cn(
-                "flex items-center gap-2 font-bold text-primary hover:opacity-80 transition-opacity duration-200 group",
-                isNavbarMinimized ? "text-lg" : "text-xl"
+                "flex items-center gap-2 font-bold hover:opacity-80 transition-opacity duration-200 group",
+                isNavbarMinimized ? "text-lg" : "text-xl",
+                isDark ? "text-gray-100" : "text-primary"
               )}>
                 <Image
                   src="/logo.jpeg"
@@ -260,20 +268,22 @@ function MainLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
 
-            <div className="flex items-center gap-2">
-              {!isNavbarMinimized && (
+            <div className="flex items-center gap-2">              {!isNavbarMinimized && (
                 <TopNavigationBar 
                   navLinks={navLinks}
                   handleLogout={handleLogout}
                   pathname={pathname}
+                  isDark={isDark}
                 />
               )}
-              
-              <Button
+                <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsNavbarMinimized(!isNavbarMinimized)}
-                className="p-2 h-8 w-8"
+                className={cn(
+                  "p-2 h-8 w-8 transition-colors duration-200",
+                  isDark ? "hover:bg-gray-700/50 text-gray-300" : ""
+                )}
                 title={isNavbarMinimized ? "Expand navbar" : "Minimize navbar"}
               >
                 {isNavbarMinimized ? (
@@ -298,11 +308,20 @@ function MainLayout({ children }: { children: React.ReactNode }) {
           position: 'relative',
           zIndex: 1
         }}
-      >
-        {/* Background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ zIndex: -1 }}>
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl opacity-40" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-accent/5 to-primary/5 rounded-full blur-3xl opacity-30" />
+      >        {/* Background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+          <div className={cn(
+            "absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl opacity-40 transition-colors duration-300",
+            isDark 
+              ? "bg-gradient-to-br from-purple-500/10 to-blue-500/10" 
+              : "bg-gradient-to-br from-primary/5 to-secondary/5"
+          )} />
+          <div className={cn(
+            "absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl opacity-30 transition-colors duration-300",
+            isDark 
+              ? "bg-gradient-to-tr from-blue-500/10 to-purple-500/10" 
+              : "bg-gradient-to-tr from-accent/5 to-primary/5"
+          )} />
         </div>
 
         <div className={cn(
@@ -311,12 +330,15 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         )}>
           {children}
         </div>
-      </main>
-
-      {/* Floating navbar toggle when minimized - Desktop Only */}
+      </main>      {/* Floating navbar toggle when minimized - Desktop Only */}
       {isNavbarMinimized && shouldShowTopNav && (
         <button
-          className="hidden md:block fixed top-4 right-4 z-50 bg-primary text-primary-foreground p-2 rounded-full shadow-lg border-2 border-primary-foreground/20"
+          className={cn(
+            "hidden md:block fixed top-4 right-4 z-50 p-2 rounded-full shadow-lg border-2 transition-colors duration-300",
+            isDark 
+              ? "bg-gray-800 text-gray-100 border-gray-600/50 hover:bg-gray-700" 
+              : "bg-primary text-primary-foreground border-primary-foreground/20 hover:bg-primary/90"
+          )}
           onClick={() => setIsNavbarMinimized(false)}
           title="Expand navbar"
         >
@@ -325,22 +347,26 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       )}
       
       <Toaster />
-      <RoutePreloader />
-        {/* Bottom Navigation - Mobile Only */}
+      <RoutePreloader />        {/* Bottom Navigation - Mobile Only */}
       {shouldShowBottomNav && (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
           <div
-            className="bg-clayGlass backdrop-blur-xl border-t border-white/50 shadow-clayStrong py-2"
+            className={cn(
+              "backdrop-blur-xl border-t shadow-lg py-2 transition-colors duration-300",
+              isDark 
+                ? "bg-gray-900/95 border-gray-700/50" 
+                : "bg-clayGlass border-white/50 shadow-clayStrong"
+            )}
             style={{
               paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
             }}
-          >
-            <div data-bottom-nav>
+          >            <div data-bottom-nav>
               <BottomNavigationBar
                 navLinks={navLinks}
                 handleLogout={handleLogout}
                 isSheetOpen={isMobileMenuOpen}
                 setIsSheetOpen={setIsMobileMenuOpen}
+                isDark={isDark}
               />
             </div>
           </div>
