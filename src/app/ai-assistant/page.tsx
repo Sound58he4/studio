@@ -22,7 +22,13 @@ export default function AIAssistantPage() {
     const [isLoadingAIChat, setIsLoadingAIChat] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const chatInterfaceRef = useRef<ChatInterfaceHandle>(null);
-    const [isClient, setIsClient] = useState(false);    const [message, setMessage] = useState('');
+    const [isClient, setIsClient] = useState(false);    const [lightTheme, setLightTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            // Check if dark theme class is applied to document root
+            return !document.documentElement.classList.contains('dark');
+        }
+        return true; // Default to light theme
+    });const [message, setMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [isAIProcessing, setIsAIProcessing] = useState(false); // Track AI processing state
     const [showSuggestions, setShowSuggestions] = useState(false);
@@ -36,7 +42,29 @@ export default function AIAssistantPage() {
 
     useEffect(() => {
         setIsClient(true);
+    }, []);    useEffect(() => {
+        const handleThemeChange = () => {
+            if (typeof window !== 'undefined') {
+                setLightTheme(!document.documentElement.classList.contains('dark'));
+            }
+        };
+
+        // Listen for class changes on the document element
+        const observer = new MutationObserver(() => {
+            handleThemeChange();
+        });
+
+        if (typeof window !== 'undefined') {
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+
+        return () => observer.disconnect();
     }, []);
+
+    const isDark = !lightTheme;
 
     const handleClearAIChatLocally = useCallback(() => {
         if (chatInterfaceRef.current) {
@@ -237,12 +265,14 @@ export default function AIAssistantPage() {
             e.preventDefault();
             handleSendMessageWithMedia();
         }
-    }, [handleSendMessageWithMedia]);
-
-    if (authLoading) {
+    }, [handleSendMessageWithMedia]);    if (authLoading) {
         return (
             <motion.div 
-                className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+                className={`min-h-screen flex flex-col transition-all duration-500 ${
+                    isDark 
+                        ? 'bg-[#1a1a1a]' 
+                        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
@@ -253,17 +283,27 @@ export default function AIAssistantPage() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                    <Card className="w-full max-w-md backdrop-blur-sm bg-white/90 border-blue-200/50 shadow-lg">
+                    <Card className={`w-full max-w-md backdrop-blur-sm border-0 shadow-lg ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                            : 'bg-white/90 border-blue-200/50'
+                    }`}>
                         <CardContent className="p-8 text-center">
                             <motion.div 
-                                className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-purple-500"
+                                className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg ${
+                                    isDark 
+                                        ? 'bg-[#8b5cf6]' 
+                                        : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                }`}
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                             >
                                 <Bot className="w-8 h-8 text-white" />
                             </motion.div>
                             <motion.h2 
-                                className="text-xl font-semibold text-gray-900 mb-3"
+                                className={`text-xl font-semibold mb-3 ${
+                                    isDark ? 'text-white' : 'text-gray-900'
+                                }`}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
@@ -279,7 +319,9 @@ export default function AIAssistantPage() {
                                 {[0, 1, 2].map((i) => (
                                     <motion.div
                                         key={i}
-                                        className="w-2 h-2 bg-primary/60 rounded-full"
+                                        className={`w-2 h-2 rounded-full ${
+                                            isDark ? 'bg-[#8b5cf6]/60' : 'bg-primary/60'
+                                        }`}
                                         animate={{
                                             y: [0, -8, 0],
                                             opacity: [0.4, 1, 0.4]
@@ -294,7 +336,9 @@ export default function AIAssistantPage() {
                                 ))}
                             </motion.div>
                             <motion.p 
-                                className="text-sm text-gray-600"
+                                className={`text-sm ${
+                                    isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5 }}
@@ -306,12 +350,14 @@ export default function AIAssistantPage() {
                 </motion.div>
             </motion.div>
         );
-    }
-
-    if (error) {
+    }    if (error) {
         return (
             <motion.div 
-                className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+                className={`min-h-screen flex flex-col transition-all duration-500 ${
+                    isDark 
+                        ? 'bg-[#1a1a1a]' 
+                        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
@@ -322,18 +368,30 @@ export default function AIAssistantPage() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                    <Card className="w-full max-w-md backdrop-blur-sm bg-white/90 border-red-200/50 shadow-lg">
+                    <Card className={`w-full max-w-md backdrop-blur-sm border-0 shadow-lg ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                            : 'bg-white/90 border-red-200/50'
+                    }`}>
                         <CardHeader className="text-center pb-3">
                             <motion.div 
-                                className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-red-400 to-pink-500"
+                                className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-lg ${
+                                    isDark 
+                                        ? 'bg-red-600' 
+                                        : 'bg-gradient-to-br from-red-400 to-pink-500'
+                                }`}
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                             >
                                 <Bot className="w-8 h-8 text-white" />
                             </motion.div>
-                            <CardTitle className="text-red-700 text-lg">Connection Error</CardTitle>
-                            <CardDescription className="text-red-600/80">{error}</CardDescription>
+                            <CardTitle className={`text-lg ${
+                                isDark ? 'text-red-400' : 'text-red-700'
+                            }`}>Connection Error</CardTitle>
+                            <CardDescription className={`${
+                                isDark ? 'text-red-400/80' : 'text-red-600/80'
+                            }`}>{error}</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-0 text-center">
                             <motion.div
@@ -344,7 +402,11 @@ export default function AIAssistantPage() {
                                 <Button 
                                     onClick={initializeAIChatSession}
                                     variant="outline"
-                                    className="hover:bg-red-50 hover:border-red-300 transition-all duration-200"
+                                    className={`transition-all duration-200 ${
+                                        isDark 
+                                            ? 'hover:bg-red-600/10 hover:border-red-500' 
+                                            : 'hover:bg-red-50 hover:border-red-300'
+                                    }`}
                                 >
                                     Try Again
                                 </Button>
@@ -354,12 +416,14 @@ export default function AIAssistantPage() {
                 </motion.div>
             </motion.div>
         );
-    }
-
-    if (isLoadingAIChat || !chatId) {
+    }    if (isLoadingAIChat || !chatId) {
         return (
             <motion.div 
-                className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50"
+                className={`min-h-screen flex flex-col transition-all duration-500 ${
+                    isDark 
+                        ? 'bg-[#1a1a1a]' 
+                        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                }`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
@@ -370,17 +434,27 @@ export default function AIAssistantPage() {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.6, delay: 0.2 }}
                 >
-                    <Card className="w-full max-w-md backdrop-blur-sm bg-white/90 border-blue-200/50 shadow-lg">
+                    <Card className={`w-full max-w-md backdrop-blur-sm border-0 shadow-lg ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                            : 'bg-white/90 border-blue-200/50'
+                    }`}>
                         <CardContent className="p-8 text-center">
                             <motion.div 
-                                className="w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-purple-500"
+                                className={`w-16 h-16 mx-auto mb-6 rounded-2xl flex items-center justify-center shadow-lg ${
+                                    isDark 
+                                        ? 'bg-[#8b5cf6]' 
+                                        : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                }`}
                                 animate={{ rotate: 360 }}
                                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                             >
                                 <Bot className="w-8 h-8 text-white" />
                             </motion.div>
                             <motion.h2 
-                                className="text-xl font-semibold text-gray-900 mb-3"
+                                className={`text-xl font-semibold mb-3 ${
+                                    isDark ? 'text-white' : 'text-gray-900'
+                                }`}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
@@ -396,7 +470,9 @@ export default function AIAssistantPage() {
                                 {[0, 1, 2].map((i) => (
                                     <motion.div
                                         key={i}
-                                        className="w-1 h-1 bg-muted-foreground/40 rounded-full"
+                                        className={`w-1 h-1 rounded-full ${
+                                            isDark ? 'bg-[#8b5cf6]/40' : 'bg-muted-foreground/40'
+                                        }`}
                                         animate={{
                                             scale: [1, 1.5, 1],
                                             opacity: [0.3, 0.8, 0.3]
@@ -411,7 +487,9 @@ export default function AIAssistantPage() {
                                 ))}
                             </motion.div>
                             <motion.p 
-                                className="text-sm text-gray-600"
+                                className={`text-sm ${
+                                    isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5 }}
@@ -424,29 +502,45 @@ export default function AIAssistantPage() {
             </motion.div>
         );
     }    return (
-        <div className="min-h-screen flex flex-col transition-all duration-500 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 relative">            {/* Main Container - Fixed height with improved spacing */}
-            <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col px-2 sm:px-4 lg:px-6 pb-32 md:pb-28 h-[calc(100vh-80px)]">
-        
-                {/* Chat Header - Enhanced visual appeal */}
-                <div className="backdrop-blur-sm p-4 sm:p-5 lg:p-6 border shadow-xl rounded-b-2xl sm:rounded-b-3xl mx-2 sm:mx-4 lg:mx-6 mt-3 sm:mt-4 transition-all duration-300 flex-shrink-0 bg-white/95 border-gray-200/60">
+        <div className={`min-h-screen flex flex-col transition-all duration-500 relative ${
+            isDark 
+                ? 'bg-[#1a1a1a]' 
+                : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+        }`}>{/* Main Container - Fixed height with improved spacing */}
+            <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col px-2 sm:px-4 lg:px-6 pb-32 md:pb-28 h-[calc(100vh-80px)]">                {/* Chat Header - Enhanced visual appeal */}
+                <div className={`backdrop-blur-sm p-4 sm:p-5 lg:p-6 border shadow-xl rounded-b-2xl sm:rounded-b-3xl mx-2 sm:mx-4 lg:mx-6 mt-3 sm:mt-4 transition-all duration-300 flex-shrink-0 ${
+                    isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-white/95 border-gray-200/60'
+                }`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3 sm:space-x-4">
                             <div className="flex items-center space-x-3 sm:space-x-4">
                                 <div className="relative">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-xl bg-gradient-to-br from-blue-400 to-purple-500">
+                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-full flex items-center justify-center shadow-xl ${
+                                        isDark 
+                                            ? 'bg-[#8b5cf6]' 
+                                            : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                    }`}>
                                         <Bot className="w-5 h-5 sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-white" />
                                     </div>
                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 border-2 border-white rounded-full shadow-lg"></div>
                                 </div>
                                 <div>
-                                    <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900">Bago AI</h2>
+                                    <h2 className={`text-base sm:text-lg lg:text-xl font-semibold ${
+                                        isDark ? 'text-white' : 'text-gray-900'
+                                    }`}>Bago AI</h2>
                                     <p className="text-sm sm:text-base text-green-600 font-medium">Active now</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>                {/* Messages Container - Fixed height for proper scrolling */}
-                <div className="flex-1 mx-2 sm:mx-4 lg:mx-6 min-h-0 overflow-hidden border border-gray-200/60 rounded-2xl bg-white/60 backdrop-blur-sm shadow-lg mt-3">
+                <div className={`flex-1 mx-2 sm:mx-4 lg:mx-6 min-h-0 overflow-hidden border rounded-2xl backdrop-blur-sm shadow-lg mt-3 ${
+                    isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-white/60 border-gray-200/60'
+                }`}>
                     <ChatInterface 
                         friend={aiFriendProfile} 
                         currentUserId={userId} 
@@ -457,31 +551,49 @@ export default function AIAssistantPage() {
             </div>            {/* Combined Actions and Input Card - Enhanced styling */}
             <div className="fixed bottom-20 md:bottom-4 left-0 right-0 z-50">
                 <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 lg:px-6">
-                    <div className="backdrop-blur-lg p-4 sm:p-5 lg:p-6 shadow-2xl mx-2 sm:mx-4 lg:mx-6 rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/95 border border-gray-200/60">                        {/* Quick Actions - Improved spacing and styling */}
+                    <div className={`backdrop-blur-lg p-4 sm:p-5 lg:p-6 shadow-2xl mx-2 sm:mx-4 lg:mx-6 rounded-2xl sm:rounded-3xl transition-all duration-300 border ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                            : 'bg-white/95 border-gray-200/60'
+                    }`}>{/* Quick Actions - Improved spacing and styling */}
                         <div className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 mb-4 sm:mb-5">                            {/* AI Processing Status Indicator */}
                             {(isSending || isAIProcessing) && (
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
-                                    className="flex items-center space-x-3 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200/60 rounded-full px-4 py-2 shadow-lg"
+                                    className={`flex items-center space-x-3 border rounded-full px-4 py-2 shadow-lg ${
+                                        isDark 
+                                            ? 'bg-[#3a3a3a] border-[#8b5cf6]/30' 
+                                            : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200/60'
+                                    }`}
                                 >
                                     <motion.div
                                         animate={{ rotate: 360 }}
                                         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                                        className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                                        className={`w-5 h-5 rounded-full ${
+                                            isDark 
+                                                ? 'bg-[#8b5cf6]' 
+                                                : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                                        }`}
                                     />
-                                    <span className="text-sm font-medium text-gray-700">
+                                    <span className={`text-sm font-medium ${
+                                        isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>
                                         {isSending ? "Sending..." : "🤖 AI is thinking..."}
                                     </span>
                                 </motion.div>
-                            )}<Button 
+                            )}                            <Button 
                                 variant="outline" 
                                 size="sm" 
                                 className={`text-sm rounded-full px-4 sm:px-5 lg:px-6 py-2 sm:py-2.5 h-auto backdrop-blur-sm flex-1 sm:flex-none min-w-0 transition-all duration-300 font-medium ${
                                     showSuggestions 
-                                        ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 shadow-lg' 
-                                        : 'bg-blue-50/90 border-blue-200/60 text-blue-700 hover:bg-blue-100/90 shadow-md'
+                                        ? isDark
+                                            ? 'bg-[#8b5cf6] border-[#8b5cf6] text-white hover:bg-[#7c3aed] hover:border-[#7c3aed] shadow-lg'
+                                            : 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700 hover:border-blue-700 shadow-lg'
+                                        : isDark
+                                            ? 'bg-[#3a3a3a] border-[#8b5cf6]/30 text-[#8b5cf6] hover:bg-[#8b5cf6]/10 shadow-md'
+                                            : 'bg-blue-50/90 border-blue-200/60 text-blue-700 hover:bg-blue-100/90 shadow-md'
                                 }`}
                                 onClick={() => setShowSuggestions(!showSuggestions)}
                             >
@@ -498,9 +610,8 @@ export default function AIAssistantPage() {
                                     exit={{ opacity: 0, height: 0 }}
                                     transition={{ duration: 0.3 }}
                                     className="mb-3 sm:mb-4"
-                                >
-                                    <AISuggestionBar 
-                                        onSuggestionClick={(prompt) => {
+                                >                                    <AISuggestionBar 
+                                        onSuggestionClick={(prompt: string) => {
                                             setMessage(prompt);
                                             setShowSuggestions(false);
                                         }} 
@@ -543,28 +654,40 @@ export default function AIAssistantPage() {
                             </div>
                         )}
                           {/* Input Area - Enhanced styling */}
-                        <div className="flex items-end space-x-2 sm:space-x-3">
-                            <Button 
+                        <div className="flex items-end space-x-2 sm:space-x-3">                            <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 text-gray-500 hover:text-purple-600 hover:bg-purple-50/90 shadow-md hover:shadow-lg"
+                                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 shadow-md hover:shadow-lg ${
+                                    isDark 
+                                        ? 'text-gray-400 hover:text-[#8b5cf6] hover:bg-[#8b5cf6]/10' 
+                                        : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50/90'
+                                }`}
                                 onClick={handleCameraClick}
                             >
                                 <Camera className="w-5 h-5 sm:w-6 sm:h-6" />
                             </Button>                            <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 shadow-md hover:shadow-lg ${isRecording ? 'text-red-600 bg-red-50 hover:bg-red-100' : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50/90'}`}
+                                className={`h-10 w-10 sm:h-12 sm:w-12 rounded-full transition-all duration-300 flex-shrink-0 shadow-md hover:shadow-lg ${
+                                    isRecording 
+                                        ? 'text-red-600 bg-red-50 hover:bg-red-100' 
+                                        : isDark
+                                            ? 'text-gray-400 hover:text-[#8b5cf6] hover:bg-[#8b5cf6]/10'
+                                            : 'text-gray-500 hover:text-purple-600 hover:bg-purple-50/90'
+                                }`}
                                 onClick={handleMicClick}
                                 disabled={isSending}
                             >
                                 <Mic className="w-5 h-5 sm:w-6 sm:h-6" />
                                 {isRecording && <span className="sr-only">Recording...</span>}
-                            </Button>
-                            <div className="flex-1 relative min-w-0 flex items-end">
+                            </Button>                            <div className="flex-1 relative min-w-0 flex items-end">
                                 <Input
                                     placeholder="Type a message..."
-                                    className="pr-12 sm:pr-14 border-0 rounded-full h-10 sm:h-12 text-sm sm:text-base focus:ring-2 focus:ring-purple-200/60 transition-all backdrop-blur-sm bg-gray-100/90 focus:bg-white/95 shadow-md focus:shadow-lg font-medium"
+                                    className={`pr-12 sm:pr-14 border-0 rounded-full h-10 sm:h-12 text-sm sm:text-base focus:ring-2 transition-all backdrop-blur-sm shadow-md focus:shadow-lg font-medium ${
+                                        isDark 
+                                            ? 'bg-[#3a3a3a] focus:bg-[#3a3a3a] focus:ring-[#8b5cf6]/30 text-white placeholder-gray-400' 
+                                            : 'bg-gray-100/90 focus:bg-white/95 focus:ring-purple-200/60 text-gray-900 placeholder-gray-500'
+                                    }`}
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onKeyDown={handleKeyPressWithMedia}
@@ -581,7 +704,11 @@ export default function AIAssistantPage() {
                                     onClick={handleSendMessageWithMedia}
                                     disabled={!message.trim() && !imagePreview || isSending}
                                     size="icon"
-                                    className="absolute right-1 bottom-1 top-auto translate-y-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-xl transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100"
+                                    className={`absolute right-1 bottom-1 top-auto translate-y-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-xl transition-all duration-300 disabled:opacity-50 hover:scale-105 disabled:hover:scale-100 ${
+                                        isDark 
+                                            ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                                            : 'bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600'
+                                    }`}
                                 >
                                     <Send className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                 </Button>

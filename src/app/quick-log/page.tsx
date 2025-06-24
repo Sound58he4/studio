@@ -42,6 +42,16 @@ const LOCAL_STORAGE_QUICKLOG_KEY_PREFIX = 'bago-quicklog-items-';
 const LOCAL_STORAGE_DAILY_FOOD_LOGS_PREFIX = 'bago-daily-food-logs-';
 
 export default function QuickLogPage() {
+  // Detect dark mode via HTML class (from settings page)
+  const [isDark, setIsDark] = useState<boolean>(false);
+  useEffect(() => {
+    const updateDark = () => setIsDark(document.documentElement.classList.contains('dark'));
+    updateDark();
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
   const { toast } = useToast();
   const { userId, loading: authLoading } = useAuth();
   const [items, setItems] = useState<StoredQuickLogItem[]>([]);
@@ -399,46 +409,63 @@ export default function QuickLogPage() {
       </div>
     );
   }
-
   return (
     <motion.div 
-      className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 transition-all duration-500"
+      className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#1a1a1a]' 
+          : 'bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100'
+      }`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
       <div className="p-3 md:p-4">
         <div className="max-w-3xl mx-auto">
-          {/* Quick Log Header Card */}
-          <motion.div 
+          {/* Quick Log Header Card */}          <motion.div 
             className="mb-6"
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
+            <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                : 'bg-white/60 shadow-lg'
+            }`}>
+              <CardContent className="p-6">                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
+                      isDark 
+                        ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                    }`}>
                       <Zap className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+                      <h2 className={`text-xl md:text-2xl font-bold ${
+                        isDark ? 'text-white' : 'text-gray-800'
+                      }`}>
                         Quick Log
                       </h2>
-                      <p className="text-sm text-gray-600">
+                      <p className={`text-sm ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         Log your meals and workouts instantly
-                        {isSyncing && <span className="ml-2 text-xs text-purple-600 animate-pulse">(Syncing...)</span>}
+                        {isSyncing && <span className={`ml-2 text-xs animate-pulse ${
+                          isDark ? 'text-[#8b5cf6]' : 'text-purple-600'
+                        }`}>(Syncing...)</span>}
                       </p>
                     </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button 
                     onClick={() => { setShowForm(!showForm); setShowHistoryLogSection(false); setEditingItemId(null); setFormState(initialFormState); }}
-                    className="w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                    className={`w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 ${
+                      isDark 
+                        ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white' 
+                        : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+                    }`}
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     {showForm ? "Cancel New" : "Add New Quick Item"}
@@ -447,7 +474,11 @@ export default function QuickLogPage() {
                   <Button 
                     onClick={() => { setShowHistoryLogSection(!showHistoryLogSection); setShowForm(false); }}
                     variant="outline"
-                    className="w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 bg-white/60 border-gray-200 text-gray-700 hover:text-gray-800 hover:bg-white/80"
+                    className={`w-full font-semibold px-6 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 ${
+                      isDark 
+                        ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                        : 'bg-white/60 border-gray-200 text-gray-700 hover:text-gray-800 hover:bg-white/80'
+                    }`}
                   >
                     <Clock className="w-5 h-5 mr-2" />
                     {showHistoryLogSection ? "Hide History" : "Log from History"}
@@ -466,21 +497,28 @@ export default function QuickLogPage() {
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
                 className="mb-6"
-              >
-                <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
+              >                <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                    : 'bg-white/60 shadow-lg'
+                }`}>
                   <CardContent className="p-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="flex items-center space-x-3 mb-4">
-                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                          isDark 
+                            ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                            : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                        }`}>
                           {editingItemId ? <Edit3 className="w-5 h-5 text-white"/> : <BrainCircuit className="w-5 h-5 text-white"/>}
                         </div>
-                        <h3 className="text-lg font-bold text-gray-800">
+                        <h3 className={`text-lg font-bold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>
                           {editingItemId ? "Edit" : "Add New"} Quick Log Item
                         </h3>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="foodName" className="text-gray-700">Food Name *</Label>
+                      </div>                      <div>
+                        <Label htmlFor="foodName" className={isDark ? 'text-gray-300' : 'text-gray-700'}>Food Name *</Label>
                         <Input 
                           ref={foodNameInputRef} 
                           id="foodName" 
@@ -490,18 +528,22 @@ export default function QuickLogPage() {
                           onBlur={handleFoodNameBlur} 
                           placeholder="e.g., Apple, Chicken Breast" 
                           required 
-                          className="mt-2 rounded-2xl border-gray-200 bg-white/80 focus:border-purple-400 focus:ring-purple-200"
+                          className={`mt-2 rounded-2xl ${
+                            isDark 
+                              ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                              : 'border-gray-200 bg-white/80 focus:border-purple-400 focus:ring-purple-200'
+                          }`}
                         />
                         {isEstimatingNutrition && (
-                          <p className="text-xs text-purple-600 mt-2 flex items-center gap-1">
+                          <p className={`text-xs mt-2 flex items-center gap-1 ${
+                            isDark ? 'text-[#8b5cf6]' : 'text-purple-600'
+                          }`}>
                             <Loader2 size={12} className="animate-spin"/> AI estimating nutrition...
                           </p>
                         )}
-                      </div>
-
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                      </div>                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
-                          <Label htmlFor="calories" className="text-xs text-gray-600">Calories *</Label>
+                          <Label htmlFor="calories" className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Calories *</Label>
                           <div className="relative mt-1">
                             <Flame className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
                             <Input 
@@ -512,12 +554,16 @@ export default function QuickLogPage() {
                               onChange={handleInputChange} 
                               placeholder="0" 
                               required 
-                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                              className={`pl-10 rounded-2xl h-12 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                                  : 'border-gray-200 bg-white/80 focus:border-purple-400'
+                              }`}
                             />
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="protein" className="text-xs text-gray-600">Protein (g) *</Label>
+                          <Label htmlFor="protein" className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Protein (g) *</Label>
                           <div className="relative mt-1">
                             <Dumbbell className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500" />
                             <Input 
@@ -529,12 +575,16 @@ export default function QuickLogPage() {
                               onChange={handleInputChange} 
                               placeholder="0" 
                               required 
-                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                              className={`pl-10 rounded-2xl h-12 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                                  : 'border-gray-200 bg-white/80 focus:border-purple-400'
+                              }`}
                             />
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="carbohydrates" className="text-xs text-gray-600">Carbs (g) *</Label>
+                          <Label htmlFor="carbohydrates" className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Carbs (g) *</Label>
                           <div className="relative mt-1">
                             <Battery className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-yellow-500" />
                             <Input 
@@ -546,12 +596,16 @@ export default function QuickLogPage() {
                               onChange={handleInputChange} 
                               placeholder="0" 
                               required 
-                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                              className={`pl-10 rounded-2xl h-12 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                                  : 'border-gray-200 bg-white/80 focus:border-purple-400'
+                              }`}
                             />
                           </div>
                         </div>
                         <div>
-                          <Label htmlFor="fat" className="text-xs text-gray-600">Fat (g) *</Label>
+                          <Label htmlFor="fat" className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Fat (g) *</Label>
                           <div className="relative mt-1">
                             <Droplets className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
                             <Input 
@@ -563,21 +617,27 @@ export default function QuickLogPage() {
                               onChange={handleInputChange} 
                               placeholder="0" 
                               required 
-                              className="pl-10 rounded-2xl border-gray-200 bg-white/80 h-12 focus:border-purple-400"
+                              className={`pl-10 rounded-2xl h-12 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                                  : 'border-gray-200 bg-white/80 focus:border-purple-400'
+                              }`}
                             />
                           </div>
                         </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="servingSizeDescription" className="text-gray-700">Serving Size (Optional)</Label>
+                      </div>                      <div>
+                        <Label htmlFor="servingSizeDescription" className={isDark ? 'text-gray-300' : 'text-gray-700'}>Serving Size (Optional)</Label>
                         <Input 
                           id="servingSizeDescription" 
                           name="servingSizeDescription" 
                           value={formState.servingSizeDescription || ''} 
                           onChange={handleInputChange} 
                           placeholder="e.g., 1 cup, 100g" 
-                          className="mt-2 rounded-2xl border-gray-200 bg-white/80 focus:border-purple-400"
+                          className={`mt-2 rounded-2xl ${
+                            isDark 
+                              ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500 focus:border-[#8b5cf6]' 
+                              : 'border-gray-200 bg-white/80 focus:border-purple-400'
+                          }`}
                         />
                       </div>
 
@@ -587,14 +647,22 @@ export default function QuickLogPage() {
                           variant="outline" 
                           onClick={() => { setShowForm(false); setEditingItemId(null); setFormState(initialFormState); }} 
                           disabled={isSubmitting || isEstimatingNutrition} 
-                          className="rounded-2xl px-6 py-3 bg-white/60 border-gray-200 text-gray-700 hover:bg-white/80"
+                          className={`rounded-2xl px-6 py-3 ${
+                            isDark 
+                              ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                              : 'bg-white/60 border-gray-200 text-gray-700 hover:bg-white/80'
+                          }`}
                         >
                           Cancel
                         </Button>
                         <Button 
                           type="submit" 
                           disabled={isSubmitting || isEstimatingNutrition} 
-                          className="rounded-2xl px-6 py-3 bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg"
+                          className={`rounded-2xl px-6 py-3 shadow-lg ${
+                            isDark 
+                              ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white' 
+                              : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg'
+                          }`}
                         >
                           {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
                           {editingItemId ? "Update Item" : "Save Item"}
@@ -616,16 +684,27 @@ export default function QuickLogPage() {
                 exit={{ opacity: 0, y: -20, scale: 0.95 }}
                 transition={{ duration: 0.3 }}
                 className="mb-6"
-              >
-                <Card className="backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 bg-white/60 shadow-lg">
+              >                <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                    : 'bg-white/60 shadow-lg'
+                }`}>
                   <CardContent className="p-6">
                     <div className="flex items-center space-x-3 mb-4">
-                      <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                        isDark 
+                          ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                          : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                      }`}>
                         <History className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-800">Log from Your History</h3>
-                        <p className="text-sm text-gray-600">Select a past meal to log it for today or save as a new quick item.</p>
+                        <h3 className={`text-lg font-bold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Log from Your History</h3>
+                        <p className={`text-sm ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Select a past meal to log it for today or save as a new quick item.</p>
                       </div>
                     </div>
 
@@ -633,11 +712,14 @@ export default function QuickLogPage() {
                       {isLoadingHistory ? (
                         <div className="space-y-3">
                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
-                        </div>
-                      ) : historyError ? (
-                        <p className="text-center text-red-600 py-6 font-medium">{historyError}</p>
+                        </div>                      ) : historyError ? (
+                        <p className={`text-center py-6 font-medium ${
+                          isDark ? 'text-red-400' : 'text-red-600'
+                        }`}>{historyError}</p>
                       ) : historyLogItems.length === 0 ? (
-                        <p className="text-center text-gray-500 py-8 italic">No recent food history found to log from.</p>
+                        <p className={`text-center py-8 italic ${
+                          isDark ? 'text-gray-500' : 'text-gray-500'
+                        }`}>No recent food history found to log from.</p>
                       ) : (
                         <div className="space-y-3">
                           {historyLogItems.map((log, index) => (
@@ -645,47 +727,76 @@ export default function QuickLogPage() {
                               key={log.id}
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
-                              transition={{ duration: 0.3, delay: index * 0.05 }}
-                              className="p-4 backdrop-blur-sm rounded-2xl shadow-lg bg-white/40 hover:bg-white/60 transition-all duration-200 flex flex-col sm:flex-row sm:items-center gap-3"
+                              transition={{ duration: 0.3, delay: index * 0.05 }}                              className={`p-4 backdrop-blur-sm rounded-2xl shadow-lg transition-all duration-200 flex flex-col sm:flex-row sm:items-center gap-3 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] hover:bg-[#4a4a4a] border border-[#8b5cf6]/20' 
+                                  : 'bg-white/40 hover:bg-white/60'
+                              }`}
                             >
                               <div className="flex-grow">
-                                <p className="font-semibold text-gray-800 text-sm">{log.identifiedFoodName || log.foodItem}</p>
+                                <p className={`font-semibold text-sm ${
+                                  isDark ? 'text-white' : 'text-gray-800'
+                                }`}>{log.identifiedFoodName || log.foodItem}</p>
                                 <div className="flex flex-wrap gap-2 mt-2">
-                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                  <span className={`inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm text-xs ${
+                                    isDark 
+                                      ? 'bg-[#4a4a4a] border border-orange-500/30' 
+                                      : 'bg-white/30'
+                                  }`}>
                                     <Flame className="w-3 h-3 text-orange-500" />
-                                    <span className="text-gray-600">{log.calories.toFixed(0)} kcal</span>
+                                    <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>{log.calories.toFixed(0)} kcal</span>
                                   </span>
-                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                  <span className={`inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm text-xs ${
+                                    isDark 
+                                      ? 'bg-[#4a4a4a] border border-blue-500/30' 
+                                      : 'bg-white/30'
+                                  }`}>
                                     <Dumbbell className="w-3 h-3 text-blue-500" />
-                                    <span className="text-gray-600">P:{log.protein.toFixed(1)}g</span>
+                                    <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>P:{log.protein.toFixed(1)}g</span>
                                   </span>
-                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                  <span className={`inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm text-xs ${
+                                    isDark 
+                                      ? 'bg-[#4a4a4a] border border-yellow-500/30' 
+                                      : 'bg-white/30'
+                                  }`}>
                                     <Battery className="w-3 h-3 text-yellow-500" />
-                                    <span className="text-gray-600">C:{log.carbohydrates.toFixed(1)}g</span>
+                                    <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>C:{log.carbohydrates.toFixed(1)}g</span>
                                   </span>
-                                  <span className="inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm bg-white/30 text-xs">
+                                  <span className={`inline-flex items-center space-x-1 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm text-xs ${
+                                    isDark 
+                                      ? 'bg-[#4a4a4a] border border-green-500/30' 
+                                      : 'bg-white/30'
+                                  }`}>
                                     <Droplets className="w-3 h-3 text-green-500" />
-                                    <span className="text-gray-600">F:{log.fat.toFixed(1)}g</span>
+                                    <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>F:{log.fat.toFixed(1)}g</span>
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
-                              </div>
-                              <div className="flex gap-2 sm:ml-auto">
+                                <p className={`text-xs mt-1 ${
+                                  isDark ? 'text-gray-500' : 'text-gray-500'
+                                }`}>Logged: {format(parseISO(log.timestamp), "MMM d, p")}</p>
+                              </div>                              <div className="flex gap-2 sm:ml-auto">
                                 <Button 
                                   variant="outline" 
                                   size="sm" 
                                   onClick={() => triggerLogFromHistoryDialog(log)} 
                                   disabled={isSubmitting} 
-                                  className="rounded-2xl px-3 py-2 text-xs bg-white/60 border-gray-200 hover:bg-white/80"
+                                  className={`rounded-2xl px-3 py-2 text-xs ${
+                                    isDark 
+                                      ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                                      : 'bg-white/60 border-gray-200 hover:bg-white/80'
+                                  }`}
                                 >
                                   Log Now
-                                </Button>
-                                <Button 
+                                </Button>                                <Button 
                                   variant="outline" 
                                   size="sm" 
                                   onClick={() => handleAddHistoryItemToQuickLog(log)} 
                                   disabled={isSubmitting} 
-                                  className="rounded-2xl px-3 py-2 text-xs bg-white/60 border-gray-200 hover:bg-white/80"
+                                  className={`rounded-2xl px-3 py-2 text-xs ${
+                                    isDark 
+                                      ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                                      : 'bg-white/60 border-gray-200 hover:bg-white/80'
+                                  }`}
                                 >
                                   <BookmarkPlus size={12} className="mr-1"/>Save to Quick
                                 </Button>
@@ -710,19 +821,28 @@ export default function QuickLogPage() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <div className="backdrop-blur-sm rounded-3xl shadow-lg p-6 border-0 transition-all duration-300 bg-white/60 shadow-lg">
+              >                <div className={`backdrop-blur-sm rounded-3xl shadow-lg p-6 border-0 transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                    : 'bg-white/60 shadow-lg'
+                }`}>
                   <div className="flex items-center space-x-3 mb-2">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                      isDark 
+                        ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                    }`}>
                       <Sparkles className="w-5 h-5 text-white" />
                     </div>
-                    <h2 className="md:text-2xl font-bold text-base text-gray-800">
+                    <h2 className={`md:text-2xl font-bold text-base ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>
                       Your Saved Quick Log Items
                     </h2>
                   </div>
                   <div className="flex items-center space-x-2 text-sm">
-                    <TrendingUp className="w-4 h-4 text-purple-600" />
-                    <span className="text-gray-600">{items.length} items ready to log</span>
+                    <TrendingUp className={`w-4 h-4 ${isDark ? 'text-[#8b5cf6]' : 'text-purple-600'}`} />
+                    <span className={isDark ? 'text-gray-400' : 'text-gray-600'}>{items.length} items ready to log</span>
                   </div>
                 </div>
               </motion.div>
@@ -737,13 +857,16 @@ export default function QuickLogPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5 }}
-                  className="text-center py-12"
-                >
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center shadow-lg bg-gradient-to-r from-purple-500 to-purple-600">
+                  className="text-center py-12"                >
+                  <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl flex items-center justify-center shadow-lg ${
+                    isDark 
+                      ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                      : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                  }`}>
                     <Sparkles className="w-10 h-10 text-white" />
                   </div>
-                  <p className="text-gray-600 text-lg mb-4">You haven't added any quick log items yet.</p>
-                  <p className="text-gray-500 text-sm">Click "Add New Quick Item" to start!</p>
+                  <p className={`text-lg mb-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>You haven't added any quick log items yet.</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>Click "Add New Quick Item" to start!</p>
                 </motion.div>
               ) : (
                 <div className="space-y-4">
@@ -752,59 +875,90 @@ export default function QuickLogPage() {
                       key={item.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className={cn(
-                        "backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 hover:scale-[1.01] bg-white/60 shadow-lg",
-                        loggedTodayMap[item.id] && "bg-green-100/60 border-green-200"
+                      transition={{ duration: 0.5, delay: index * 0.1 }}                      className={cn(
+                        `backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 hover:scale-[1.01] ${
+                          isDark 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a] hover:shadow-[#8b5cf6]/20' 
+                            : 'bg-white/60 shadow-lg'
+                        }`,
+                        loggedTodayMap[item.id] && (isDark ? "bg-green-900/50 border-green-700/50" : "bg-green-100/60 border-green-200")
                       )}
                     >
                       <div className="p-5 md:p-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                          <div className="flex-1">
-                            <div className="flex items-start lg:items-center justify-between mb-3">
-                              <h3 className="text-lg md:text-xl font-bold flex-1 mr-3 text-gray-800">
+                          <div className="flex-1">                            <div className="flex items-start lg:items-center justify-between mb-3">
+                              <h3 className={`text-lg md:text-xl font-bold flex-1 mr-3 ${
+                                isDark ? 'text-white' : 'text-gray-800'
+                              }`}>
                                 {item.foodName}
                               </h3>
-                              <div className="flex items-center space-x-1 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg bg-white/40">
-                                <Hash className="w-3 h-3 text-purple-600" />
-                                <span className="text-sm text-purple-600 font-bold">
+                              <div className={`flex items-center space-x-1 backdrop-blur-sm px-3 py-1 rounded-full shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border border-[#8b5cf6]/30' 
+                                  : 'bg-white/40'
+                              }`}>
+                                <Hash className={`w-3 h-3 ${isDark ? 'text-[#8b5cf6]' : 'text-purple-600'}`} />
+                                <span className={`text-sm font-bold ${isDark ? 'text-[#8b5cf6]' : 'text-purple-600'}`}>
                                   {index + 1}
                                 </span>
                               </div>
                             </div>
-                            
-                            <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
-                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                              <div className="flex flex-wrap items-center gap-3 text-sm mb-3">
+                              <div className={`flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border border-orange-500/30' 
+                                  : 'bg-white/30'
+                              }`}>
                                 <Flame className="w-4 h-4 text-orange-500" />
-                                <span className="font-semibold text-gray-600">{item.calories.toFixed(0)} kcal</span>
+                                <span className={`font-semibold ${
+                                  isDark ? 'text-gray-300' : 'text-gray-600'
+                                }`}>{item.calories.toFixed(0)} kcal</span>
                               </div>
-                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                              <div className={`flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border border-blue-500/30' 
+                                  : 'bg-white/30'
+                              }`}>
                                 <Dumbbell className="w-4 h-4 text-blue-500" />
-                                <span className="text-gray-600">P: {item.protein.toFixed(1)}g</span>
+                                <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>P: {item.protein.toFixed(1)}g</span>
                               </div>
-                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                              <div className={`flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border border-yellow-500/30' 
+                                  : 'bg-white/30'
+                              }`}>
                                 <Battery className="w-4 h-4 text-yellow-500" />
-                                <span className="text-gray-600">C: {item.carbohydrates.toFixed(1)}g</span>
+                                <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>C: {item.carbohydrates.toFixed(1)}g</span>
                               </div>
-                              <div className="flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg bg-white/30">
+                              <div className={`flex items-center space-x-2 backdrop-blur-sm px-3 py-2 rounded-full shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a] border border-green-500/30' 
+                                  : 'bg-white/30'
+                              }`}>
                                 <Droplets className="w-4 h-4 text-green-500" />
-                                <span className="text-gray-600">F: {item.fat.toFixed(1)}g</span>
+                                <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>F: {item.fat.toFixed(1)}g</span>
                               </div>
                             </div>
-                            
-                            {item.servingSizeDescription && (
-                              <p className="text-sm backdrop-blur-sm rounded-2xl px-4 py-2 inline-block shadow-lg text-gray-500 bg-white/40">
+                              {item.servingSizeDescription && (
+                              <p className={`text-sm backdrop-blur-sm rounded-2xl px-4 py-2 inline-block shadow-lg ${
+                                isDark 
+                                  ? 'text-gray-400 bg-[#3a3a3a] border border-[#8b5cf6]/20' 
+                                  : 'text-gray-500 bg-white/40'
+                              }`}>
                                 {item.servingSizeDescription}
                               </p>
                             )}
                           </div>
 
-                          <div className="flex items-center justify-between lg:justify-end space-x-3 lg:ml-6">
-                            <div className="flex items-center space-x-2">
+                          <div className="flex items-center justify-between lg:justify-end space-x-3 lg:ml-6">                            <div className="flex items-center space-x-2">
                               <Button 
                                 size="sm" 
                                 variant="ghost"
-                                className="backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl bg-white/60 text-gray-600 hover:text-gray-800 hover:bg-white/80" 
+                                className={`backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl ${
+                                  isDark 
+                                    ? 'bg-[#3a3a3a] text-gray-400 hover:text-white hover:bg-[#4a4a4a] border border-[#8b5cf6]/20' 
+                                    : 'bg-white/60 text-gray-600 hover:text-gray-800 hover:bg-white/80'
+                                }`} 
                                 onClick={() => handleEdit(item)}
                                 title="Edit Item"
                               >
@@ -816,7 +970,11 @@ export default function QuickLogPage() {
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
-                                    className="backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl bg-white/60 text-gray-600 hover:text-red-500 hover:bg-red-50"
+                                    className={`backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl ${
+                                      isDark 
+                                        ? 'bg-[#3a3a3a] text-gray-400 hover:text-red-400 hover:bg-red-900/50 border border-[#8b5cf6]/20' 
+                                        : 'bg-white/60 text-gray-600 hover:text-red-500 hover:bg-red-50'
+                                    }`}
                                     title="Delete Item"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -834,13 +992,14 @@ export default function QuickLogPage() {
                                 </AlertDialogContent>
                               </AlertDialog>
                             </div>
-                            
-                            <Button 
+                              <Button 
                               className={cn(
                                 "font-semibold px-6 py-3 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 text-sm",
                                 loggedTodayMap[item.id] 
                                   ? "bg-green-500 hover:bg-green-600 text-white" 
-                                  : "bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                                  : isDark 
+                                    ? "bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white" 
+                                    : "bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
                               )}
                               onClick={() => handleLogForTodayFromPreset(item)} 
                               disabled={isSubmitting || loggedTodayMap[item.id]}
@@ -870,29 +1029,35 @@ export default function QuickLogPage() {
       </div>
 
       {/* Log from History Dialog */}
-      <AlertDialog open={showLogFromHistoryDialog} onOpenChange={setShowLogFromHistoryDialog}>
-        <AlertDialogContent className="rounded-3xl bg-white/95 backdrop-blur-lg">
+      <AlertDialog open={showLogFromHistoryDialog} onOpenChange={setShowLogFromHistoryDialog}>        <AlertDialogContent className={`rounded-3xl backdrop-blur-lg ${
+          isDark 
+            ? 'bg-[#2a2a2a]/95 border border-[#3a3a3a]' 
+            : 'bg-white/95'
+        }`}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Log "{itemToLogFromHistory?.identifiedFoodName || itemToLogFromHistory?.foodItem}" for Today?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className={isDark ? 'text-white' : undefined}>Log "{itemToLogFromHistory?.identifiedFoodName || itemToLogFromHistory?.foodItem}" for Today?</AlertDialogTitle>
+            <AlertDialogDescription className={isDark ? 'text-gray-400' : undefined}>
               Review and edit nutritional details if needed before logging.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {itemToLogFromHistory && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-4 py-4">              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="dialog-foodName" className="text-xs">Food Name</Label>
+                  <Label htmlFor="dialog-foodName" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Food Name</Label>
                   <Input 
                     id="dialog-foodName" 
                     name="foodName" 
                     value={editableHistoryLogDetails.foodName || ''} 
                     onChange={handleDialogInputChange} 
-                    className="mt-1 h-10 text-sm rounded-2xl bg-white/80"
+                    className={`mt-1 h-10 text-sm rounded-2xl ${
+                      isDark 
+                        ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white' 
+                        : 'bg-white/80'
+                    }`}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dialog-calories" className="text-xs">Calories (kcal)</Label>
+                  <Label htmlFor="dialog-calories" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Calories (kcal)</Label>
                   <div className="relative mt-1">
                     <Flame className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-orange-500" />
                     <Input 
@@ -901,14 +1066,17 @@ export default function QuickLogPage() {
                       type="number" 
                       value={editableHistoryLogDetails.calories || 0} 
                       onChange={handleDialogInputChange} 
-                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                      className={`pl-10 h-10 text-sm rounded-2xl ${
+                        isDark 
+                          ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white' 
+                          : 'bg-white/80'
+                      }`}
                     />
                   </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
+              </div>              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <Label htmlFor="dialog-protein" className="text-xs">Protein (g)</Label>
+                  <Label htmlFor="dialog-protein" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Protein (g)</Label>
                   <div className="relative mt-1">
                     <Dumbbell className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-blue-500" />
                     <Input 
@@ -918,12 +1086,16 @@ export default function QuickLogPage() {
                       step="0.1" 
                       value={editableHistoryLogDetails.protein || 0} 
                       onChange={handleDialogInputChange} 
-                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                      className={`pl-10 h-10 text-sm rounded-2xl ${
+                        isDark 
+                          ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white' 
+                          : 'bg-white/80'
+                      }`}
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="dialog-carbohydrates" className="text-xs">Carbs (g)</Label>
+                  <Label htmlFor="dialog-carbohydrates" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Carbs (g)</Label>
                   <div className="relative mt-1">
                     <Battery className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-yellow-500" />
                     <Input 
@@ -933,12 +1105,16 @@ export default function QuickLogPage() {
                       step="0.1" 
                       value={editableHistoryLogDetails.carbohydrates || 0} 
                       onChange={handleDialogInputChange} 
-                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                      className={`pl-10 h-10 text-sm rounded-2xl ${
+                        isDark 
+                          ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white' 
+                          : 'bg-white/80'
+                      }`}
                     />
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="dialog-fat" className="text-xs">Fat (g)</Label>
+                  <Label htmlFor="dialog-fat" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Fat (g)</Label>
                   <div className="relative mt-1">
                     <Droplets className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-500" />
                     <Input 
@@ -948,29 +1124,39 @@ export default function QuickLogPage() {
                       step="0.1" 
                       value={editableHistoryLogDetails.fat || 0} 
                       onChange={handleDialogInputChange} 
-                      className="pl-10 h-10 text-sm rounded-2xl bg-white/80"
+                      className={`pl-10 h-10 text-sm rounded-2xl ${
+                        isDark 
+                          ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white' 
+                          : 'bg-white/80'
+                      }`}
                     />
                   </div>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="dialog-servingSizeDescription" className="text-xs">Serving/Notes</Label>
+              </div>              <div>
+                <Label htmlFor="dialog-servingSizeDescription" className={`text-xs ${isDark ? 'text-gray-300' : ''}`}>Serving/Notes</Label>
                 <Input 
                   id="dialog-servingSizeDescription" 
                   name="servingSizeDescription" 
                   value={editableHistoryLogDetails.servingSizeDescription || ''} 
                   onChange={handleDialogInputChange} 
                   placeholder="e.g., 1 bowl, as eaten" 
-                  className="mt-1 h-10 text-sm rounded-2xl bg-white/80"
+                  className={`mt-1 h-10 text-sm rounded-2xl ${
+                    isDark 
+                      ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-white placeholder:text-gray-500' 
+                      : 'bg-white/80'
+                  }`}
                 />
               </div>
             </div>
-          )}
-          <AlertDialogFooter className="mt-2">
+          )}          <AlertDialogFooter className="mt-2">
             <AlertDialogCancel 
               onClick={() => setShowLogFromHistoryDialog(false)} 
               disabled={isSubmitting}
-              className="rounded-2xl"
+              className={`rounded-2xl ${
+                isDark 
+                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                  : ''
+              }`}
             >
               Cancel
             </AlertDialogCancel>
@@ -978,14 +1164,22 @@ export default function QuickLogPage() {
               onClick={() => confirmLogFromHistory(true)} 
               disabled={isSubmitting} 
               variant="outline"
-              className="rounded-2xl"
+              className={`rounded-2xl ${
+                isDark 
+                  ? 'bg-[#3a3a3a] border-[#8b5cf6]/20 text-gray-300 hover:text-white hover:bg-[#4a4a4a]' 
+                  : ''
+              }`}
             >
               Log As Is
             </Button>
             <Button 
               onClick={() => confirmLogFromHistory(false)} 
               disabled={isSubmitting} 
-              className="bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-2xl"
+              className={`rounded-2xl ${
+                isDark 
+                  ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white' 
+                  : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+              }`}
             >
               {isSubmitting ? <Loader2 size={16} className="animate-spin mr-1.5"/> : <Save size={16} className="mr-1.5"/>} 
               Log Edited Values

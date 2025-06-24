@@ -46,6 +46,38 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
     const performanceRef = usePerformanceMonitor('ChatInterface');
     const firebasePerf = useFirebasePerformance();
     
+    const [lightTheme, setLightTheme] = useState(() => {
+        if (typeof window !== 'undefined') {
+            // Check if dark theme class is applied to document root
+            return !document.documentElement.classList.contains('dark');
+        }
+        return true; // Default to light theme
+    });
+
+    useEffect(() => {
+        const handleThemeChange = () => {
+            if (typeof window !== 'undefined') {
+                setLightTheme(!document.documentElement.classList.contains('dark'));
+            }
+        };
+
+        // Listen for class changes on the document element
+        const observer = new MutationObserver(() => {
+            handleThemeChange();
+        });
+
+        if (typeof window !== 'undefined') {
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+
+        return () => observer.disconnect();
+    }, []);
+
+    const isDark = !lightTheme;
+    
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const initialAIMessage: ChatMessage = {
         id: `ai-greeting-${Date.now()}`, senderId: AI_ASSISTANT_ID,
@@ -316,7 +348,11 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     <AnimatePresence>
                         {!shouldAutoScroll && (
                             <motion.button
-                                className="absolute bottom-4 right-4 z-30 bg-gradient-to-br from-blue-500 to-purple-600 text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border border-white/20 backdrop-blur-sm"
+                                className={`absolute bottom-4 right-4 z-30 text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border border-white/20 backdrop-blur-sm ${
+                                    isDark 
+                                        ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                                        : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                }`}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0, opacity: 0 }}
