@@ -13,6 +13,7 @@ import { LogOut, Settings, Menu, User, History as HistoryIcon, BarChart2, Bot, U
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { auth, db } from '@/lib/firebase/exports';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import BottomNavigationBar from '@/components/layout/BottomNavigationBar';
@@ -398,7 +399,9 @@ export default function RootLayout({
         fontSans.variable
       )}>
         <AuthProvider>
+          <ThemeProvider>
             <MainLayout>{children}</MainLayout>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

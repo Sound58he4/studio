@@ -36,8 +36,8 @@ interface ProcessedFoodResult extends Nutrition {
 
 export default function LogFoodPage() {
   const { toast } = useToast();
-  const { user, userId, loading: authLoading } = useAuth();  // Always use light theme (clay design)
-  const lightTheme = true;
+  const { user, userId, loading: authLoading } = useAuth();
+  
   const [activeTab, setActiveTab] = useState("manual");
   const [isLoading, setIsLoading] = useState(false);
   const [isIdentifying, setIsIdentifying] = useState(false);
@@ -47,6 +47,7 @@ export default function LogFoodPage() {
   const [manualInput, setManualInput] = useState("");
   const [aiSuggestions, setAiSuggestions] = useState<SuggestionItem[]>([]); 
   const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -56,10 +57,28 @@ export default function LogFoodPage() {
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);  const [recordingTime, setRecordingTime] = useState(0);  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);  
+  const [recordingTime, setRecordingTime] = useState(0);  
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isVoiceSupported, setIsVoiceSupported] = useState<boolean | null>(null);
 
-  // Always use light theme (clay design)
+  // Detect theme from HTML class (consistent with Overview page)
+  useEffect(() => {
+    const updateDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    updateDark(); // Initial check
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
   
   const resetInputState = useCallback((tabToKeep?: string) => {
       setError(null);
@@ -564,7 +583,11 @@ export default function LogFoodPage() {
   };
   if (authLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+      <div className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#1a1a1a]' 
+          : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'
+      }`}>
         <div className="p-3 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
             <motion.div
@@ -572,9 +595,15 @@ export default function LogFoodPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+              <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl ${
+                isDark 
+                  ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                  : 'bg-clay-100/70'
+              }`}>
                 <CardContent className="p-4 md:p-6 flex justify-center items-center">
-                  <Loader2 className="h-8 w-8 animate-spin text-purple-600"/>
+                  <Loader2 className={`h-8 w-8 animate-spin ${
+                    isDark ? 'text-[#8b5cf6]' : 'text-purple-600'
+                  }`}/>
                 </CardContent>
               </Card>
             </motion.div>
@@ -584,7 +613,11 @@ export default function LogFoodPage() {
     );
   }  if (!userId && !authLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+      <div className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#1a1a1a]' 
+          : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'
+      }`}>
         <div className="p-3 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
             <motion.div
@@ -592,10 +625,18 @@ export default function LogFoodPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+              <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl ${
+                isDark 
+                  ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                  : 'bg-clay-100/70'
+              }`}>
                 <CardContent className="p-4 md:p-6 text-center">
-                  <h2 className="text-xl font-bold text-gray-800 mb-2">Authentication Required</h2>
-                  <p className="text-gray-600">Please log in to access this page.</p>
+                  <h2 className={`text-xl font-bold mb-2 ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                  }`}>Authentication Required</h2>
+                  <p className={`${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Please log in to access this page.</p>
                 </CardContent>
               </Card>
             </motion.div>
@@ -603,7 +644,11 @@ export default function LogFoodPage() {
         </div>
       </div>
     );
-  }return (    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-all duration-500">
+  }return (    <div className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
+      isDark 
+        ? 'bg-[#1a1a1a]' 
+        : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'
+    }`}>
       <div className="p-3 md:p-6">
         <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
           {/* Header */}
@@ -613,22 +658,38 @@ export default function LogFoodPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="backdrop-blur-sm rounded-3xl shadow-clayStrong border-0 p-4 md:p-6 text-center bg-clay-100/70 transition-all duration-500">
+          <div className={`backdrop-blur-sm rounded-3xl shadow-clayStrong border-0 p-4 md:p-6 text-center transition-all duration-500 ${
+            isDark 
+              ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+              : 'bg-clay-100/70'
+          }`}>
             <div className="flex items-center justify-center space-x-3 md:space-x-4 mb-3 md:mb-4">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-lg">
+              <div className={`w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                  : 'bg-gradient-to-r from-purple-500 to-purple-600'
+              }`}>
                 <ChefHat className="w-6 h-6 md:w-8 md:h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 text-gray-800">
+                <h1 className={`text-2xl md:text-3xl lg:text-4xl font-bold mb-2 ${
+                  isDark ? 'text-white' : 'text-gray-800'
+                }`}>
                   Log Your Meal
                 </h1>
                 <div className="flex items-center justify-center space-x-2">
-                  <Brain className="w-4 h-4 md:w-5 md:h-5 text-purple-600" />
-                  <span className="text-sm md:text-base text-purple-600 font-semibold">AI-Powered Nutrition</span>
+                  <Brain className={`w-4 h-4 md:w-5 md:h-5 ${
+                    isDark ? 'text-[#8b5cf6]' : 'text-purple-600'
+                  }`} />
+                  <span className={`text-sm md:text-base font-semibold ${
+                    isDark ? 'text-[#8b5cf6]' : 'text-purple-600'
+                  }`}>AI-Powered Nutrition</span>
                 </div>
               </div>
             </div>
-            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
+            <p className={`text-sm md:text-base max-w-2xl mx-auto ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>
               Transform your nutrition tracking with intelligent meal logging using text, photos, or voice commands.
             </p>
           </div>
@@ -638,11 +699,21 @@ export default function LogFoodPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
         >
-          <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl overflow-hidden mb-6 md:mb-8">
-            <div className="flex relative p-2 bg-white/20">
+          <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl overflow-hidden mb-6 md:mb-8 ${
+            isDark 
+              ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+              : 'bg-clay-100/70'
+          }`}>
+            <div className={`flex relative p-2 ${
+              isDark ? 'bg-[#3a3a3a]/20' : 'bg-white/20'
+            }`}>
               {/* Active Tab Indicator */}
               <div 
-                className={`absolute top-2 bottom-2 rounded-xl shadow-lg transition-all duration-500 ease-in-out bg-gradient-to-r from-purple-500 to-purple-600 ${
+                className={`absolute top-2 bottom-2 rounded-xl shadow-lg transition-all duration-500 ease-in-out ${
+                  isDark 
+                    ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                    : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                } ${
                   activeTab === 'manual' ? 'left-2 right-[66.66%]' :
                   activeTab === 'image' ? 'left-[33.33%] right-[33.33%]' :
                   'left-[66.66%] right-2'
@@ -654,7 +725,9 @@ export default function LogFoodPage() {
                 className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
                   activeTab === 'manual' 
                     ? 'text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                    : isDark 
+                      ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]/30' 
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
                 }`}
               >
                 <FileText className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
@@ -666,7 +739,9 @@ export default function LogFoodPage() {
                 className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
                   activeTab === 'image' 
                     ? 'text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                    : isDark 
+                      ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]/30' 
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
                 }`}
               >
                 <Camera className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
@@ -678,7 +753,9 @@ export default function LogFoodPage() {
                 className={`flex-1 py-3 md:py-4 px-2 md:px-4 text-center font-bold transition-all duration-300 flex items-center justify-center space-x-1.5 md:space-x-2 relative z-10 rounded-xl ${
                   activeTab === 'voice' 
                     ? 'text-white shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
+                    : isDark 
+                      ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]/30' 
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
                 }`}
               >
                 <Mic className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
@@ -692,28 +769,50 @@ export default function LogFoodPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl">
+          <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl ${
+            isDark 
+              ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+              : 'bg-clay-100/70'
+          }`}>
             <CardContent className="p-4 md:p-6">{/* Manual Tab Content */}
             {activeTab === 'manual' && (
               <div className="space-y-6 md:space-y-8">
                 <div>                  <div className="flex items-center space-x-3 mb-4 md:mb-6">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center shadow-clayInset ${
+                      isDark 
+                        ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                    }`}>
                       <FileText className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Describe Your Meal</h3>
-                  </div>                  <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-lg border bg-clay-100/40">
+                    <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>Describe Your Meal</h3>
+                  </div>                  <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 shadow-lg border ${
+                    isDark 
+                      ? 'bg-[#3a3a3a]/40 border-[#8b5cf6]/20' 
+                      : 'bg-clay-100/40'
+                  }`}>
                     <Textarea
                       value={manualInput}
                       onChange={(e) => setManualInput(e.target.value)}
                       placeholder="Try describing: '2 scrambled eggs with whole wheat toast and avocado', 'Large grilled chicken Caesar salad', 'Homemade beef stir-fry with brown rice'..."
-                      className="w-full min-h-[120px] md:min-h-[140px] resize-none bg-transparent border-0 shadow-none text-sm sm:text-base md:text-lg focus:ring-0 focus:outline-none text-gray-800 placeholder:text-gray-500"
+                      className={`w-full min-h-[120px] md:min-h-[140px] resize-none bg-transparent border-0 shadow-none text-sm sm:text-base md:text-lg focus:ring-0 focus:outline-none ${
+                        isDark 
+                          ? 'text-white placeholder:text-gray-400' 
+                          : 'text-gray-800 placeholder:text-gray-500'
+                      }`}
                       disabled={isLoading}
                     />
                   </div>
                 </div>                {/* Main Action Button */}
                 <Button
                   onClick={handleManualSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                  className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg text-white ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea]' 
+                      : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
+                  }`}
                   disabled={!manualInput.trim() || isLoading}
                 >
                   {isLoading ? (
@@ -737,36 +836,62 @@ export default function LogFoodPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                   >
-                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-6 md:mt-8 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
                       <CardContent className="p-4 md:p-6">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
                           <div className="flex items-center space-x-3 md:space-x-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center ${
+                              isDark 
+                                ? 'bg-green-600' 
+                                : 'bg-green-500'
+                            }`}>
                               <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                             </div>
                             <div>
-                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                              <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                                isDark ? 'text-white' : 'text-gray-800'
+                              }`}>
                                 AI Analysis Complete ({pendingResults.length} items)
                               </h3>
-                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                              <p className={`text-sm md:text-base ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Review and confirm before logging</p>
                             </div>
                           </div>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={clearAllPending}
-                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                            className={`backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-200 ${
+                              isDark 
+                                ? 'bg-[#3a3a3a]/80 hover:bg-red-900/20 border-red-400/30' 
+                                : 'bg-white/80'
+                            }`}
                           >
                             <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                             <span>Clear All</span>
                           </Button>
                         </div>
-                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                        <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong ${
+                          isDark 
+                            ? 'bg-green-900/30 border-green-500/30' 
+                            : 'bg-green-100/60'
+                        }`}>
                           <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                            <Brain className={`w-4 h-4 md:w-5 md:h-5 ${
+                              isDark ? 'text-green-400' : 'text-green-600'
+                            }`} />
+                            <span className={`font-bold text-sm md:text-base ${
+                              isDark ? 'text-green-300' : 'text-green-700'
+                            }`}>Smart Nutrition Analysis</span>
                           </div>
-                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                          <p className={`leading-relaxed text-xs sm:text-sm md:text-base ${
+                            isDark ? 'text-green-400' : 'text-green-600'
+                          }`}>
                             Our AI has analyzed your meal and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
                           </p>
                         </div>                        {/* Items Display - Mobile Cards & Desktop Table */}
@@ -774,12 +899,22 @@ export default function LogFoodPage() {
                           {/* Mobile Card View */}
                           <div className="block md:hidden space-y-3">
                             {pendingResults.map((item, index) => (
-                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                              <div key={item.id} className={`backdrop-blur-sm rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a]/60 hover:bg-[#3a3a3a]/70 border-[#4a4a4a]' 
+                                  : 'bg-clay-100/60 hover:bg-clay-200/40 border-clay-200'
+                              }`}>
                                 <div className="flex justify-between items-start mb-3">
                                   <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    <h4 className={`text-sm font-bold mb-1 ${
+                                      isDark ? 'text-white' : 'text-gray-800'
+                                    }`}>{item.identifiedFoodName}</h4>
                                     {item.originalDescription && (
-                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                      <div className={`text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border mb-2 ${
+                                        isDark 
+                                          ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                          : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                      }`}>
                                         From: {item.originalDescription.substring(0, 25)}...
                                       </div>
                                     )}
@@ -788,27 +923,63 @@ export default function LogFoodPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeItem(item.id)}
-                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                    className={`h-8 w-8 rounded-xl transition-all duration-200 shadow-sm ml-2 ${
+                                      isDark 
+                                        ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                        : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                    }`}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 text-center">
-                                  <div className="bg-purple-50 rounded-lg p-2">
-                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
-                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-purple-900/40 border border-purple-500/30' 
+                                      : 'bg-purple-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-purple-300' : 'text-purple-600'
+                                    }`}>Calories</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-purple-200' : 'text-purple-700'
+                                    }`}>{item.calories.toFixed(0)}</div>
                                   </div>
-                                  <div className="bg-blue-50 rounded-lg p-2">
-                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
-                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-blue-900/40 border border-blue-500/30' 
+                                      : 'bg-blue-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-blue-300' : 'text-blue-600'
+                                    }`}>Protein</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-blue-200' : 'text-blue-700'
+                                    }`}>{item.protein.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-green-50 rounded-lg p-2">
-                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
-                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-green-900/40 border border-green-500/30' 
+                                      : 'bg-green-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-green-300' : 'text-green-600'
+                                    }`}>Carbs</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-green-200' : 'text-green-700'
+                                    }`}>{item.carbohydrates.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-orange-50 rounded-lg p-2">
-                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
-                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-orange-900/40 border border-orange-500/30' 
+                                      : 'bg-orange-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-orange-300' : 'text-orange-600'
+                                    }`}>Fat</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-orange-200' : 'text-orange-700'
+                                    }`}>{item.fat.toFixed(1)}g</div>
                                   </div>
                                 </div>
                               </div>
@@ -816,42 +987,88 @@ export default function LogFoodPage() {
                           </div>
 
                           {/* Desktop Table View */}
-                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                          <div className={`hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm ${
+                            isDark 
+                              ? 'bg-[#3a3a3a]/40 border-[#4a4a4a]' 
+                              : 'bg-clay-100/40 border-clay-200'
+                          }`}>
                             <div className="overflow-x-auto">
                               <table className="w-full">
-                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                <thead className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#4a4a4a]/50' 
+                                    : 'bg-clay-300/50'
+                                }`}>
                                   <tr>
-                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                    <th className={`text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>AI Identified Food</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Calories</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Protein</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Carbs</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Fat</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Actions</th>
                                   </tr>
                                 </thead>
-                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                <tbody className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#3a3a3a]/30' 
+                                    : 'bg-clay-100/30'
+                                }`}>
                                   {pendingResults.map((item, index) => (
-                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                    <tr key={item.id} className={`border-b transition-colors duration-200 ${
+                                      isDark 
+                                        ? 'hover:bg-[#3a3a3a]/40 bg-[#3a3a3a]/30 border-[#4a4a4a]' 
+                                        : 'hover:bg-clay-200/40 bg-clay-100/30 border-clay-200'
+                                    }`}>
                                       <td className="py-3 md:py-5 px-3 md:px-6">
                                         <div>
-                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          <div className={`text-sm md:text-base font-bold mb-1 md:mb-2 ${
+                                            isDark ? 'text-white' : 'text-gray-800'
+                                          }`}>{item.identifiedFoodName}</div>
                                           {item.originalDescription && (
-                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                            <div className={`text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border ${
+                                              isDark 
+                                                ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                                : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                            }`}>
                                               From: {item.originalDescription.substring(0, 30)}...
                                             </div>
                                           )}
                                         </div>
                                       </td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold ${
+                                        isDark ? 'text-purple-300' : 'text-purple-600'
+                                      }`}>{item.calories.toFixed(0)}</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-blue-300' : 'text-blue-700'
+                                      }`}>{item.protein.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-green-300' : 'text-green-700'
+                                      }`}>{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-orange-300' : 'text-orange-700'
+                                      }`}>{item.fat.toFixed(1)}g</td>
                                       <td className="text-center py-3 md:py-5 px-2 md:px-4">
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => removeItem(item.id)}
-                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                          className={`h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong ${
+                                            isDark 
+                                              ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                              : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                          }`}
                                         >
                                           <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                                         </Button>
@@ -879,28 +1096,46 @@ export default function LogFoodPage() {
                 )}
 
                 {/* AI Suggestions Section */}
-                <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg bg-clay-100/40">
+                <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg ${
+                  isDark 
+                    ? 'bg-[#3a3a3a]/40 border-[#8b5cf6]/20' 
+                    : 'bg-clay-100/40'
+                }`}>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4 mb-3 md:mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600">
+                      <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl shadow-lg flex items-center justify-center ${
+                        isDark 
+                          ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                          : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                      }`}>
                         <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
                       <div>
-                        <span className="text-sm sm:text-base md:text-lg font-bold text-gray-800">AI-Powered Smart Suggestions</span>
-                        <p className="text-xs md:text-sm text-gray-600">Personalized recommendations just for you</p>
+                        <span className={`text-sm sm:text-base md:text-lg font-bold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>AI-Powered Smart Suggestions</span>
+                        <p className={`text-xs md:text-sm ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Personalized recommendations just for you</p>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={fetchSuggestions}
-                      className="backdrop-blur-sm rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto border-0 bg-white/80 text-gray-700 shadow-lg hover:bg-white/90 hover:shadow-clayStrong"
+                      className={`backdrop-blur-sm rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto border-0 shadow-lg hover:shadow-clayStrong ${
+                        isDark 
+                          ? 'bg-[#3a3a3a]/80 text-gray-300 hover:bg-[#3a3a3a]/90' 
+                          : 'bg-white/80 text-gray-700 hover:bg-white/90'
+                      }`}
                       disabled={!userId || isSuggesting}
                     >
                       <Target className="w-3 h-3 md:w-4 md:h-4 mr-2" />
                       {isSuggesting ? "Getting..." : "Get Suggestions"}
                     </Button>
-                  </div>                  <p className="leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
+                  </div>                  <p className={`leading-relaxed text-xs sm:text-sm md:text-base ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     Get intelligent food recommendations tailored to your dietary preferences, nutritional goals, and eating patterns.
                   </p>
                   
@@ -964,14 +1199,24 @@ export default function LogFoodPage() {
             )}            {/* Image Tab Content */}
             {activeTab === 'image' && (
               <div className="space-y-6 md:space-y-8">                  <div className="flex items-center space-x-3 mb-4 md:mb-6">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600 shadow-clayInset">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-lg flex items-center justify-center shadow-clayInset ${
+                      isDark 
+                        ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                        : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                    }`}>
                       <Camera className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Upload Meal Photo</h3>
+                    <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>Upload Meal Photo</h3>
                   </div>
                   {/* Image Upload Area */}
                 <div className="text-center space-y-4 md:space-y-6">
-                  <div className="relative border-2 border-dashed rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] transition-colors duration-200 group overflow-hidden border-gray-300 hover:border-purple-400 bg-clay-100/30">
+                  <div className={`relative border-2 border-dashed rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] transition-colors duration-200 group overflow-hidden ${
+                    isDark 
+                      ? 'border-[#8b5cf6]/30 hover:border-[#8b5cf6]/50 bg-[#3a3a3a]/30' 
+                      : 'border-gray-300 hover:border-purple-400 bg-clay-100/30'
+                  }`}>
                     <Input 
                       ref={imageInputRef} 
                       type="file" 
@@ -1003,16 +1248,26 @@ export default function LogFoodPage() {
                         </Button>
                       </div>
                     ) : (
-                      <Camera className="h-16 w-16 md:h-20 md:h-20 mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10 text-gray-400" />
+                      <Camera className={`h-16 w-16 md:h-20 md:h-20 mb-3 sm:mb-4 group-hover:text-primary transition-colors z-10 ${
+                        isDark ? 'text-gray-500' : 'text-gray-400'
+                      }`} />
                     )}
                     <div>
-                      <h4 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-800">Upload your meal photo</h4>
-                      <p className="mb-4 md:mb-6 max-w-md mx-auto leading-relaxed text-xs sm:text-sm md:text-base text-gray-600">
+                      <h4 className={`text-base sm:text-lg md:text-xl font-bold mb-2 ${
+                        isDark ? 'text-white' : 'text-gray-800'
+                      }`}>Upload your meal photo</h4>
+                      <p className={`mb-4 md:mb-6 max-w-md mx-auto leading-relaxed text-xs sm:text-sm md:text-base ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         Take a clear photo of your meal for instant AI analysis
                       </p>
                       <Button
                         onClick={triggerImageUpload}
-                        className="flex items-center space-x-2 mx-auto shadow-clayStrong rounded-xl px-6 md:px-8 py-2 md:py-3 font-semibold text-sm md:text-base bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                        className={`flex items-center space-x-2 mx-auto shadow-clayStrong rounded-xl px-6 md:px-8 py-2 md:py-3 font-semibold text-sm md:text-base text-white ${
+                          isDark 
+                            ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea]' 
+                            : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
+                        }`}
                         disabled={isLoading}
                       >
                         <Upload className="w-4 h-4 md:w-5 md:h-5" />
@@ -1023,7 +1278,11 @@ export default function LogFoodPage() {
                 </div>                {/* Add from Image Button */}
                 <Button
                   onClick={handleImageSubmit}
-                  className="w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white"
+                  className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg text-white ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea]' 
+                      : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
+                  }`}
                   disabled={!imagePreview || isLoading}
                 >
                   {isLoading ? (
@@ -1086,12 +1345,22 @@ export default function LogFoodPage() {
                           {/* Mobile Card View */}
                           <div className="block md:hidden space-y-3">
                             {pendingResults.map((item, index) => (
-                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                              <div key={item.id} className={`backdrop-blur-sm rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a]/60 hover:bg-[#3a3a3a]/70 border-[#4a4a4a]' 
+                                  : 'bg-clay-100/60 hover:bg-clay-200/40 border-clay-200'
+                              }`}>
                                 <div className="flex justify-between items-start mb-3">
                                   <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    <h4 className={`text-sm font-bold mb-1 ${
+                                      isDark ? 'text-white' : 'text-gray-800'
+                                    }`}>{item.identifiedFoodName}</h4>
                                     {item.originalDescription && (
-                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                      <div className={`text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border mb-2 ${
+                                        isDark 
+                                          ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                          : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                      }`}>
                                         From: {item.originalDescription.substring(0, 25)}...
                                       </div>
                                     )}
@@ -1100,27 +1369,63 @@ export default function LogFoodPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeItem(item.id)}
-                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                    className={`h-8 w-8 rounded-xl transition-all duration-200 shadow-sm ml-2 ${
+                                      isDark 
+                                        ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                        : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                    }`}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 text-center">
-                                  <div className="bg-purple-50 rounded-lg p-2">
-                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
-                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-purple-900/40 border border-purple-500/30' 
+                                      : 'bg-purple-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-purple-300' : 'text-purple-600'
+                                    }`}>Calories</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-purple-200' : 'text-purple-700'
+                                    }`}>{item.calories.toFixed(0)}</div>
                                   </div>
-                                  <div className="bg-blue-50 rounded-lg p-2">
-                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
-                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-blue-900/40 border border-blue-500/30' 
+                                      : 'bg-blue-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-blue-300' : 'text-blue-600'
+                                    }`}>Protein</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-blue-200' : 'text-blue-700'
+                                    }`}>{item.protein.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-green-50 rounded-lg p-2">
-                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
-                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-green-900/40 border border-green-500/30' 
+                                      : 'bg-green-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-green-300' : 'text-green-600'
+                                    }`}>Carbs</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-green-200' : 'text-green-700'
+                                    }`}>{item.carbohydrates.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-orange-50 rounded-lg p-2">
-                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
-                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-orange-900/40 border border-orange-500/30' 
+                                      : 'bg-orange-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-orange-300' : 'text-orange-600'
+                                    }`}>Fat</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-orange-200' : 'text-orange-700'
+                                    }`}>{item.fat.toFixed(1)}g</div>
                                   </div>
                                 </div>
                               </div>
@@ -1128,42 +1433,89 @@ export default function LogFoodPage() {
                           </div>
 
                           {/* Desktop Table View */}
-                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                          <div className={`hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm ${
+                            isDark 
+                              ? 'bg-[#3a3a3a]/40 border-[#4a4a4a]' 
+                              : 'bg-clay-100/40 border-clay-200'
+                          }`}>
                             <div className="overflow-x-auto">
                               <table className="w-full">
-                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                <thead className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#4a4a4a]/50' 
+                                    : 'bg-clay-300/50'
+                                }`}>
                                   <tr>
-                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                    <th className={`text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>AI Identified Food</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Calories</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Protein</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Carbs</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Fat</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Actions</th>
                                   </tr>
                                 </thead>
-                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                <tbody className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#3a3a3a]/30' 
+                                    : 'bg-clay-100/30'
+                                }`}>
                                   {pendingResults.map((item, index) => (
-                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                    <tr key={item.id} className={`border-b transition-colors duration-200 ${
+                                      isDark 
+                                        ? 'hover:bg-[#3a3a3a]/40 bg-[#3a3a3a]/30 border-[#4a4a4a]' 
+                                        : 'hover:bg-clay-200/40 bg-clay-100/30 border-clay-200'
+                                    }`}>
                                       <td className="py-3 md:py-5 px-3 md:px-6">
                                         <div>
-                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          <div className={`text-sm md:text-base font-bold mb-1 md:mb-2 ${
+                                            isDark ? 'text-white' : 'text-gray-800'
+                                          }`}>{item.identifiedFoodName}</div>
                                           {item.originalDescription && (
-                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                            <div className={`text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border ${
+                                              isDark 
+                                                ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                                : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                            }`}>
                                               From: {item.originalDescription.substring(0, 30)}...
                                             </div>
                                           )}
                                         </div>
                                       </td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold ${
+                                        isDark ? 'text-purple-300' : 'text-purple-600'
+                                      }`}>{item.calories.toFixed(0)}</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-blue-300' : 'text-blue-700'
+                                      }`}>{item.protein.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-green-300' : 'text-green-700'
+                                      }`}>{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-orange-300' : 'text-orange-700'
+                                      }`}>{item.fat.toFixed(1)}g</td>
                                       <td className="text-center py-3 md:py-5 px-2 md:px-4">
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => removeItem(item.id)}
-                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                          className={`h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong ${
+                                            isDark 
+                                              ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                              : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                          }`}
                                         >
                                           <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                                         </Button>
@@ -1195,21 +1547,41 @@ export default function LogFoodPage() {
             {/* Voice Tab Content */}
             {activeTab === 'voice' && (
               <div className="space-y-6 md:space-y-8">
-                <div className="flex items-center space-x-3 mb-4 md:mb-6">                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-clayInset flex items-center justify-center bg-gradient-to-r from-purple-500 to-purple-600">
+                <div className="flex items-center space-x-3 mb-4 md:mb-6">                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl shadow-clayInset flex items-center justify-center ${
+                    isDark 
+                      ? 'bg-gradient-to-r from-[#8b5cf6] to-[#a855f7]' 
+                      : 'bg-gradient-to-r from-purple-500 to-purple-600'
+                  }`}>
                     <Mic className="w-5 h-5 md:w-6 md:h-6 text-white" />
                   </div>
-                  <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">Voice Recording</h3>
-                </div>                  <div className="rounded-3xl p-6 md:p-10 shadow-lg bg-clay-100/40 transition-all duration-300">
+                  <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                  }`}>Voice Recording</h3>
+                </div>                  <div className={`rounded-3xl p-6 md:p-10 shadow-lg transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-[#3a3a3a]/40' 
+                      : 'bg-clay-100/40'
+                  }`}>
                   <div className="flex flex-col items-center space-y-6 md:space-y-8">
                     
                     {/* Voice Support Check */}
                     {isVoiceSupported === false && (
-                      <div className="w-full mb-4 p-4 rounded-2xl bg-yellow-100/80 border border-yellow-200 shadow-sm">
+                      <div className={`w-full mb-4 p-4 rounded-2xl border shadow-sm ${
+                        isDark 
+                          ? 'bg-yellow-900/20 border-yellow-600/30' 
+                          : 'bg-yellow-100/80 border-yellow-200'
+                      }`}>
                         <div className="flex items-start space-x-3">
-                          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                          <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
+                            isDark ? 'text-yellow-400' : 'text-yellow-600'
+                          }`} />
                           <div>
-                            <h4 className="text-sm font-bold text-yellow-800 mb-1">Voice Recording Unavailable</h4>
-                            <p className="text-xs text-yellow-700 leading-relaxed">
+                            <h4 className={`text-sm font-bold mb-1 ${
+                              isDark ? 'text-yellow-300' : 'text-yellow-800'
+                            }`}>Voice Recording Unavailable</h4>
+                            <p className={`text-xs leading-relaxed ${
+                              isDark ? 'text-yellow-400' : 'text-yellow-700'
+                            }`}>
                               Voice recording requires browser support and microphone permissions. Please try the <strong>Text</strong> or <strong>Photo</strong> options instead.
                             </p>
                           </div>
@@ -1226,6 +1598,8 @@ export default function LogFoodPage() {
                             ? 'bg-gray-400 cursor-not-allowed opacity-50'
                             : isRecording
                             ? 'bg-red-400 hover:bg-red-500 scale-110'
+                            : isDark
+                            ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] hover:scale-105'
                             : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
                         }`}
                         disabled={isLoading || isVoiceSupported === false}
@@ -1240,7 +1614,9 @@ export default function LogFoodPage() {
                         )}
                       </button>
                     </div>{/* Timer Display */}
-                    <div className="px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong bg-gray-700">
+                    <div className={`px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong ${
+                      isDark ? 'bg-[#3a3a3a]' : 'bg-gray-700'
+                    }`}>
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
                         <span className="text-2xl md:text-3xl font-mono font-bold text-white">
@@ -1248,7 +1624,9 @@ export default function LogFoodPage() {
                         </span>
                       </div>
                     </div>                    {/* Status */}
-                    <div className="text-center space-y-3 md:space-y-4">                      <h4 className="text-lg md:text-xl font-bold text-gray-800">
+                    <div className="text-center space-y-3 md:space-y-4">                      <h4 className={`text-lg md:text-xl font-bold ${
+                        isDark ? 'text-white' : 'text-gray-800'
+                      }`}>
                         {isVoiceSupported === false 
                           ? 'Voice Recording Unavailable'
                           : isRecording 
@@ -1256,7 +1634,9 @@ export default function LogFoodPage() {
                           : 'Tap to record'
                         }
                       </h4>
-                      <p className="leading-relaxed text-sm md:text-base max-w-md text-gray-600">
+                      <p className={`leading-relaxed text-sm md:text-base max-w-md ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         {isVoiceSupported === false
                           ? 'Your browser doesn\'t support voice recording. Please use the Text or Photo upload options above.'
                           : isRecording 
@@ -1268,13 +1648,21 @@ export default function LogFoodPage() {
 
                     {/* Audio Preview */}
                     {audioPreviewUrl && !isRecording && (
-                      <div className="w-full mt-3 sm:mt-4 p-2 sm:p-3 bg-background rounded shadow-inner border z-10 animate-in fade-in duration-300">
-                        <p className="text-xs sm:text-sm text-muted-foreground mb-2">Preview Recording:</p>
+                      <div className={`w-full mt-3 sm:mt-4 p-2 sm:p-3 rounded shadow-inner border z-10 animate-in fade-in duration-300 ${
+                        isDark 
+                          ? 'bg-[#3a3a3a] border-[#8b5cf6]/20' 
+                          : 'bg-background'
+                      }`}>
+                        <p className={`text-xs sm:text-sm mb-2 ${
+                          isDark ? 'text-gray-400' : 'text-muted-foreground'
+                        }`}>Preview Recording:</p>
                         <audio controls src={audioPreviewUrl} className="w-full h-8 sm:h-10"></audio>
                         <Button 
                           variant="link" 
                           size="sm" 
-                          className="text-xs h-auto p-0 text-muted-foreground hover:text-destructive mt-1" 
+                          className={`text-xs h-auto p-0 mt-1 hover:text-destructive ${
+                            isDark ? 'text-gray-400' : 'text-muted-foreground'
+                          }`}
                           onClick={() => {
                             if (audioPreviewUrl) {
                               URL.revokeObjectURL(audioPreviewUrl);
@@ -1294,6 +1682,8 @@ export default function LogFoodPage() {
                   className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg ${
                     isVoiceSupported === false
                       ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                      : isDark
+                      ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white'
                       : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
                   }`}
                   disabled={!audioBlob || isLoading || isRecording || isVoiceSupported === false}
@@ -1350,10 +1740,11 @@ export default function LogFoodPage() {
                         </div>
                         <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
                           <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                            <Brain className={`w-4 h-4 md:w-5 md:h-5 text-green-600`}
+                            />
+                            <span className={`font-bold text-sm md:text-base text-green-700`}>Smart Nutrition Analysis</span>
                           </div>
-                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                          <p className={`leading-relaxed text-xs sm:text-sm md:text-base text-green-600`}>
                             Our AI has analyzed your voice recording and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
                           </p>
                         </div>
@@ -1363,12 +1754,22 @@ export default function LogFoodPage() {
                           {/* Mobile Card View */}
                           <div className="block md:hidden space-y-3">
                             {pendingResults.map((item, index) => (
-                              <div key={item.id} className="backdrop-blur-sm bg-clay-100/60 rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 hover:bg-clay-200/40">
+                              <div key={item.id} className={`backdrop-blur-sm rounded-2xl border shadow-clayStrong p-4 transition-colors duration-200 ${
+                                isDark 
+                                  ? 'bg-[#3a3a3a]/60 hover:bg-[#3a3a3a]/70 border-[#4a4a4a]' 
+                                  : 'bg-clay-100/60 hover:bg-clay-200/40 border-clay-200'
+                              }`}>
                                 <div className="flex justify-between items-start mb-3">
                                   <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-gray-800 mb-1">{item.identifiedFoodName}</h4>
+                                    <h4 className={`text-sm font-bold mb-1 ${
+                                      isDark ? 'text-white' : 'text-gray-800'
+                                    }`}>{item.identifiedFoodName}</h4>
                                     {item.originalDescription && (
-                                      <div className="text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border bg-clay-100/60 text-gray-600 mb-2">
+                                      <div className={`text-xs backdrop-blur-sm rounded-lg px-2 py-1 inline-block shadow-sm border mb-2 ${
+                                        isDark 
+                                          ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                          : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                      }`}>
                                         From: {item.originalDescription.substring(0, 25)}...
                                       </div>
                                     )}
@@ -1377,27 +1778,63 @@ export default function LogFoodPage() {
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeItem(item.id)}
-                                    className="h-8 w-8 rounded-xl transition-all duration-200 shadow-sm text-gray-500 hover:text-red-500 hover:bg-red-50 ml-2"
+                                    className={`h-8 w-8 rounded-xl transition-all duration-200 shadow-sm ml-2 ${
+                                      isDark 
+                                        ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                        : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                    }`}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2 text-center">
-                                  <div className="bg-purple-50 rounded-lg p-2">
-                                    <div className="text-xs text-purple-600 font-medium">Calories</div>
-                                    <div className="text-sm font-bold text-purple-700">{item.calories.toFixed(0)}</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-purple-900/40 border border-purple-500/30' 
+                                      : 'bg-purple-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-purple-300' : 'text-purple-600'
+                                    }`}>Calories</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-purple-200' : 'text-purple-700'
+                                    }`}>{item.calories.toFixed(0)}</div>
                                   </div>
-                                  <div className="bg-blue-50 rounded-lg p-2">
-                                    <div className="text-xs text-blue-600 font-medium">Protein</div>
-                                    <div className="text-sm font-bold text-blue-700">{item.protein.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-blue-900/40 border border-blue-500/30' 
+                                      : 'bg-blue-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-blue-300' : 'text-blue-600'
+                                    }`}>Protein</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-blue-200' : 'text-blue-700'
+                                    }`}>{item.protein.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-green-50 rounded-lg p-2">
-                                    <div className="text-xs text-green-600 font-medium">Carbs</div>
-                                    <div className="text-sm font-bold text-green-700">{item.carbohydrates.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-green-900/40 border border-green-500/30' 
+                                      : 'bg-green-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-green-300' : 'text-green-600'
+                                    }`}>Carbs</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-green-200' : 'text-green-700'
+                                    }`}>{item.carbohydrates.toFixed(1)}g</div>
                                   </div>
-                                  <div className="bg-orange-50 rounded-lg p-2">
-                                    <div className="text-xs text-orange-600 font-medium">Fat</div>
-                                    <div className="text-sm font-bold text-orange-700">{item.fat.toFixed(1)}g</div>
+                                  <div className={`rounded-lg p-2 ${
+                                    isDark 
+                                      ? 'bg-orange-900/40 border border-orange-500/30' 
+                                      : 'bg-orange-50'
+                                  }`}>
+                                    <div className={`text-xs font-medium ${
+                                      isDark ? 'text-orange-300' : 'text-orange-600'
+                                    }`}>Fat</div>
+                                    <div className={`text-sm font-bold ${
+                                      isDark ? 'text-orange-200' : 'text-orange-700'
+                                    }`}>{item.fat.toFixed(1)}g</div>
                                   </div>
                                 </div>
                               </div>
@@ -1405,42 +1842,88 @@ export default function LogFoodPage() {
                           </div>
 
                           {/* Desktop Table View */}
-                          <div className="hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm bg-clay-100/40">
+                          <div className={`hidden md:block overflow-hidden rounded-2xl border shadow-clayStrong backdrop-blur-sm ${
+                            isDark 
+                              ? 'bg-[#3a3a3a]/40 border-[#4a4a4a]' 
+                              : 'bg-clay-100/40 border-clay-200'
+                          }`}>
                             <div className="overflow-x-auto">
                               <table className="w-full">
-                                <thead className="backdrop-blur-sm bg-clay-300/50">
+                                <thead className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#4a4a4a]/50' 
+                                    : 'bg-clay-300/50'
+                                }`}>
                                   <tr>
-                                    <th className="text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold text-gray-700">AI Identified Food</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Calories</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Protein</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Carbs</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Fat</th>
-                                    <th className="text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold text-gray-700">Actions</th>
+                                    <th className={`text-left py-3 md:py-5 px-3 md:px-6 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>AI Identified Food</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Calories</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Protein</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Carbs</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Fat</th>
+                                    <th className={`text-center py-3 md:py-5 px-2 md:px-4 text-xs md:text-sm font-bold ${
+                                      isDark ? 'text-gray-300' : 'text-gray-700'
+                                    }`}>Actions</th>
                                   </tr>
                                 </thead>
-                                <tbody className="backdrop-blur-sm bg-clay-100/30">
+                                <tbody className={`backdrop-blur-sm ${
+                                  isDark 
+                                    ? 'bg-[#3a3a3a]/30' 
+                                    : 'bg-clay-100/30'
+                                }`}>
                                   {pendingResults.map((item, index) => (
-                                    <tr key={item.id} className="border-b transition-colors duration-200 hover:bg-clay-200/40 bg-clay-100/30">
+                                    <tr key={item.id} className={`border-b transition-colors duration-200 ${
+                                      isDark 
+                                        ? 'hover:bg-[#3a3a3a]/40 bg-[#3a3a3a]/30 border-[#4a4a4a]' 
+                                        : 'hover:bg-clay-200/40 bg-clay-100/30 border-clay-200'
+                                    }`}>
                                       <td className="py-3 md:py-5 px-3 md:px-6">
                                         <div>
-                                          <div className="text-sm md:text-base font-bold mb-1 md:mb-2 text-gray-800">{item.identifiedFoodName}</div>
+                                          <div className={`text-sm md:text-base font-bold mb-1 md:mb-2 ${
+                                            isDark ? 'text-white' : 'text-gray-800'
+                                          }`}>{item.identifiedFoodName}</div>
                                           {item.originalDescription && (
-                                            <div className="text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border bg-clay-100/60 text-gray-600">
+                                            <div className={`text-xs md:text-sm backdrop-blur-sm rounded-xl px-2 md:px-4 py-1 md:py-2 inline-block shadow-clayStrong border ${
+                                              isDark 
+                                                ? 'bg-[#4a4a4a]/60 border-[#5a5a5a] text-gray-300' 
+                                                : 'bg-clay-100/60 border-clay-200 text-gray-600'
+                                            }`}>
                                               From: {item.originalDescription.substring(0, 30)}...
                                             </div>
                                           )}
                                         </div>
                                       </td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold text-purple-600">{item.calories.toFixed(0)}</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-blue-700">{item.protein.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-green-700">{item.carbohydrates.toFixed(1)}g</td>
-                                      <td className="text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold text-orange-700">{item.fat.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-bold ${
+                                        isDark ? 'text-purple-300' : 'text-purple-600'
+                                      }`}>{item.calories.toFixed(0)}</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-blue-300' : 'text-blue-700'
+                                      }`}>{item.protein.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-green-300' : 'text-green-700'
+                                      }`}>{item.carbohydrates.toFixed(1)}g</td>
+                                      <td className={`text-center py-3 md:py-5 px-2 md:px-4 text-sm md:text-base font-semibold ${
+                                        isDark ? 'text-orange-300' : 'text-orange-700'
+                                      }`}>{item.fat.toFixed(1)}g</td>
                                       <td className="text-center py-3 md:py-5 px-2 md:px-4">
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => removeItem(item.id)}
-                                          className="h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong text-gray-500 hover:text-red-500 hover:bg-red-50"
+                                          className={`h-8 w-8 md:h-10 md:w-10 rounded-xl transition-all duration-200 shadow-clayStrong ${
+                                            isDark 
+                                              ? 'text-gray-400 hover:text-red-400 hover:bg-red-900/20' 
+                                              : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                          }`}
                                         >
                                           <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                                         </Button>
@@ -1490,11 +1973,19 @@ export default function LogFoodPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="backdrop-blur-sm border-0 bg-red-100/70 shadow-clayStrong rounded-3xl mb-6 md:mb-8">
+            <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mb-6 md:mb-8 ${
+              isDark 
+                ? 'bg-red-900/30 border-red-600/30' 
+                : 'bg-red-100/70'
+            }`}>
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600" />
-                  <p className="text-sm md:text-base font-medium text-red-700">
+                  <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                    isDark ? 'text-red-400' : 'text-red-600'
+                  }`} />
+                  <p className={`text-sm md:text-base font-medium ${
+                    isDark ? 'text-red-300' : 'text-red-700'
+                  }`}>
                     {error}
                   </p>
                 </div>

@@ -345,26 +345,63 @@ export default function SettingsPage() {
      };
 
    if (authLoading || isLoading) {
+     const isDark = settings.theme === 'dark';
      return (
-       <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex justify-center items-center">
-         <Card className="w-full max-w-2xl mx-4 backdrop-blur-sm bg-white/70 border-0 shadow-lg rounded-3xl animate-pulse">
+       <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center ${
+         isDark 
+           ? 'bg-[#1a1a1a]' 
+           : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100'
+       }`}>
+         <Card className={`w-full max-w-2xl mx-4 border-0 shadow-lg rounded-3xl animate-pulse ${
+           isDark 
+             ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+             : 'backdrop-blur-sm bg-white/70'
+         }`}>
             <CardHeader className="items-center text-center pb-2 md:pb-3">
-              <Skeleton className="h-12 w-12 rounded-2xl bg-blue-200 mb-4 mx-auto" />
-              <Skeleton className="h-6 w-40 bg-blue-200 mb-2 mx-auto" />
-              <Skeleton className="h-4 w-60 bg-blue-200 mx-auto" />
+              <Skeleton className={`h-12 w-12 rounded-2xl mb-4 mx-auto ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+              }`} />
+              <Skeleton className={`h-6 w-40 mb-2 mx-auto ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+              }`} />
+              <Skeleton className={`h-4 w-60 mx-auto ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+              }`} />
             </CardHeader>
              <CardContent className="p-4 sm:p-6 md:p-8 space-y-6">
-                 <div className="space-y-4 p-4 border rounded-2xl bg-white/40">
-                   <Skeleton className="h-5 w-24 bg-blue-200 mb-4" />
-                   <Skeleton className="h-10 w-full bg-blue-200" />
+                 <div className={`space-y-4 p-4 border rounded-2xl ${
+                   isDark 
+                     ? 'bg-[#1a1a1a] border-[#3a3a3a]' 
+                     : 'bg-white/40'
+                 }`}>
+                   <Skeleton className={`h-5 w-24 mb-4 ${
+                     isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                   }`} />
+                   <Skeleton className={`h-10 w-full ${
+                     isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                   }`} />
                  </div>
-                 <div className="space-y-4 p-4 border rounded-2xl bg-white/40">
-                   <Skeleton className="h-5 w-32 bg-blue-200 mb-4" />
-                   <Skeleton className="h-10 w-full bg-blue-200" />
+                 <div className={`space-y-4 p-4 border rounded-2xl ${
+                   isDark 
+                     ? 'bg-[#1a1a1a] border-[#3a3a3a]' 
+                     : 'bg-white/40'
+                 }`}>
+                   <Skeleton className={`h-5 w-32 mb-4 ${
+                     isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                   }`} />
+                   <Skeleton className={`h-10 w-full ${
+                     isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                   }`} />
                  </div>
              </CardContent>
-             <CardFooter className="p-6 justify-center border-t bg-white/20">
-               <Skeleton className="h-11 w-40 bg-blue-200 rounded-2xl" />
+             <CardFooter className={`p-6 justify-center border-t ${
+               isDark 
+                 ? 'bg-[#1a1a1a]/20 border-[#3a3a3a]' 
+                 : 'bg-white/20'
+             }`}>
+               <Skeleton className={`h-11 w-40 rounded-2xl ${
+                 isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+               }`} />
              </CardFooter>
          </Card>
        </div>
@@ -373,30 +410,57 @@ export default function SettingsPage() {
 
     // Display Firestore error prominently
     if (firestoreError) {
+        const isDark = settings.theme === 'dark';
         return (
-            <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 flex justify-center items-center p-4">
-                <Card className="w-full max-w-md text-center backdrop-blur-sm bg-white/70 border-0 shadow-lg rounded-3xl">
+            <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center p-4 ${
+              isDark 
+                ? 'bg-[#1a1a1a]' 
+                : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100'
+            }`}>
+                <Card className={`w-full max-w-md text-center border-0 shadow-lg rounded-3xl ${
+                  isDark 
+                    ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+                    : 'backdrop-blur-sm bg-white/70'
+                }`}>
                     <CardHeader>
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4 bg-gradient-to-br from-red-400 to-red-600">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4 ${
+                          isDark 
+                            ? 'bg-red-600' 
+                            : 'bg-gradient-to-br from-red-400 to-red-600'
+                        }`}>
                           <AlertCircle className="h-6 w-6 text-white" />
                         </div>
-                        <CardTitle className="text-red-700 text-lg">Database Configuration Needed</CardTitle>
-                        <CardDescription className="text-xs text-gray-600 p-2 break-words">
+                        <CardTitle className={`text-lg ${
+                          isDark ? 'text-red-400' : 'text-red-700'
+                        }`}>Database Configuration Needed</CardTitle>
+                        <CardDescription className={`text-xs p-2 break-words ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                             {firestoreError.includes("index needed") || firestoreError.includes("index required")
                                 ? "A Firestore index is required for this feature. Please create the index in your Firebase console:"
                                 : "A database error occurred."}
                              {firestoreError.includes("https://console.firebase.google.com") && (
-                               <a href={firestoreError.substring(firestoreError.indexOf("https://"))} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline block mt-2 text-sm">
+                               <a href={firestoreError.substring(firestoreError.indexOf("https://"))} target="_blank" rel="noopener noreferrer" className={`block mt-2 text-sm hover:underline ${
+                                 isDark ? 'text-blue-400' : 'text-blue-500'
+                               }`}>
                                    Open Firebase Console to Create Index
                                </a>
                              )}
                              {!firestoreError.includes("https://console.firebase.google.com") && (
-                                 <pre className="mt-2 text-left text-xs bg-white/40 p-2 rounded overflow-x-auto">{firestoreError}</pre>
+                                 <pre className={`mt-2 text-left text-xs p-2 rounded overflow-x-auto ${
+                                   isDark 
+                                     ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                                     : 'bg-white/40'
+                                 }`}>{firestoreError}</pre>
                              )}
                         </CardDescription>
                     </CardHeader>
                      <CardFooter className="justify-center">
-                         <Button onClick={loadProfileAndSettings} className="rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white">
+                         <Button onClick={loadProfileAndSettings} className={`rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 text-white ${
+                           isDark 
+                             ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                             : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                         }`}>
                            Retry Loading
                          </Button>
                      </CardFooter>
@@ -405,40 +469,74 @@ export default function SettingsPage() {
         );
     }
 
+  const isDark = settings.theme === 'dark';
+
   return (
-    <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 animate-fade-in transition-all duration-500">
+    <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+      isDark 
+        ? 'bg-[#1a1a1a]' 
+        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100'
+    }`}>
       <div className="max-w-2xl mx-auto px-3 py-4 md:px-6 md:py-8 space-y-4 md:space-y-6">
         
         {/* Header */}
         <div className="mb-6 md:mb-8 animate-slide-down">
-          <div className="backdrop-blur-sm rounded-3xl shadow-lg border-0 p-6 text-center transition-all duration-500 bg-white/70">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4 animate-scale-in bg-gradient-to-br from-blue-400 to-blue-600">
+          <div className={`rounded-3xl shadow-lg border-0 p-6 text-center transition-all duration-500 ${
+            isDark 
+              ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+              : 'backdrop-blur-sm bg-white/70'
+          }`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg mx-auto mb-4 animate-scale-in ${
+              isDark 
+                ? 'bg-[#8b5cf6] text-white' 
+                : 'bg-gradient-to-br from-blue-400 to-blue-600'
+            }`}>
               <SettingsIcon className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800">Application Settings</h1>
-            <p className="text-sm md:text-base text-gray-600">Customize your Bago experience</p>
+            <h1 className={`text-xl md:text-2xl font-bold mb-2 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Application Settings</h1>
+            <p className={`text-sm md:text-base ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Customize your Bago experience</p>
           </div>
         </div>
 
         {/* Appearance Section */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-white/70 shadow-lg hover:shadow-xl">
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a] shadow-lg hover:shadow-xl' 
+            : 'backdrop-blur-sm bg-white/70 shadow-lg hover:shadow-xl'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
             <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-blue-600">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-gradient-to-br from-blue-400 to-blue-600'
+              }`}>
                 <Palette className="h-5 w-5 text-white" />
               </div>
-              <span className="text-gray-800">Appearance</span>
+              <span className={isDark ? 'text-white' : 'text-gray-800'}>Appearance</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-lg transition-all duration-300 bg-white/40">
+            <div className={`rounded-2xl p-4 shadow-lg transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                : 'backdrop-blur-sm bg-white/40'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0 mr-3">
-                  <div className="font-medium text-sm md:text-base mb-1 text-gray-800 flex items-center gap-1.5">
+                  <div className={`font-medium text-sm md:text-base mb-1 flex items-center gap-1.5 ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                  }`}>
                     {settings.theme === 'light' ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}
                     {settings.theme === 'light' ? 'Light Theme' : 'Dark Theme'}
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600">
+                  <p className={`text-xs md:text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>
                     {settings.theme === 'light' 
                       ? "Bright and clean interface for daytime use"
                       : "Easy on the eyes for low-light environments"
@@ -455,25 +553,43 @@ export default function SettingsPage() {
         </Card>
 
         {/* Progress Sharing Section */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-white/70 shadow-lg hover:shadow-xl" style={{ animationDelay: '100ms' }}>
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a] shadow-lg hover:shadow-xl' 
+            : 'backdrop-blur-sm bg-white/70 shadow-lg hover:shadow-xl'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
             <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-400 to-purple-600">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-gradient-to-br from-purple-400 to-purple-600'
+              }`}>
                 <Eye className="h-5 w-5 text-white" />
               </div>
-              <span className="text-gray-800">Progress Sharing</span>
+              <span className={isDark ? 'text-white' : 'text-gray-800'}>Progress Sharing</span>
             </CardTitle>
-            <p className="text-xs md:text-sm ml-12 text-gray-600">Control who can see your progress dashboard</p>
+            <p className={`text-xs md:text-sm ml-12 ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Control who can see your progress dashboard</p>
           </CardHeader>
           <CardContent className="space-y-3 md:space-y-4 pt-2">
-            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-lg transition-all duration-300 bg-white/40">
+            <div className={`rounded-2xl p-4 shadow-lg transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                : 'backdrop-blur-sm bg-white/40'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0 mr-3">
                   <div className="flex items-center space-x-2 mb-1">
-                    <EyeOff className="h-4 w-4 text-gray-600" />
-                    <span className="font-medium text-sm md:text-base text-gray-800">Private</span>
+                    <EyeOff className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <span className={`font-medium text-sm md:text-base ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>Private</span>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600">Only you can see your progress</p>
+                  <p className={`text-xs md:text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Only you can see your progress</p>
                 </div>
                 <Switch 
                   checked={settings.progressViewPermission === 'private'} 
@@ -482,14 +598,22 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-lg transition-all duration-300 bg-white/40">
+            <div className={`rounded-2xl p-4 shadow-lg transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                : 'backdrop-blur-sm bg-white/40'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0 mr-3">
                   <div className="flex items-center space-x-2 mb-1">
-                    <Users className="h-4 w-4 text-gray-600" />
-                    <span className="font-medium text-sm md:text-base text-gray-800">Request Only</span>
+                    <Users className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <span className={`font-medium text-sm md:text-base ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>Request Only</span>
                   </div>
-                  <p className="text-xs md:text-sm text-gray-600">Others must request to view your progress</p>
+                  <p className={`text-xs md:text-sm ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                  }`}>Others must request to view your progress</p>
                 </div>
                 <Switch 
                   checked={settings.progressViewPermission === 'request_only'} 
@@ -501,13 +625,21 @@ export default function SettingsPage() {
         </Card>
 
         {/* Find Users Section */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-white/70 shadow-lg hover:shadow-xl" style={{ animationDelay: '150ms' }}>
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a] shadow-lg hover:shadow-xl' 
+            : 'backdrop-blur-sm bg-white/70 shadow-lg hover:shadow-xl'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
             <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-green-400 to-green-600">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-gradient-to-br from-green-400 to-green-600'
+              }`}>
                 <UserSearch className="h-5 w-5 text-white" />
               </div>
-              <span className="text-gray-800">Find & Follow Users</span>
+              <span className={isDark ? 'text-white' : 'text-gray-800'}>Find & Follow Users</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
@@ -517,10 +649,18 @@ export default function SettingsPage() {
                 placeholder="Search by display name..."
                 value={searchQuery}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                className="h-10 sm:h-9 flex-grow text-sm rounded-2xl border-0 bg-white/60 backdrop-blur-sm shadow-inner"
+                className={`h-10 sm:h-9 flex-grow text-sm rounded-2xl border-0 shadow-inner ${
+                  isDark 
+                    ? 'bg-[#1a1a1a] text-white placeholder-gray-400 border border-[#3a3a3a]' 
+                    : 'bg-white/60 backdrop-blur-sm'
+                }`}
                 disabled={isSearching}
               />
-              <Button type="submit" className="h-10 sm:h-9 px-4 whitespace-nowrap rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white" disabled={isSearching || searchQuery.trim().length < 2}>
+              <Button type="submit" className={`h-10 sm:h-9 px-4 whitespace-nowrap rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 text-white ${
+                isDark 
+                  ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                  : 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+              }`} disabled={isSearching || searchQuery.trim().length < 2}>
                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserSearch className="h-4 w-4 mr-2"/>}
                 <span className="hidden sm:inline">Search</span>
                 <span className="sm:hidden">Find Users</span>
@@ -530,15 +670,25 @@ export default function SettingsPage() {
             {/* Search Results */}
             <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
               {searchResults.length > 0 && searchResults.map(foundUser => (
-                <div key={foundUser.id} className="backdrop-blur-sm rounded-2xl p-3 shadow-lg transition-all duration-300 bg-white/40 hover:bg-white/60">
+                <div key={foundUser.id} className={`rounded-2xl p-3 shadow-lg transition-all duration-300 ${
+                  isDark 
+                    ? 'bg-[#1a1a1a] border border-[#3a3a3a] hover:bg-[#2a2a2a]' 
+                    : 'backdrop-blur-sm bg-white/40 hover:bg-white/60'
+                }`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-grow min-w-0">
                       <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                         <AvatarImage src={foundUser.photoURL ?? undefined} alt={foundUser.displayName || 'User'} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-400 to-blue-600 text-white">{foundUser.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                        <AvatarFallback className={`text-white ${
+                          isDark 
+                            ? 'bg-[#8b5cf6]' 
+                            : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                        }`}>{foundUser.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                       </Avatar>
                       <div className="flex-grow min-w-0">
-                        <p className="text-sm sm:text-sm font-medium truncate text-gray-800">{foundUser.displayName || 'Unnamed User'}</p>
+                        <p className={`text-sm sm:text-sm font-medium truncate ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>{foundUser.displayName || 'Unnamed User'}</p>
                       </div>
                     </div>
                     <Button
@@ -548,9 +698,19 @@ export default function SettingsPage() {
                       disabled={foundUser.requestStatus === 'pending' || foundUser.requestStatus === 'following' || foundUser.requestStatus === 'is_self'}
                       className={cn(
                         "text-sm h-10 px-4 transition-all duration-200 w-full sm:w-auto min-w-[120px] whitespace-nowrap rounded-2xl shadow-lg",
-                        foundUser.requestStatus === 'pending' && "cursor-not-allowed border-dashed text-gray-500 bg-white/40",
-                        foundUser.requestStatus === 'following' && "bg-gradient-to-br from-green-100 to-green-200 text-green-700 border-green-200 cursor-default shadow-inner",
-                        foundUser.requestStatus === 'none' && "bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hover:scale-105"
+                        foundUser.requestStatus === 'pending' && `cursor-not-allowed border-dashed ${
+                          isDark ? 'text-gray-400 bg-[#1a1a1a] border-[#3a3a3a]' : 'text-gray-500 bg-white/40'
+                        }`,
+                        foundUser.requestStatus === 'following' && `cursor-default shadow-inner ${
+                          isDark 
+                            ? 'bg-green-900/30 text-green-400 border-green-700' 
+                            : 'bg-gradient-to-br from-green-100 to-green-200 text-green-700 border-green-200'
+                        }`,
+                        foundUser.requestStatus === 'none' && `text-white hover:scale-105 ${
+                          isDark 
+                            ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                            : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                        }`
                       )}
                     >
                       {foundUser.requestStatus === 'pending' ? (
@@ -577,7 +737,9 @@ export default function SettingsPage() {
               ))}
               {isSearching && (
                 <div className="text-center py-6">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-500 mx-auto"/>
+                  <Loader2 className={`h-6 w-6 animate-spin mx-auto ${
+                    isDark ? 'text-purple-400' : 'text-blue-500'
+                  }`}/>
                 </div>
               )}
             </div>
@@ -585,33 +747,55 @@ export default function SettingsPage() {
         </Card>
 
         {/* Friends Section */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-white/70 shadow-lg hover:shadow-xl" style={{ animationDelay: '200ms' }}>
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a] shadow-lg hover:shadow-xl' 
+            : 'backdrop-blur-sm bg-white/70 shadow-lg hover:shadow-xl'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
             <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-green-500 to-green-600">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-gradient-to-br from-green-500 to-green-600'
+              }`}>
                 <UserCheck className="h-5 w-5 text-white" />
               </div>
-              <span className="text-gray-800">Friends ({friends.length})</span>
+              <span className={isDark ? 'text-white' : 'text-gray-800'}>Friends ({friends.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
             {isLoadingFriends ? (
               <div className="space-y-3 py-4">
-                <Skeleton className="h-16 w-full bg-blue-200 rounded-2xl" />
+                <Skeleton className={`h-16 w-full rounded-2xl ${
+                  isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                }`} />
               </div>
             ) : friends.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {friends.map(friend => (
-                  <div key={friend.id} className="backdrop-blur-sm rounded-2xl p-3 shadow-lg transition-all duration-300 bg-white/40 hover:bg-white/60">
+                  <div key={friend.id} className={`rounded-2xl p-3 shadow-lg transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-[#1a1a1a] border border-[#3a3a3a] hover:bg-[#2a2a2a]' 
+                      : 'backdrop-blur-sm bg-white/40 hover:bg-white/60'
+                  }`}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3 flex-grow min-w-0">
                         <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                           <AvatarImage src={friend.photoURL ?? undefined} alt={friend.displayName || 'User'} />
-                          <AvatarFallback className="bg-gradient-to-br from-green-400 to-green-600 text-white">{friend.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                          <AvatarFallback className={`text-white ${
+                            isDark 
+                              ? 'bg-[#8b5cf6]' 
+                              : 'bg-gradient-to-br from-green-400 to-green-600'
+                          }`}>{friend.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow min-w-0">
-                          <p className="text-sm font-medium truncate text-gray-800">{friend.displayName || 'Unnamed User'}</p>
-                          <p className="text-xs text-green-600 flex items-center gap-1">
+                          <p className={`text-sm font-medium truncate ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>{friend.displayName || 'Unnamed User'}</p>
+                          <p className={`text-xs flex items-center gap-1 ${
+                            isDark ? 'text-green-400' : 'text-green-600'
+                          }`}>
                             <UserCheck className="h-3 w-3" />
                             Following
                           </p>
@@ -622,20 +806,32 @@ export default function SettingsPage() {
                           <Button 
                             variant="outline" 
                             size="default" 
-                            className="text-sm h-10 px-4 text-red-600 border-red-200 bg-white/60 hover:bg-red-50 w-full sm:w-auto min-w-[100px] whitespace-nowrap rounded-2xl shadow-lg transition-all duration-300" 
+                            className={`text-sm h-10 px-4 border-red-200 w-full sm:w-auto min-w-[100px] whitespace-nowrap rounded-2xl shadow-lg transition-all duration-300 ${
+                              isDark 
+                                ? 'text-red-400 bg-[#1a1a1a] border-red-800 hover:bg-red-900/20' 
+                                : 'text-red-600 bg-white/60 hover:bg-red-50'
+                            }`}
                             title="Remove Friend"
                           >
                             <UserX className="h-4 w-4 mr-2"/>
                             Remove
                           </Button>
                         </AlertDialogTrigger>
-                        <AlertDialogContent className="mx-4 max-w-md backdrop-blur-sm border-0 shadow-lg rounded-3xl bg-white/90">
+                        <AlertDialogContent className={`mx-4 max-w-md border-0 shadow-lg rounded-3xl ${
+                          isDark 
+                            ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+                            : 'backdrop-blur-sm bg-white/90'
+                        }`}>
                           <AlertDialogHeader>
-                            <AlertDialogTitle className="text-gray-800">Remove Friend?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-gray-600">Stop sharing progress with {friend.displayName || 'this user'}?</AlertDialogDescription>
+                            <AlertDialogTitle className={isDark ? 'text-white' : 'text-gray-800'}>Remove Friend?</AlertDialogTitle>
+                            <AlertDialogDescription className={isDark ? 'text-gray-400' : 'text-gray-600'}>Stop sharing progress with {friend.displayName || 'this user'}?</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                            <AlertDialogCancel className="w-full sm:w-auto rounded-2xl shadow-lg bg-white/60 text-gray-700 border-0">Cancel</AlertDialogCancel>
+                            <AlertDialogCancel className={`w-full sm:w-auto rounded-2xl shadow-lg border-0 ${
+                              isDark 
+                                ? 'bg-[#1a1a1a] text-gray-300 hover:bg-[#333]' 
+                                : 'bg-white/60 text-gray-700'
+                            }`}>Cancel</AlertDialogCancel>
                             <AlertDialogAction 
                               onClick={() => handleRemoveFriend(friend.id)} 
                               className={cn("w-full sm:w-auto rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white")}
@@ -650,40 +846,66 @@ export default function SettingsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 text-sm italic py-6">Find and add friends to share progress.</p>
+              <p className={`text-center text-sm italic py-6 ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>Find and add friends to share progress.</p>
             )}
           </CardContent>
         </Card>
 
         {/* Incoming Requests Section */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-white/70 shadow-lg hover:shadow-xl" style={{ animationDelay: '250ms' }}>
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a] shadow-lg hover:shadow-xl' 
+            : 'backdrop-blur-sm bg-white/70 shadow-lg hover:shadow-xl'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
             <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-500 to-purple-600">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-[#8b5cf6] text-white' 
+                  : 'bg-gradient-to-br from-purple-500 to-purple-600'
+              }`}>
                 <Users className="h-5 w-5 text-white" />
               </div>
-              <span className="text-gray-800">Incoming View Requests</span>
+              <span className={isDark ? 'text-white' : 'text-gray-800'}>Incoming View Requests</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-2">
             {isLoadingRequests ? (
               <div className="space-y-3 py-4">
-                <Skeleton className="h-16 w-full bg-blue-200 rounded-2xl" />
-                <Skeleton className="h-16 w-full bg-blue-200 rounded-2xl" />
+                <Skeleton className={`h-16 w-full rounded-2xl ${
+                  isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                }`} />
+                <Skeleton className={`h-16 w-full rounded-2xl ${
+                  isDark ? 'bg-[#3a3a3a]' : 'bg-blue-200'
+                }`} />
               </div>
             ) : incomingRequests.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                 {incomingRequests.map(request => (
-                  <div key={request.id} className="backdrop-blur-sm rounded-2xl p-3 shadow-lg transition-all duration-300 bg-white/40">
+                  <div key={request.id} className={`rounded-2xl p-3 shadow-lg transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                      : 'backdrop-blur-sm bg-white/40'
+                  }`}>
                     <div className="flex flex-col gap-3">
                       <div className="flex items-center gap-3 flex-grow min-w-0">
                         <Avatar className="h-10 w-10 sm:h-8 sm:w-8 flex-shrink-0">
                           <AvatarImage src={request.requestingUserPhotoURL ?? undefined} alt={request.requestingUserDisplayName || 'User'} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white">{request.requestingUserDisplayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                          <AvatarFallback className={`text-white ${
+                            isDark 
+                              ? 'bg-[#8b5cf6]' 
+                              : 'bg-gradient-to-br from-purple-400 to-purple-600'
+                          }`}>{request.requestingUserDisplayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow min-w-0">
-                          <p className="text-sm font-medium truncate text-gray-800">{request.requestingUserDisplayName || 'Unknown User'}</p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <p className={`text-sm font-medium truncate ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>{request.requestingUserDisplayName || 'Unknown User'}</p>
+                          <p className={`text-xs flex items-center gap-1 ${
+                            isDark ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
                             <Clock className="h-3 w-3"/>
                             {request.timestamp ? formatDistanceToNow(parseISO(request.timestamp), { addSuffix: true }) : 'Unknown time'}
                           </p>
@@ -695,20 +917,32 @@ export default function SettingsPage() {
                             <Button 
                               variant="default" 
                               size="default" 
-                              className="h-10 text-sm w-full sm:flex-1 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white" 
+                              className={`h-10 text-sm w-full sm:flex-1 rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 text-white ${
+                                isDark 
+                                  ? 'bg-green-700 hover:bg-green-600' 
+                                  : 'bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'
+                              }`}
                               title="Accept"
                             >
                               <CheckCircle className="h-4 w-4 mr-2"/>
                               Accept Request
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="mx-4 max-w-md backdrop-blur-sm border-0 shadow-lg rounded-3xl bg-white/90">
+                          <AlertDialogContent className={`mx-4 max-w-md border-0 shadow-lg rounded-3xl ${
+                            isDark 
+                              ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+                              : 'backdrop-blur-sm bg-white/90'
+                          }`}>
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-gray-800">Accept Request?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-600">Allow {request.requestingUserDisplayName || 'this user'} to view your progress?</AlertDialogDescription>
+                              <AlertDialogTitle className={isDark ? 'text-white' : 'text-gray-800'}>Accept Request?</AlertDialogTitle>
+                              <AlertDialogDescription className={isDark ? 'text-gray-400' : 'text-gray-600'}>Allow {request.requestingUserDisplayName || 'this user'} to view your progress?</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                              <AlertDialogCancel className="w-full sm:w-auto rounded-2xl shadow-lg bg-white/60 text-gray-700 border-0">Cancel</AlertDialogCancel>
+                              <AlertDialogCancel className={`w-full sm:w-auto rounded-2xl shadow-lg border-0 ${
+                                isDark 
+                                  ? 'bg-[#1a1a1a] text-gray-300 hover:bg-[#333]' 
+                                  : 'bg-white/60 text-gray-700'
+                              }`}>Cancel</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => handleAcceptRequest(request)} 
                                 className="w-full sm:w-auto rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
@@ -723,20 +957,32 @@ export default function SettingsPage() {
                             <Button 
                               variant="outline" 
                               size="default" 
-                              className="h-10 text-sm text-red-600 border-red-200 bg-white/60 hover:bg-red-50 w-full sm:flex-1 rounded-2xl shadow-lg transition-all duration-300" 
+                              className={`h-10 text-sm w-full sm:flex-1 rounded-2xl shadow-lg transition-all duration-300 ${
+                                isDark 
+                                  ? 'text-red-400 border-red-800 bg-[#1a1a1a] hover:bg-red-900/20' 
+                                  : 'text-red-600 border-red-200 bg-white/60 hover:bg-red-50'
+                              }`}
                               title="Decline"
                             >
                               <XCircle className="h-4 w-4 mr-2"/>
                               Decline
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="mx-4 max-w-md backdrop-blur-sm border-0 shadow-lg rounded-3xl bg-white/90">
+                          <AlertDialogContent className={`mx-4 max-w-md border-0 shadow-lg rounded-3xl ${
+                            isDark 
+                              ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+                              : 'backdrop-blur-sm bg-white/90'
+                          }`}>
                             <AlertDialogHeader>
-                              <AlertDialogTitle className="text-gray-800">Decline Request?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-gray-600">Deny access for {request.requestingUserDisplayName || 'this user'}?</AlertDialogDescription>
+                              <AlertDialogTitle className={isDark ? 'text-white' : 'text-gray-800'}>Decline Request?</AlertDialogTitle>
+                              <AlertDialogDescription className={isDark ? 'text-gray-400' : 'text-gray-600'}>Deny access for {request.requestingUserDisplayName || 'this user'}?</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                              <AlertDialogCancel className="w-full sm:w-auto rounded-2xl shadow-lg bg-white/60 text-gray-700 border-0">Cancel</AlertDialogCancel>
+                              <AlertDialogCancel className={`w-full sm:w-auto rounded-2xl shadow-lg border-0 ${
+                                isDark 
+                                  ? 'bg-[#1a1a1a] text-gray-300 hover:bg-[#333]' 
+                                  : 'bg-white/60 text-gray-700'
+                              }`}>Cancel</AlertDialogCancel>
                               <AlertDialogAction 
                                 onClick={() => handleDeclineRequest(request.id)} 
                                 className="w-full sm:w-auto rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
@@ -752,31 +998,55 @@ export default function SettingsPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 text-sm italic py-6">No pending requests.</p>
+              <p className={`text-center text-sm italic py-6 ${
+                isDark ? 'text-gray-400' : 'text-gray-500'
+              }`}>No pending requests.</p>
             )}
           </CardContent>
         </Card>
 
         {/* Danger Zone */}
-        <Card className="backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in bg-gradient-to-br from-red-50/80 to-red-100/80 shadow-lg hover:shadow-xl" style={{ animationDelay: '300ms' }}>
+        <Card className={`rounded-3xl border-0 hover:shadow-lg transition-all duration-300 animate-fade-in shadow-lg hover:shadow-xl ${
+          isDark 
+            ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+            : 'backdrop-blur-sm bg-gradient-to-br from-red-50/80 to-red-100/80'
+        }`}>
           <CardHeader className="pb-2 md:pb-3">
-            <CardTitle className="flex items-center space-x-2 text-base md:text-lg text-red-700">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-red-400 to-red-600">
+            <CardTitle className={`flex items-center space-x-2 text-base md:text-lg ${
+              isDark ? 'text-red-400' : 'text-red-700'
+            }`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${
+                isDark 
+                  ? 'bg-red-600 text-white' 
+                  : 'bg-gradient-to-br from-red-400 to-red-600'
+              }`}>
                 <Trash2 className="h-5 w-5 text-white" />
               </div>
               <span>Danger Zone</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="backdrop-blur-sm rounded-2xl p-4 shadow-lg border transition-all duration-300 bg-white/50 border-red-200/30">
+            <div className={`rounded-2xl p-4 shadow-lg border transition-all duration-300 ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#3a3a3a]' 
+                : 'backdrop-blur-sm bg-white/50 border-red-200/30'
+            }`}>
               <div className="space-y-3">
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 mt-1 bg-gradient-to-br from-red-400 to-red-500">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 mt-1 ${
+                    isDark 
+                      ? 'bg-red-600 text-white' 
+                      : 'bg-gradient-to-br from-red-400 to-red-500'
+                  }`}>
                     <Trash2 className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-sm md:text-base mb-1 text-red-900">Delete Account</h3>
-                    <p className="text-xs md:text-sm mb-3 text-red-800">
+                    <h3 className={`font-semibold text-sm md:text-base mb-1 ${
+                      isDark ? 'text-red-400' : 'text-red-900'
+                    }`}>Delete Account</h3>
+                    <p className={`text-xs md:text-sm mb-3 ${
+                      isDark ? 'text-gray-400' : 'text-red-800'
+                    }`}>
                       Permanently delete your account and all associated data. This action cannot be undone.
                     </p>
                     <AlertDialog 
@@ -787,7 +1057,11 @@ export default function SettingsPage() {
                       }}
                     >
                       <AlertDialogTrigger asChild>
-                        <Button className="rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 h-9 md:h-10 px-4 md:px-6 text-sm md:text-base bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white" disabled={isDeletingAccount}>
+                        <Button className={`rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 h-9 md:h-10 px-4 md:px-6 text-sm md:text-base text-white ${
+                          isDark 
+                            ? 'bg-red-600 hover:bg-red-700' 
+                            : 'bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
+                        }`} disabled={isDeletingAccount}>
                           {isDeletingAccount ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -801,16 +1075,28 @@ export default function SettingsPage() {
                           )}
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="mx-4 max-w-md backdrop-blur-sm border-0 shadow-lg rounded-3xl bg-white/90">
+                      <AlertDialogContent className={`mx-4 max-w-md border-0 shadow-lg rounded-3xl ${
+                        isDark 
+                          ? 'bg-[#2a2a2a] border-[#3a3a3a] backdrop-blur-sm' 
+                          : 'backdrop-blur-sm bg-white/90'
+                      }`}>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="text-base md:text-lg flex items-center space-x-2 text-gray-800">
-                            <div className="w-8 h-8 rounded-xl flex items-center justify-center shadow-lg bg-gradient-to-br from-red-400 to-red-600">
+                          <AlertDialogTitle className={`text-base md:text-lg flex items-center space-x-2 ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-lg ${
+                              isDark 
+                                ? 'bg-red-600 text-white' 
+                                : 'bg-gradient-to-br from-red-400 to-red-600'
+                            }`}>
                               <Trash2 className="h-4 w-4 text-white" />
                             </div>
                             <span>Delete Account Permanently?</span>
                           </AlertDialogTitle>
-                          <AlertDialogDescription className="text-sm md:text-base mt-3 text-gray-600">
-                            <p className="mb-2">This will <strong className="text-red-600">permanently delete</strong> your account and all associated data including:</p>
+                          <AlertDialogDescription className={`text-sm md:text-base mt-3 ${
+                            isDark ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
+                            <p className="mb-2">This will <strong className={isDark ? 'text-red-400' : 'text-red-600'}>permanently delete</strong> your account and all associated data including:</p>
                             <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
                               <li>All food and exercise logs</li>
                               <li>Workout plans and progress</li>
@@ -818,14 +1104,24 @@ export default function SettingsPage() {
                               <li>Quick log items and preferences</li>
                               <li>Points and achievements</li>
                             </ul>
-                            <div className="bg-red-50 p-3 rounded-2xl mt-4 border border-red-200">
-                              <p className="text-red-700 font-medium text-sm">
+                            <div className={`p-3 rounded-2xl mt-4 border ${
+                              isDark 
+                                ? 'bg-red-900/20 border-red-800' 
+                                : 'bg-red-50 border-red-200'
+                            }`}>
+                              <p className={`font-medium text-sm ${
+                                isDark ? 'text-red-400' : 'text-red-700'
+                              }`}>
                                 Type "DELETE" below to confirm:
                               </p>
                               <input 
                                 type="text" 
                                 id="delete-confirmation"
-                                className="w-full p-3 mt-2 text-sm border border-red-200 rounded-2xl bg-white"
+                                className={`w-full p-3 mt-2 text-sm border rounded-2xl ${
+                                  isDark 
+                                    ? 'border-red-800 bg-[#1a1a1a] text-white' 
+                                    : 'border-red-200 bg-white'
+                                }`}
                                 placeholder="Type DELETE here"
                                 autoComplete="off"
                                 value={confirmDeleteText}
@@ -834,12 +1130,16 @@ export default function SettingsPage() {
                                 }}
                               />
                               {confirmDeleteText && confirmDeleteText !== 'DELETE' && (
-                                <p className="text-xs text-red-600 mt-1">
+                                <p className={`text-xs mt-1 ${
+                                  isDark ? 'text-red-400' : 'text-red-600'
+                                }`}>
                                   Please type "DELETE" exactly as shown to enable the button.
                                 </p>
                               )}
                               {confirmDeleteText === 'DELETE' && (
-                                <p className="text-xs text-green-600 mt-1 font-medium">
+                                <p className={`text-xs mt-1 font-medium ${
+                                  isDark ? 'text-green-400' : 'text-green-600'
+                                }`}>
                                   ✓ Confirmation correct - button is now enabled.
                                 </p>
                               )}
@@ -847,7 +1147,11 @@ export default function SettingsPage() {
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-6">
-                          <AlertDialogCancel disabled={isDeletingAccount} className="w-full sm:w-auto rounded-2xl shadow-lg bg-white/60 text-gray-700 border-0">
+                          <AlertDialogCancel disabled={isDeletingAccount} className={`w-full sm:w-auto rounded-2xl shadow-lg border-0 ${
+                            isDark 
+                              ? 'bg-[#1a1a1a] text-gray-300 hover:bg-[#333]' 
+                              : 'bg-white/60 text-gray-700'
+                          }`}>
                             Cancel
                           </AlertDialogCancel>
                           <AlertDialogAction 
@@ -882,10 +1186,14 @@ export default function SettingsPage() {
         </Card>
 
         {/* Save Button */}
-        <div className="flex justify-center pt-4 md:pt-6 animate-fade-in" style={{ animationDelay: '400ms' }}>
+        <div className="flex justify-center pt-4 md:pt-6 animate-fade-in">
           <Button 
             onClick={handleSaveSettings} 
-            className="rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 px-6 md:px-8 h-10 md:h-11 text-sm md:text-base w-full sm:w-auto bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+            className={`rounded-2xl shadow-lg transition-all duration-300 hover:scale-105 px-6 md:px-8 h-10 md:h-11 text-sm md:text-base w-full sm:w-auto text-white ${
+              isDark 
+                ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
+                : 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+            }`}
             disabled={isSaving}
           > 
             <AnimatePresence mode="wait">
