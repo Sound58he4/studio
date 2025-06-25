@@ -115,6 +115,25 @@ export default function WorkoutPlansPage() {
     // State for unsaved changes tracking
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [originalPlan, setOriginalPlan] = useState<Record<DayOfWeek, EditableExercise[]> | null>(null);
+    const [isDark, setIsDark] = useState(false);
+
+    // Detect theme from HTML class (consistent with Settings page)
+    useEffect(() => {
+        const updateDark = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        updateDark(); // Initial check
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(updateDark);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     // Get today's day name
     const todayDayName = useMemo(() => {
@@ -451,7 +470,11 @@ export default function WorkoutPlansPage() {
     // --- Render Logic ---
     if (authLoading || isLoadingPlan) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/50 to-violet-50/50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+            <div className={`min-h-screen transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-slate-50 via-blue-50/50 to-violet-50/50'
+            }`}>
                 <div className="max-w-6xl mx-auto p-3 sm:p-4 md:p-6 space-y-6 sm:space-y-8">
                     <motion.div 
                         className="space-y-3 sm:space-y-4"
@@ -468,8 +491,16 @@ export default function WorkoutPlansPage() {
                                 <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-spin" />
                             </motion.div>
                             <div className="space-y-2">
-                                <div className="h-6 sm:h-8 w-60 sm:w-80 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-2xl animate-pulse"/>
-                                <div className="h-3 sm:h-4 w-72 sm:w-96 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-xl animate-pulse"/>
+                                <div className={`h-6 sm:h-8 w-60 sm:w-80 rounded-2xl animate-pulse ${
+                                    isDark 
+                                        ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                                        : 'bg-gradient-to-r from-slate-200 to-slate-300'
+                                }`}/>
+                                <div className={`h-3 sm:h-4 w-72 sm:w-96 rounded-xl animate-pulse ${
+                                    isDark 
+                                        ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                                        : 'bg-gradient-to-r from-slate-200 to-slate-300'
+                                }`}/>
                             </div>
                         </div>
                     </motion.div>
@@ -481,7 +512,11 @@ export default function WorkoutPlansPage() {
                             transition={{ delay: 0.2, duration: 0.6 }}
                         >
                             {Array.from({ length: 4 }, (_, i) => (
-                                <div key={i} className="h-20 sm:h-24 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-3xl animate-pulse"/>
+                                <div key={i} className={`h-20 sm:h-24 rounded-3xl animate-pulse ${
+                                    isDark 
+                                        ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                                        : 'bg-gradient-to-r from-slate-200 to-slate-300'
+                                }`}/>
                             ))}
                         </motion.div>
                         <motion.div 
@@ -490,8 +525,16 @@ export default function WorkoutPlansPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.4, duration: 0.6 }}
                         >
-                            <div className="h-40 sm:h-48 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-3xl animate-pulse"/>
-                            <div className="h-24 sm:h-32 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-600 rounded-3xl animate-pulse"/>
+                            <div className={`h-40 sm:h-48 rounded-3xl animate-pulse ${
+                                isDark 
+                                    ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                                    : 'bg-gradient-to-r from-slate-200 to-slate-300'
+                            }`}/>
+                            <div className={`h-24 sm:h-32 rounded-3xl animate-pulse ${
+                                isDark 
+                                    ? 'bg-gradient-to-r from-slate-700 to-slate-600' 
+                                    : 'bg-gradient-to-r from-slate-200 to-slate-300'
+                            }`}/>
                         </motion.div>
                     </div>
                 </div>
@@ -501,33 +544,53 @@ export default function WorkoutPlansPage() {
 
     if (error && error.includes("Profile not found")) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-red-50/30 to-orange-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-3 sm:p-6">
+            <div className={`min-h-screen flex items-center justify-center p-3 sm:p-6 transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-slate-50 via-red-50/30 to-orange-50/30'
+            }`}>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5 }}
                     className="w-full max-w-2xl"
                 >
-                    <Card className="border-0 shadow-2xl rounded-2xl sm:rounded-3xl bg-white/80 backdrop-blur-sm dark:bg-slate-900/80 overflow-hidden">
+                    <Card className={`border-0 shadow-2xl rounded-2xl sm:rounded-3xl backdrop-blur-sm overflow-hidden ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                            : 'bg-white/80'
+                    }`}>
                         <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-orange-500/5 to-yellow-500/5 pointer-events-none"/>
                         <CardHeader className="text-center space-y-4 sm:space-y-6 pb-6 sm:pb-8 relative p-4 sm:p-6">
                             <motion.div 
-                                className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-red-100 to-orange-100 dark:from-red-900/30 dark:to-orange-900/30 rounded-full flex items-center justify-center"
+                                className={`mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center ${
+                                    isDark 
+                                        ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30' 
+                                        : 'bg-gradient-to-br from-red-100 to-orange-100'
+                                }`}
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ delay: 0.2, duration: 0.5, type: "spring" }}
                             >
-                                <AlertCircle size={40} className="sm:w-12 sm:h-12 text-red-600 dark:text-red-400"/>
+                                <AlertCircle size={40} className={`sm:w-12 sm:h-12 ${
+                                    isDark ? 'text-red-400' : 'text-red-600'
+                                }`}/>
                             </motion.div>
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3, duration: 0.5 }}
                             >
-                                <CardTitle className="text-xl sm:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                                <CardTitle className={`text-xl sm:text-3xl font-bold bg-clip-text text-transparent ${
+                                    isDark 
+                                        ? 'bg-gradient-to-r from-slate-100 to-slate-300' 
+                                        : 'bg-gradient-to-r from-slate-900 to-slate-700'
+                                }`}>
                                     Something Went Wrong
                                 </CardTitle>
-                                <CardDescription className="text-sm sm:text-lg text-slate-600 dark:text-slate-400 mt-3 sm:mt-4 leading-relaxed px-2">
+                                <CardDescription className={`text-sm sm:text-lg mt-3 sm:mt-4 leading-relaxed px-2 ${
+                                    isDark ? 'text-slate-400' : 'text-slate-600'
+                                }`}>
                                     {error || "User profile is missing. Please set up your profile first to access workout plans."}
                                 </CardDescription>
                             </motion.div>
@@ -559,7 +622,11 @@ export default function WorkoutPlansPage() {
         );
     }    // Main component render
     return (
-        <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 transition-all duration-500">
+        <div className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
+            isDark 
+                ? 'bg-[#1a1a1a]' 
+                : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+        }`}>
             <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-6xl space-y-4 sm:space-y-6">
                 {/* Header Section */}
                 <motion.div
@@ -568,12 +635,20 @@ export default function WorkoutPlansPage() {
                     transition={{ duration: 0.6 }}
                     className="flex flex-col gap-4"
                 >
-                    <div className="backdrop-blur-sm p-4 sm:p-6 border shadow-lg rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 transition-all duration-300 bg-white/90 border-gray-200/50 text-center w-full">
+                    <div className={`backdrop-blur-sm p-4 sm:p-6 border shadow-lg rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 transition-all duration-300 text-center w-full ${
+                        isDark 
+                            ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                            : 'bg-white/90 border-gray-200/50'
+                    }`}>
                         <div className="mb-4 sm:mb-6">
-                            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900">
+                            <h1 className={`text-2xl sm:text-3xl font-bold mb-2 ${
+                                isDark ? 'text-white' : 'text-gray-900'
+                            }`}>
                                 Workout Plans
                             </h1>
-                            <p className="text-base sm:text-lg text-gray-600">
+                            <p className={`text-base sm:text-lg ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
                                 Plan and track your fitness journey
                             </p>
                         </div>
@@ -634,10 +709,18 @@ export default function WorkoutPlansPage() {
                         transition={{ delay: 0.3, duration: 0.3 }}
                         className="px-1"
                     >
-                        <Card className="border-red-200 bg-red-50 shadow-lg rounded-2xl sm:rounded-3xl">
+                        <Card className={`border shadow-lg rounded-2xl sm:rounded-3xl ${
+                            isDark 
+                                ? 'border-red-500/30 bg-red-900/20' 
+                                : 'border-red-200 bg-red-50'
+                        }`}>
                             <CardContent className="p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
-                                <p className="text-red-600 font-medium text-xs sm:text-base break-words leading-relaxed">{error}</p>
+                                <AlertCircle className={`h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 ${
+                                    isDark ? 'text-red-400' : 'text-red-600'
+                                }`} />
+                                <p className={`font-medium text-xs sm:text-base break-words leading-relaxed ${
+                                    isDark ? 'text-red-400' : 'text-red-600'
+                                }`}>{error}</p>
                             </CardContent>
                         </Card>
                     </motion.div>
@@ -649,9 +732,15 @@ export default function WorkoutPlansPage() {
                 >
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                         {/* Week Calendar */}
-                        <Card className="backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
+                        <Card className={`backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 ${
+                            isDark 
+                                ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                                : 'bg-white/90 border-gray-200/50'
+                        }`}>
                             <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
-                                <CardTitle className="flex items-center text-lg sm:text-xl text-gray-900">
+                                <CardTitle className={`flex items-center text-lg sm:text-xl ${
+                                    isDark ? 'text-white' : 'text-gray-900'
+                                }`}>
                                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                     This Week
                                 </CardTitle>
@@ -700,17 +789,17 @@ export default function WorkoutPlansPage() {
                                             className={cn(
                                                 "w-full p-2 sm:p-3 rounded-lg sm:rounded-xl text-left transition-all duration-300",
                                                 isActive && "bg-gradient-to-br from-blue-400 to-purple-500 text-white shadow-lg",
-                                                !isActive && isToday && "bg-blue-100/50 text-blue-700",
-                                                !isActive && !isToday && "bg-gray-100/50 text-gray-700 hover:bg-gray-200/50",
-                                                isRestDay && !isActive && "bg-emerald-100/50 text-emerald-700"
+                                                !isActive && isToday && (isDark ? "bg-blue-900/30 text-blue-300" : "bg-blue-100/50 text-blue-700"),
+                                                !isActive && !isToday && (isDark ? "bg-[#3a3a3a] text-gray-300 hover:bg-[#4a4a4a]" : "bg-gray-100/50 text-gray-700 hover:bg-gray-200/50"),
+                                                isRestDay && !isActive && (isDark ? "bg-emerald-900/30 text-emerald-300" : "bg-emerald-100/50 text-emerald-700")
                                             )}
                                         >
                                             <div className="font-medium text-sm sm:text-base">{day}</div>
                                             <div className={cn(
                                                 "text-xs sm:text-sm",
                                                 isActive && "text-white/80",
-                                                !isActive && isToday && "text-blue-600",
-                                                !isActive && !isToday && "text-gray-500"
+                                                !isActive && isToday && (isDark ? "text-blue-400" : "text-blue-600"),
+                                                !isActive && !isToday && (isDark ? "text-gray-400" : "text-gray-500")
                                             )}>
                                                 {isRestDay ? (
                                                     <span className="font-medium">Rest Day</span>
@@ -735,15 +824,23 @@ export default function WorkoutPlansPage() {
                                     transition={{ duration: 0.5 }}
                                     className="space-y-4 sm:space-y-6"
                                 >                                    {/* Day Content */}
-                                    <Card className="backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 bg-white/90 border-gray-200/50">
+                                    <Card className={`backdrop-blur-sm border shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 ${
+                                        isDark 
+                                            ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                                            : 'bg-white/90 border-gray-200/50'
+                                    }`}>
                                         <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
                                             <div className="flex items-center justify-between">
-                                                <CardTitle className="text-lg sm:text-xl text-gray-900">
+                                                <CardTitle className={`text-lg sm:text-xl ${
+                                                    isDark ? 'text-white' : 'text-gray-900'
+                                                }`}>
                                                     <div className="flex items-center">
                                                         <Dumbbell className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                                                         <span className="truncate">{activeDay} Workout</span>
                                                     </div>
-                                                    <div className="text-xs sm:text-sm font-normal mt-1 text-gray-600">
+                                                    <div className={`text-xs sm:text-sm font-normal mt-1 ${
+                                                        isDark ? 'text-gray-400' : 'text-gray-600'
+                                                    }`}>
                                                         {activeDay === todayDayName ? "Today's workout" : "Plan your workout"}
                                                         {editablePlan[activeDay]?.length > 0 && (
                                                             <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
@@ -793,17 +890,31 @@ export default function WorkoutPlansPage() {
                                                         <span className="truncate">Set Rest Day</span>
                                                     </Button>
                                                 </div>                                                {/* PDF Workout Integration - Compact Design */}
-                                                <Card className="bg-gradient-to-r from-orange-50/50 to-red-50/30 border-orange-200/50 rounded-xl sm:rounded-2xl">
+                                                <Card className={`rounded-xl sm:rounded-2xl ${
+                                                    isDark 
+                                                        ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-500/30' 
+                                                        : 'bg-gradient-to-r from-orange-50/50 to-red-50/30 border-orange-200/50'
+                                                }`}>
                                                     <CardContent className="p-3 sm:p-4">
                                                         <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                                                            <div className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                                                <FileText className="h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 text-orange-600" />
+                                                            <div className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                                                isDark 
+                                                                    ? 'bg-gradient-to-br from-orange-900/30 to-red-900/30' 
+                                                                    : 'bg-gradient-to-br from-orange-100 to-red-100'
+                                                            }`}>
+                                                                <FileText className={`h-2 w-2 sm:h-3 sm:w-3 md:h-4 md:w-4 ${
+                                                                    isDark ? 'text-orange-400' : 'text-orange-600'
+                                                                }`} />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
-                                                                <h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-orange-900 truncate">
+                                                                <h3 className={`text-[10px] sm:text-xs md:text-sm font-semibold truncate ${
+                                                                    isDark ? 'text-orange-300' : 'text-orange-900'
+                                                                }`}>
                                                                     PDF Workout Plans
                                                                 </h3>
-                                                                <p className="text-[8px] sm:text-[10px] md:text-xs text-orange-700/70 truncate">
+                                                                <p className={`text-[8px] sm:text-[10px] md:text-xs truncate ${
+                                                                    isDark ? 'text-orange-400/70' : 'text-orange-700/70'
+                                                                }`}>
                                                                     Power, Light, Max & Xtreme
                                                                 </p>
                                                             </div>
@@ -854,9 +965,15 @@ export default function WorkoutPlansPage() {
                                                                     whileHover={{ scale: 1.02 }}
                                                                     className="group"
                                                                 >
-                                                                    <div className="backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-all duration-500 bg-white/40 border border-gray-200/30 hover:bg-white/60 hover:shadow-lg">
+                                                                    <div className={`backdrop-blur-sm rounded-xl sm:rounded-2xl p-3 sm:p-4 transition-all duration-500 border hover:shadow-lg ${
+                                                                        isDark 
+                                                                            ? 'bg-[#3a3a3a] border-[#4a4a4a] hover:bg-[#4a4a4a]' 
+                                                                            : 'bg-white/40 border-gray-200/30 hover:bg-white/60'
+                                                                    }`}>
                                                                         <div className="flex items-start justify-between mb-2 sm:mb-3">
-                                                                            <h3 className="font-semibold text-base sm:text-lg text-gray-900 pr-2 leading-tight">
+                                                                            <h3 className={`font-semibold text-base sm:text-lg pr-2 leading-tight ${
+                                                                                isDark ? 'text-white' : 'text-gray-900'
+                                                                            }`}>
                                                                                 {exercise.exercise}
                                                                             </h3>
                                                                             <div className="flex space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0">
@@ -864,7 +981,11 @@ export default function WorkoutPlansPage() {
                                                                                     variant="ghost"
                                                                                     size="sm"
                                                                                     onClick={() => handleEditExerciseClick(activeDay, exercise)}
-                                                                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-blue-600 hover:bg-blue-50 p-0"
+                                                                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0 ${
+                                                                                        isDark 
+                                                                                            ? 'text-blue-400 hover:bg-blue-900/30' 
+                                                                                            : 'text-blue-600 hover:bg-blue-50'
+                                                                                    }`}
                                                                                 >
                                                                                     <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
                                                                                 </Button>
@@ -872,7 +993,11 @@ export default function WorkoutPlansPage() {
                                                                                     variant="ghost"
                                                                                     size="sm"
                                                                                     onClick={() => handleRemoveExercise(activeDay, exercise.id)}
-                                                                                    className="h-7 w-7 sm:h-8 sm:w-8 rounded-full text-red-600 hover:bg-red-50 p-0"
+                                                                                    className={`h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0 ${
+                                                                                        isDark 
+                                                                                            ? 'text-red-400 hover:bg-red-900/30' 
+                                                                                            : 'text-red-600 hover:bg-red-50'
+                                                                                    }`}
                                                                                 >
                                                                                     <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                                                                                 </Button>
@@ -881,15 +1006,27 @@ export default function WorkoutPlansPage() {
                                                                         
                                                                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-3 mb-2 sm:mb-3">
                                                                             {exercise.sets && (
-                                                                                <div className="text-center p-2 rounded-lg bg-gray-100/50">
-                                                                                    <div className="text-xs font-medium text-gray-500">Sets</div>
-                                                                                    <div className="text-sm sm:text-lg font-bold text-gray-900">{exercise.sets}</div>
+                                                                                <div className={`text-center p-2 rounded-lg ${
+                                                                                    isDark ? 'bg-[#4a4a4a]' : 'bg-gray-100/50'
+                                                                                }`}>
+                                                                                    <div className={`text-xs font-medium ${
+                                                                                        isDark ? 'text-gray-400' : 'text-gray-500'
+                                                                                    }`}>Sets</div>
+                                                                                    <div className={`text-sm sm:text-lg font-bold ${
+                                                                                        isDark ? 'text-white' : 'text-gray-900'
+                                                                                    }`}>{exercise.sets}</div>
                                                                                 </div>
                                                                             )}
                                                                             {exercise.reps && (
-                                                                                <div className="text-center p-2 rounded-lg bg-gray-100/50">
-                                                                                    <div className="text-xs font-medium text-gray-500">Reps</div>
-                                                                                    <div className="text-sm sm:text-lg font-bold text-gray-900">{exercise.reps}</div>
+                                                                                <div className={`text-center p-2 rounded-lg ${
+                                                                                    isDark ? 'bg-[#4a4a4a]' : 'bg-gray-100/50'
+                                                                                }`}>
+                                                                                    <div className={`text-xs font-medium ${
+                                                                                        isDark ? 'text-gray-400' : 'text-gray-500'
+                                                                                    }`}>Reps</div>
+                                                                                    <div className={`text-sm sm:text-lg font-bold ${
+                                                                                        isDark ? 'text-white' : 'text-gray-900'
+                                                                                    }`}>{exercise.reps}</div>
                                                                                 </div>
                                                                             )}
                                                                             {exercise.youtubeLink && (
@@ -897,7 +1034,11 @@ export default function WorkoutPlansPage() {
                                                                                     href={exercise.youtubeLink}
                                                                                     target="_blank"
                                                                                     rel="noopener noreferrer"
-                                                                                    className="flex items-center gap-1 text-red-600 hover:text-red-700 transition-colors col-span-full sm:col-span-1 text-center justify-center p-2 rounded-lg bg-red-50"
+                                                                                    className={`flex items-center gap-1 transition-colors col-span-full sm:col-span-1 text-center justify-center p-2 rounded-lg ${
+                                                                                        isDark 
+                                                                                            ? 'text-red-400 hover:text-red-300 bg-red-900/30' 
+                                                                                            : 'text-red-600 hover:text-red-700 bg-red-50'
+                                                                                    }`}
                                                                                     whileHover={{ scale: 1.05 }}
                                                                                 >
                                                                                     <Youtube className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -907,11 +1048,17 @@ export default function WorkoutPlansPage() {
                                                                         </div>
                                                                         
                                                                         <div className="flex items-center justify-between text-xs sm:text-sm">
-                                                                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                                                isDark 
+                                                                                    ? 'bg-purple-900/30 text-purple-300' 
+                                                                                    : 'bg-purple-100 text-purple-700'
+                                                                            }`}>
                                                                                 Exercise
                                                                             </span>
                                                                             {exercise.notes && (
-                                                                                <span className="text-xs text-gray-500 italic line-clamp-2 break-words max-w-[60%] text-right">
+                                                                                <span className={`text-xs italic line-clamp-2 break-words max-w-[60%] text-right ${
+                                                                                    isDark ? 'text-gray-400' : 'text-gray-500'
+                                                                                }`}>
                                                                                     {exercise.notes}
                                                                                 </span>
                                                                             )}
@@ -924,7 +1071,9 @@ export default function WorkoutPlansPage() {
                                                             initial={{ opacity: 0 }}
                                                             animate={{ opacity: 1 }}
                                                             transition={{ duration: 0.5 }}
-                                                            className="text-center py-8 sm:py-12 rounded-xl sm:rounded-2xl bg-gray-100/30"
+                                                            className={`text-center py-8 sm:py-12 rounded-xl sm:rounded-2xl ${
+                                                                isDark ? 'bg-[#3a3a3a]' : 'bg-gray-100/30'
+                                                            }`}
                                                         >
                                                             <motion.div
                                                                 animate={{ 
@@ -937,12 +1086,18 @@ export default function WorkoutPlansPage() {
                                                                     ease: "easeInOut"
                                                                 }}
                                                             >
-                                                                <Dumbbell className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-gray-400" />
+                                                                <Dumbbell className={`w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 ${
+                                                                    isDark ? 'text-gray-500' : 'text-gray-400'
+                                                                }`} />
                                                             </motion.div>
-                                                            <p className="text-base sm:text-lg font-medium mb-2 text-gray-600">
+                                                            <p className={`text-base sm:text-lg font-medium mb-2 ${
+                                                                isDark ? 'text-gray-300' : 'text-gray-600'
+                                                            }`}>
                                                                 No exercises planned for {activeDay}
                                                             </p>
-                                                            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-6 px-4">
+                                                            <p className={`text-xs sm:text-sm mb-3 sm:mb-6 px-4 ${
+                                                                isDark ? 'text-gray-400' : 'text-gray-500'
+                                                            }`}>
                                                                 Add some exercises to get started with your workout
                                                             </p>
                                                             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center px-4">

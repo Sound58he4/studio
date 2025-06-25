@@ -49,6 +49,26 @@ interface AddEditExerciseFormProps {
 const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
     exercise: initialExercise, day, onSave, onCancel, onChange: propagateChange
 }) => {
+    const [isDark, setIsDark] = useState(false);
+
+    // Detect theme from HTML class (consistent with Settings page)
+    useEffect(() => {
+        const updateDark = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        updateDark(); // Initial check
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(updateDark);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, []);
+    
     const [exercise, setExercise] = useState<EditableExercise>({
         id: initialExercise?.id || `${day}-new-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         exercise: initialExercise?.exercise || "",
@@ -101,17 +121,33 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
     };
 
     const trackingOptions = trackingType === 'reps' ? commonRepCounts : commonDurations;    return (
-        <div className="w-full max-w-full max-h-[90vh] overflow-y-auto p-0 bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-50/80 backdrop-blur-xl border-0 shadow-2xl rounded-2xl sm:rounded-3xl">
+        <div className={`w-full max-w-full max-h-[90vh] overflow-y-auto p-0 backdrop-blur-xl border-0 shadow-2xl rounded-2xl sm:rounded-3xl ${
+            isDark 
+                ? 'bg-gradient-to-br from-[#2a2a2a] via-[#333333] to-[#2a2a2a]' 
+                : 'bg-gradient-to-br from-blue-50/80 via-white/90 to-purple-50/80'
+        }`}>
             {/* Header */}
-            <div className="sticky top-0 z-10 p-3 sm:p-6 pb-2 sm:pb-4 border-b border-blue-200/30 bg-white/80 backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl">
-                <div className="text-base sm:text-xl font-semibold text-gray-800 flex items-center">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
+            <div className={`sticky top-0 z-10 p-3 sm:p-6 pb-2 sm:pb-4 border-b backdrop-blur-xl rounded-t-2xl sm:rounded-t-3xl ${
+                isDark 
+                    ? 'border-[#4a4a4a] bg-[#2a2a2a]/80' 
+                    : 'border-blue-200/30 bg-white/80'
+            }`}>
+                <div className={`text-base sm:text-xl font-semibold flex items-center ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                }`}>
+                    <div className={`w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg ${
+                        isDark 
+                            ? 'bg-gradient-to-br from-[#8b5cf6] to-[#7c3aed]' 
+                            : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                    }`}>
                         {exercise.isNew ? <Plus className="w-3 h-3 sm:w-5 sm:h-5 text-white" /> : <Edit className="w-3 h-3 sm:w-5 sm:h-5 text-white" />}
                     </div>
                     <span className="truncate">{exercise.isNew ? 'Add Exercise' : 'Edit Exercise'}</span>
                 </div>
                 
-                <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 ml-8 sm:ml-11 truncate">Configure your exercise details for {day}</p>
+                <p className={`text-xs sm:text-sm mt-1 sm:mt-2 ml-8 sm:ml-11 truncate ${
+                    isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Configure your exercise details for {day}</p>
             </div>            <div className="p-3 sm:p-6 space-y-4 sm:space-y-8">
                 {/* Exercise Details Section */}
                 <motion.div 
@@ -124,7 +160,9 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
                             <span className="text-white font-bold text-sm sm:text-lg">1</span>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Exercise Details</h3>
+                        <h3 className={`text-lg sm:text-xl font-semibold ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Exercise Details</h3>
                     </div>
                     
                     <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-blue-100/50">
