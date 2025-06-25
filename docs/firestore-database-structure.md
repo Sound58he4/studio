@@ -214,6 +214,24 @@ Each user document contains profile information, preferences, and aggregated dai
 }
 ```
 
+###### `users/{userId}/dailyPoints/` Sub-collection
+**Purpose**: Daily points tracking for badge calculation  
+**Document ID**: `YYYY-MM-DD` format
+
+```typescript
+{
+  date: string                     // YYYY-MM-DD format
+  points: number                   // Points earned on this day
+  dayOfWeek: number               // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  lastUpdated: string             // ISO string when last updated
+}
+```
+
+**Badge Calculation Rules**:
+- To earn 1 badge: 100+ points per day for 3 consecutive working days
+- Sundays (dayOfWeek: 0) are excluded from badge calculations
+- Each 3-day consecutive streak of 100+ points earns 1 badge
+
 ###### `users/{userId}/friends/` Sub-collection
 **Purpose**: User's friend connections  
 **Document ID**: `{friendUserId}`

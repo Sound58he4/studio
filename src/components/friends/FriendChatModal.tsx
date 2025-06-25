@@ -4,15 +4,13 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Send, ArrowLeft, MessageCircle, X } from 'lucide-react';
-import type { UserFriend } from '@/app/dashboard/types';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getOrCreateChatRoom, sendChatMessage } from '@/services/firestore/chatService';
+import { collection, query, orderBy, onSnapshot, limit as firestoreLimit } from 'firebase/firestore';
+import { db } from '@/lib/firebase/exports';
+import type { UserFriend, ChatMessage } from '@/app/dashboard/types';
 import { motion, AnimatePresence } from 'framer-motion';
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'me' | 'friend';
-  timestamp: Date;
-}
 
 interface FriendChatModalProps {
   friend: UserFriend;
@@ -21,16 +19,13 @@ interface FriendChatModalProps {
 }
 
 const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
+  const { userId } = useAuth();
+  const { toast } = useToast();
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: `Hey! Ready for today's workout?`,
-      sender: 'friend',
-      timestamp: new Date(Date.now() - 5 * 60 * 1000)
-    }
-  ]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -41,42 +36,84 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
     scrollToBottom();
   }, [messages]);
 
-  const generateFriendResponse = (userMessage: string) => {
-    const responses = [
-      "That sounds awesome! Keep it up! 💪",
-      "Great job on staying consistent!",
-      "Let's crush our goals together!",
-      "You're doing amazing! 🔥",
-      "Thanks for the motivation!",
-      "Let's workout together sometime!"
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+  // Initialize chat room and set up real-time message listener
+  useEffect(() => {
+    if (!isOpen || !userId || !friend.id) return;
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+    const initializeChat = async () => {
+      try {
+        setIsLoading(true);
+        const newChatId = await getOrCreateChatRoom(userId, friend.id);
+        setChatId(newChatId);
 
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      text: message,
-      sender: 'me',
-      timestamp: new Date()
+        // Set up real-time listener for messages
+        const messagesRef = collection(db, 'chats', newChatId, 'messages');
+        const q = query(messagesRef, orderBy('timestamp', 'asc'), firestoreLimit(100));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const fetchedMessages: ChatMessage[] = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            fetchedMessages.push({
+              id: doc.id,
+              senderId: data.senderId,
+              text: data.text,
+              timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp,
+              isAI: false
+            });
+          });
+          setMessages(fetchedMessages);
+          setIsLoading(false);
+        }, (error) => {
+          console.error("[FriendChatModal] Error fetching messages:", error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load messages."
+          });
+          setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+      } catch (error) {
+        console.error("[FriendChatModal] Error initializing chat:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not initialize chat."
+        });
+        setIsLoading(false);
+      }
     };
 
-    setMessages(prev => [...prev, newMessage]);
-    setMessage('');
-    setIsTyping(true);
+    const cleanup = initializeChat();
+    return () => {
+      cleanup?.then(unsub => unsub?.());
+    };
+  }, [isOpen, userId, friend.id, toast]);
 
-    setTimeout(() => {
-      const friendResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: generateFriendResponse(message),
-        sender: 'friend',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, friendResponse]);
-      setIsTyping(false);
-    }, 1500);
+  const handleSendMessage = async () => {
+    if (!message.trim() || !chatId || !userId || isSending) return;
+
+    const messageText = message.trim();
+    setMessage('');
+    setIsSending(true);
+
+    try {
+      await sendChatMessage(chatId, userId, messageText);
+      // The real-time listener will automatically update the messages
+    } catch (error) {
+      console.error("[FriendChatModal] Error sending message:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not send message. Please try again."
+      });
+      // Restore the message on error
+      setMessage(messageText);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -86,9 +123,10 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
     }
   };
 
-  const getTimeAgo = (timestamp: Date) => {
+  const getTimeAgo = (timestamp: string) => {
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - timestamp.getTime()) / (1000 * 60));
+    const messageTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60));
     
     if (diffInMinutes < 1) return 'now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
@@ -150,62 +188,49 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
             <CardContent className="flex-1 p-0 bg-gradient-to-br from-gray-50/30 to-blue-50/30">
               <ScrollArea className="h-[400px]">
                 <div className="p-4 space-y-4">
-                  {messages.map((msg) => (
-                    <motion.div 
-                      key={msg.id} 
-                      className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <div className={`max-w-[75%] ${msg.sender === 'friend' ? 'flex items-start space-x-2' : ''}`}>
-                        {msg.sender === 'friend' && (
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
-                            {friend.photoURL ? (
-                              <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
-                            ) : (
-                              friendInitials
-                            )}
-                          </div>
-                        )}
-                        <div className="flex flex-col">
-                          <div className={`p-3 rounded-2xl shadow-sm backdrop-blur-sm ${
-                            msg.sender === 'friend'
-                              ? 'bg-white/80 text-gray-800 rounded-tl-md border border-gray-200/50'
-                              : 'bg-gradient-to-br from-blue-400 to-purple-500 text-white rounded-tr-md ml-auto'
-                          }`}>
-                            <p className="text-sm leading-relaxed">{msg.text}</p>
-                          </div>
-                          <p className={`text-xs mt-1 text-gray-500 ${msg.sender === 'me' ? 'text-right' : ''}`}>
-                            {getTimeAgo(msg.timestamp)}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-
-                  {isTyping && (
-                    <motion.div 
-                      className="flex justify-start"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <div className="flex items-start space-x-2">
-                        <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
-                          {friend.photoURL ? (
-                            <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            friendInitials
+                  {isLoading ? (
+                    <div className="flex justify-center items-center h-32">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center text-gray-500 py-8">
+                      <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>Start your conversation with {friend.displayName}!</p>
+                    </div>
+                  ) : (
+                    messages.map((msg) => (
+                      <motion.div 
+                        key={msg.id} 
+                        className={`flex ${msg.senderId === userId ? 'justify-end' : 'justify-start'}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className={`max-w-[75%] ${msg.senderId !== userId ? 'flex items-start space-x-2' : ''}`}>
+                          {msg.senderId !== userId && (
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
+                              {friend.photoURL ? (
+                                <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
+                              ) : (
+                                friendInitials
+                              )}
+                            </div>
                           )}
-                        </div>                        <div className="bg-white/80 backdrop-blur-sm p-3 rounded-2xl rounded-tl-md shadow-sm border border-gray-200/50">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.1s]"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+                          <div className="flex flex-col">
+                            <div className={`p-3 rounded-2xl shadow-sm backdrop-blur-sm ${
+                              msg.senderId !== userId
+                                ? 'bg-white/80 text-gray-800 rounded-tl-md border border-gray-200/50'
+                                : 'bg-gradient-to-br from-blue-400 to-purple-500 text-white rounded-tr-md ml-auto'
+                            }`}>
+                              <p className="text-sm leading-relaxed">{msg.text}</p>
+                            </div>
+                            <p className={`text-xs mt-1 text-gray-500 ${msg.senderId === userId ? 'text-right' : ''}`}>
+                              {getTimeAgo(msg.timestamp)}
+                            </p>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
+                    ))
                   )}
 
                   <div ref={messagesEndRef} />
@@ -222,15 +247,16 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Type a message..."
                     onKeyDown={handleKeyPress}
+                    disabled={isSending || isLoading || !chatId}
                     className="pr-12 border-0 rounded-full bg-gray-100/80 focus:bg-white/90 focus:ring-2 focus:ring-purple-200 backdrop-blur-sm"
                   />
                   <Button
                     onClick={handleSendMessage}
-                    disabled={!message.trim() || isTyping}
+                    disabled={!message.trim() || isSending || isLoading || !chatId}
                     size="icon"
                     className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 transition-all duration-200"
                   >
-                    <Send className="w-4 h-4 text-white" />
+                    <Send className={`w-4 h-4 text-white ${isSending ? 'animate-pulse' : ''}`} />
                   </Button>
                 </div>
               </div>

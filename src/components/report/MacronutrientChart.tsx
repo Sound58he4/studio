@@ -40,7 +40,7 @@ const MacronutrientChart: React.FC<MacronutrientChartProps> = ({ data, title, va
           return (
             <div className={`p-2 border rounded-md shadow-lg backdrop-blur-sm text-xs transition-all duration-300 ${
                 isDark 
-                    ? 'bg-gray-800/80 border-gray-600 text-gray-200' 
+                    ? 'bg-[#2a2a2a] border-[#3a3a3a] text-gray-200' 
                     : 'bg-background/80 border-border'
             }`}>
               <p className="font-semibold">{label}</p>

@@ -36,6 +36,7 @@ import {
   serverTimestamp, increment
 } from 'firebase/firestore';
 import { createFirestoreServiceError } from '@/services/firestore/utils';
+import { countUnhealthyFoods, calculateUnhealthyFoodPenalty } from '@/data/food-categories';
 import { startOfDay, endOfDay, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { fadeInVariants, staggerContainer, optimizedSlideVariants } from '@/lib/animations';
@@ -122,28 +123,6 @@ const updateUserPointsData = async (userId: string, pointsData: PointsData): Pro
     console.error("[Points Service] Error updating user points:", error);
     throw createFirestoreServiceError(`Failed to update user points. Reason: ${error.message}`, "update-failed");
   }
-};
-
-// Helper functions for unhealthy food detection
-const countUnhealthyFoods = (foodLogs: StoredFoodLogEntry[]): number => {
-  const unhealthyKeywords = [
-    'fried', 'deep fried', 'chips', 'fries', 'burger', 'pizza', 'soda', 'soft drink',
-    'candy', 'chocolate', 'ice cream', 'cake', 'cookies', 'donuts', 'pastry',
-    'fast food', 'junk food', 'processed', 'instant noodles', 'energy drink'
-  ];
-  
-  return foodLogs.filter(log => {
-    const foodName = log.foodItem.toLowerCase();
-    return unhealthyKeywords.some(keyword => foodName.includes(keyword));
-  }).length;
-};
-
-const calculateUnhealthyFoodPenalty = (unhealthyCount: number): number => {
-  // Progressive penalty: 1 item = -2 points, 2 items = -5 points, 3+ items = -10 points
-  if (unhealthyCount >= 3) return 10;
-  if (unhealthyCount === 2) return 5;
-  if (unhealthyCount === 1) return 2;
-  return 0;
 };
 
 export default function PointsPage() {
@@ -378,8 +357,18 @@ export default function PointsPage() {
         todayPoints: calculatedPoints,
       };
       setPointsData(updatedPointsData);      // Debounced update to Firebase to avoid excessive writes
-      const timeoutId = setTimeout(() => {
-        updateUserPointsData(userId, updatedPointsData).catch(console.error);
+      const timeoutId = setTimeout(async () => {
+        try {
+          await updateUserPointsData(userId, updatedPointsData);
+          
+          // Update streak when points are updated
+          const { updateUserStreak } = await import('@/services/firestore/streakService');
+          const today = format(new Date(), 'yyyy-MM-dd');
+          await updateUserStreak(userId, today, calculatedPoints);
+          
+        } catch (error) {
+          console.error("[Points Page] Error updating points and streak:", error);
+        }
       }, 1000);
       return () => clearTimeout(timeoutId);
     }

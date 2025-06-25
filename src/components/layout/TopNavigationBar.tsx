@@ -135,7 +135,7 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                                                 ? "text-blue-400 font-semibold bg-blue-500/20 hover:bg-blue-500/30" 
                                                 : "text-primary font-semibold bg-primary/10 hover:bg-primary/20"
                                             : isDark 
-                                                ? "hover:bg-gray-700/50 hover:text-gray-100 text-gray-300" 
+                                                ? "hover:bg-[#2a2a2a] hover:text-white text-gray-300" 
                                                 : "hover:bg-accent/50 hover:text-accent-foreground"
                                     )}
                                 >                                    {isActive && (
@@ -186,7 +186,7 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                                 "text-sm font-medium transition-all duration-200 ease-out group relative overflow-hidden",
                                 "min-w-0 px-3 lg:px-4 transform hover:scale-105",
                                 isDark 
-                                    ? "hover:bg-gray-700/50 hover:text-gray-100 text-gray-300" 
+                                    ? "hover:bg-[#2a2a2a] hover:text-white text-gray-300" 
                                     : "hover:bg-accent/50 hover:text-accent-foreground"
                             )}
                         >
@@ -201,7 +201,7 @@ const TopNavigationBar: React.FC<TopNavigationBarProps> = ({ navLinks, handleLog
                         className={cn(
                             "w-56 backdrop-blur-lg border shadow-lg transition-colors duration-200",
                             isDark 
-                                ? "bg-gray-800/95 border-gray-600/50" 
+                                ? "bg-[#2a2a2a] border-[#3a3a3a]" 
                                 : "bg-card/95"
                         )}
                         sideOffset={5}

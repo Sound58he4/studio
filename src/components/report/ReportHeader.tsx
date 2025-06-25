@@ -147,7 +147,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
             </div>
             <div className={`mt-4 flex flex-col sm:flex-row justify-between items-center gap-3 p-2 rounded-md border shadow-inner transition-all duration-300 ${
                 isDark 
-                    ? 'bg-gray-700/50 border-gray-600' 
+                    ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
                     : 'bg-muted/50'
             }`}>
                 <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateDate('prev')} aria-label="Previous Period"> <ChevronLeft className="h-4 w-4" /> </Button>

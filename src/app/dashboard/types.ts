@@ -175,6 +175,9 @@ export interface SearchResultUser {
   email?: string;
   photoURL?: string | null;
   requestStatus?: 'none' | 'pending' | 'following' | 'is_self';
+  totalPoints?: number; // Total points for level calculation
+  level?: number; // Calculated level based on total points
+  badges?: number; // Number of badges earned based on daily consistency
 }
 
 export interface ViewRequest {
@@ -192,6 +195,30 @@ export interface UserFriend {
     photoURL?: string | null;
     since?: string; // ISO string
     isAI?: boolean;
+    totalPoints?: number; // Total points for level calculation
+    level?: number; // Calculated level based on total points
+    badges?: number; // Number of badges earned based on daily consistency
+    dayStreak?: number; // Day streak based on reaching 10+ points daily
+    weeklyGoal?: {
+        targets: {
+            calories: number;
+            protein: number;
+            carbohydrates: number;
+            fat: number;
+        };
+        actuals: {
+            calories: number;
+            protein: number;
+            carbohydrates: number;
+            fat: number;
+        };
+        progress: {
+            calories: number; // percentage
+            protein: number;  // percentage
+            carbohydrates: number; // percentage
+            fat: number; // percentage
+        };
+    } | null;
 }
 
 export const AI_ASSISTANT_ID = "ai_assistant";
@@ -200,6 +227,10 @@ export const aiFriendProfile: UserFriend = {
     displayName: 'Bago AI Assistant',
     photoURL: null, // Consider adding a default AI bot avatar URL
     isAI: true,
+    totalPoints: 0, // AI doesn't have points
+    level: 1, // AI has default level 1
+    badges: 0, // AI doesn't have badges
+    dayStreak: 0, // AI doesn't have streaks
 };
 
 // Exercise Detail for Workout Plans

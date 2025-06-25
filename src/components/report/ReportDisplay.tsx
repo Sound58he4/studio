@@ -16,7 +16,7 @@ interface ReportDisplayProps {
 
 const SectionCard: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode; className?: string; isDark?: boolean }> = ({ title, icon: Icon, children, className, isDark = false }) => (
     <Card className={cn("backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 hover:shadow-clay", 
-        isDark ? "bg-gray-700/40 shadow-lg border border-gray-600" : "bg-white/40 shadow-clayInset", 
+        isDark ? "bg-[#2a2a2a] shadow-lg border border-[#3a3a3a]" : "bg-white/40 shadow-clayInset", 
         className)}>
         <CardHeader className="pb-3 pt-4 px-4 sm:px-5">
             <CardTitle className={`text-base sm:text-lg font-semibold flex items-center gap-3 ${
@@ -63,7 +63,7 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report, isDark = false })
             {/* Daily Report Header */}
             <Card className={`mb-6 backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
                 isDark 
-                    ? 'bg-gray-700/40 shadow-lg border border-gray-600' 
+                    ? 'bg-[#2a2a2a] shadow-lg border border-[#3a3a3a]' 
                     : 'bg-white/40 shadow-clayInset'
             }`}>
                 <CardHeader>
@@ -186,7 +186,7 @@ const ReportDisplay: React.FC<ReportDisplayProps> = ({ report, isDark = false })
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <Card className={`backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
                     isDark 
-                        ? 'bg-gray-700/40 shadow-lg border border-gray-600' 
+                        ? 'bg-[#2a2a2a] shadow-lg border border-[#3a3a3a]' 
                         : 'bg-white/40 shadow-clayInset'
                 }`}>
                     <CardHeader>

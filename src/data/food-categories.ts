@@ -33,11 +33,23 @@ export const UNHEALTHY_FOOD_KEYWORDS = [
   // Indian unhealthy foods
   'vada', 'bajji', 'bonda', 'pakoda', 'mixture', 'halwa', 'gulab jamun',
   'jalebi', 'laddu', 'barfi', 'rasgulla', 'kulfi', 'pani puri', 'chaat',
-  'bhel puri', 'sev puri', 'dahi puri', 'aloo tikki',
+  'bhel puri', 'sev puri', 'dahi puri', 'aloo tikki', 'parotta', 'paratha',
+  'naan', 'kulcha', 'puri', 'bhatura', 'chole bhature', 'aloo paratha',
+  'butter naan', 'garlic naan', 'cheese naan', 'keema naan', 'biryani',
+  'pulao', 'fried rice', 'masala dosa', 'cheese dosa', 'mysore masala dosa',
+  'uttapam', 'rava dosa', 'set dosa', 'pesarattu', 'appam', 'kothu parotta',
+  'chicken 65', 'mutton fry', 'fish fry', 'prawn fry', 'tandoori chicken',
+  'butter chicken', 'chicken tikka masala', 'paneer butter masala',
   
   // Processed and packaged foods
   'instant noodles', 'maggi', 'ramen', 'cup noodles', 'ready meal', 'frozen meal',
-  'packaged snack', 'processed cheese', 'cheese spread'
+  'packaged snack', 'processed cheese', 'cheese spread', 'sandwich spread',
+  'mayo', 'mayonnaise', 'ketchup', 'white bread', 'refined flour',
+  'maida', 'refined sugar', 'artificial sweetener', 'carbonated drink',
+  'packaged juice', 'tetra pack', 'instant mix', 'ready to eat',
+  'canned food', 'preservatives', 'artificial flavoring', 'msg',
+  'trans fat', 'hydrogenated oil', 'palm oil', 'deep fried snack',
+  'namkeen', 'bhujia', 'sev', 'gathiya', 'chivda', 'farsan'
 ];
 
 // Healthy food patterns (for reference, though not used in penalty calculation)
@@ -93,12 +105,12 @@ export function countUnhealthyFoods(foodLogs: Array<{ foodItem: string; identifi
 /**
  * Calculates penalty points for unhealthy foods
  * @param unhealthyFoodCount Number of unhealthy food items
- * @param penaltyPerItem Points deducted per unhealthy item (default: 3)
+ * @param penaltyPerItem Points deducted per unhealthy item (default: 2)
  * @returns Total penalty points
  */
 export function calculateUnhealthyFoodPenalty(
   unhealthyFoodCount: number, 
-  penaltyPerItem: number = 3
+  penaltyPerItem: number = 2
 ): number {
   return Math.max(0, unhealthyFoodCount * penaltyPerItem);
 }

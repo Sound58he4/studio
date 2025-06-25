@@ -57,13 +57,32 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('orientationchange', checkMobile);
     };
   }, []);
+
+  // Detect theme from HTML class (consistent with overview page)
+  useEffect(() => {
+    const updateDark = () => {
+      const isDarkTheme = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkTheme);
+      console.log(`[Layout] Theme updated to: ${isDarkTheme ? 'dark' : 'light'}`);
+    };
+
+    updateDark(); // Initial check
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     const applyThemeFromFirestore = async () => {
       if (!isClient || !userId) {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add('light'); // Default to light theme
-        setIsDark(false);
         setThemeApplied(true);
         if (!userId) console.log("[Layout] User not logged in, applying default light theme.");
         return;
@@ -99,15 +118,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(theme);
-        setIsDark(theme === 'dark');
-        console.log(`[Layout] Applied theme: ${theme}`);
+        console.log(`[Layout] Applied theme from Firestore: ${theme}`);
         setThemeApplied(true);
       } catch (error) {
         console.error("[Layout] Error fetching/applying theme from Firestore:", error);
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add('light'); // Default to light theme on error
-        setIsDark(false);
         setThemeApplied(true);
       }
     };
@@ -115,9 +132,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     applyThemeFromFirestore();
   }, [userId, isClient]);
 
-  const showHeaderFooter = !pathname.startsWith('/authorize') && !!user;
-  const applyMainPadding = showHeaderFooter && !['/friends', '/ai-assistant'].includes(pathname);
-  const isChatPage = ['/friends', '/ai-assistant'].includes(pathname);
+  const showHeaderFooter = !pathname?.startsWith('/authorize') && !!user;
+  const applyMainPadding = showHeaderFooter && !['/friends', '/ai-assistant'].includes(pathname || '');
+  const isChatPage = ['/friends', '/ai-assistant'].includes(pathname || '');
 
 
   const handleLogout = async () => {
@@ -139,7 +156,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         root.classList.remove('light', 'dark');
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         root.classList.add(systemTheme);
-        setIsDark(systemTheme === 'dark');
         console.log(`[Layout] Reset theme to system default: ${systemTheme}`);
       }
 
@@ -228,9 +244,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   }, [isClient, router]);  return (
     <div 
       className={cn(
-        "min-h-screen flex flex-col transition-colors duration-300",
+        "min-h-screen flex flex-col transition-colors duration-500",
         isDark 
-          ? "bg-gradient-to-br from-gray-900 via-slate-900 to-gray-800" 
+          ? "bg-[#1a1a1a]" 
           : "bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200",
         !themeApplied ? 'opacity-0' : 'opacity-100'
       )}
@@ -238,9 +254,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {shouldShowTopNav && (
         <header 
           className={cn(
-            "sticky top-0 z-50 shadow-lg animate-slide-down hidden md:block transition-colors duration-300",
+            "sticky top-0 z-50 shadow-lg animate-slide-down hidden md:block transition-all duration-500",
             isDark 
-              ? "bg-gray-900/95 backdrop-blur-lg border-b border-gray-700/50" 
+              ? "bg-[#1a1a1a]" 
               : "bg-clayGlass backdrop-blur-lg border-b border-white/20"
           )}
         >
@@ -253,7 +269,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
               <Link href="/dashboard" className={cn(
                 "flex items-center gap-2 font-bold hover:opacity-80 transition-opacity duration-200 group",
                 isNavbarMinimized ? "text-lg" : "text-xl",
-                isDark ? "text-gray-100" : "text-primary"
+                isDark ? "text-white" : "text-primary"
               )}>
                 <Image
                   src="/logo.jpeg"
@@ -273,7 +289,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 <TopNavigationBar 
                   navLinks={navLinks}
                   handleLogout={handleLogout}
-                  pathname={pathname}
+                  pathname={pathname || ''}
                   isDark={isDark}
                 />
               )}
@@ -283,7 +299,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => setIsNavbarMinimized(!isNavbarMinimized)}
                 className={cn(
                   "p-2 h-8 w-8 transition-colors duration-200",
-                  isDark ? "hover:bg-gray-700/50 text-gray-300" : ""
+                  isDark ? "hover:bg-[#2a2a2a] text-white" : ""
                 )}
                 title={isNavbarMinimized ? "Expand navbar" : "Minimize navbar"}
               >
@@ -312,13 +328,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       >        {/* Background elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
           <div className={cn(
-            "absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl opacity-40 transition-colors duration-300",
+            "absolute -top-40 -right-40 w-80 h-80 rounded-full blur-3xl opacity-40 transition-colors duration-500",
             isDark 
               ? "bg-gradient-to-br from-purple-500/10 to-blue-500/10" 
               : "bg-gradient-to-br from-primary/5 to-secondary/5"
           )} />
           <div className={cn(
-            "absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl opacity-30 transition-colors duration-300",
+            "absolute -bottom-40 -left-40 w-80 h-80 rounded-full blur-3xl opacity-30 transition-colors duration-500",
             isDark 
               ? "bg-gradient-to-tr from-blue-500/10 to-purple-500/10" 
               : "bg-gradient-to-tr from-accent/5 to-primary/5"
@@ -335,9 +351,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       {isNavbarMinimized && shouldShowTopNav && (
         <button
           className={cn(
-            "hidden md:block fixed top-4 right-4 z-50 p-2 rounded-full shadow-lg border-2 transition-colors duration-300",
+            "hidden md:block fixed top-4 right-4 z-50 p-2 rounded-full shadow-lg border-2 transition-colors duration-500",
             isDark 
-              ? "bg-gray-800 text-gray-100 border-gray-600/50 hover:bg-gray-700" 
+              ? "bg-[#2a2a2a] text-white border-[#3a3a3a] hover:bg-[#3a3a3a]" 
               : "bg-primary text-primary-foreground border-primary-foreground/20 hover:bg-primary/90"
           )}
           onClick={() => setIsNavbarMinimized(false)}
@@ -353,9 +369,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
           <div
             className={cn(
-              "backdrop-blur-xl border-t shadow-lg py-2 transition-colors duration-300",
+              "backdrop-blur-xl border-t shadow-lg py-2 transition-all duration-500",
               isDark 
-                ? "bg-gray-900/95 border-gray-700/50" 
+                ? "bg-[#1a1a1a] border-[#2a2a2a]" 
                 : "bg-clayGlass border-white/50 shadow-clayStrong"
             )}
             style={{

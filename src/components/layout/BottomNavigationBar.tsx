@@ -147,7 +147,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
           shadow-[0_-4px_20px_0_rgba(0,0,0,0.08)]
           transition-all duration-500
           ${isDark 
-            ? 'bg-gray-900/95 border-purple-500/20 shadow-[0_-4px_20px_0_rgba(147,51,234,0.1)]' 
+            ? 'bg-[#1a1a1a] border-[#2a2a2a]' 
             : 'bg-white/95 border-gray-200/50'
           }
         `}
@@ -169,10 +169,10 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                   flex flex-col items-center justify-center px-1 py-2 min-w-[60px] max-w-[70px] rounded-lg
                   ${isActive 
                     ? isDark 
-                      ? 'text-purple-400 bg-purple-500/20 font-semibold shadow-lg border border-purple-400/30' 
+                      ? 'text-blue-400 bg-blue-500/20 font-semibold shadow-lg border border-blue-400/30' 
                       : 'text-blue-600 bg-clayBlue font-semibold shadow-clayInset'
                     : isDark 
-                      ? 'text-gray-300 hover:text-purple-300 hover:bg-gray-800/60' 
+                      ? 'text-gray-300 hover:text-white hover:bg-[#2a2a2a]' 
                       : 'text-gray-600 hover:text-blue-500 hover:bg-clay-100/60'
                   }
                 `}              >
@@ -199,7 +199,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
               hover:scale-105 active:scale-95
               flex flex-col items-center justify-center px-1 py-2 min-w-[60px] max-w-[70px] rounded-lg
               ${isDark 
-                ? 'text-gray-300 hover:text-purple-300 hover:bg-gray-800/60' 
+                ? 'text-gray-300 hover:text-white hover:bg-[#2a2a2a]' 
                 : 'text-gray-600 hover:text-blue-500 hover:bg-clay-100/60'
               }
             `}
@@ -219,7 +219,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
         <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobileMenu(false)}>
           <div className={cn(
             "fixed bottom-0 left-0 right-0 rounded-t-lg p-4 transition-colors duration-200",
-            isDark ? "bg-gray-800" : "bg-white"
+            isDark ? "bg-[#2a2a2a]" : "bg-white"
           )}>
             <h3 className={cn(
               "text-lg font-semibold mb-4",
@@ -237,7 +237,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
                   className={cn(
                     "flex items-center space-x-3 w-full p-3 rounded transition-colors duration-200",
                     isDark 
-                      ? "hover:bg-gray-700 text-gray-200" 
+                      ? "hover:bg-[#2a2a2a] text-gray-200" 
                       : "hover:bg-gray-100 text-gray-900"
                   )}
                 >
@@ -254,7 +254,7 @@ const BottomNavigationBar: React.FC<BottomNavigationBarProps> = ({
               className={cn(
                 "flex items-center space-x-3 w-full p-3 rounded transition-colors duration-200",
                 isDark 
-                  ? "hover:bg-gray-700 text-red-400" 
+                  ? "hover:bg-[#2a2a2a] text-red-400" 
                   : "hover:bg-gray-100 text-red-600"
               )}
             >

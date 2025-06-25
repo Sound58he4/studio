@@ -1,6 +1,4 @@
 // src/services/firestore/socialService.ts
-'use server';
-
 import { db } from '@/lib/firebase/exports';
 import {
   doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs,
@@ -11,6 +9,9 @@ import type {
 } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils'; 
 import { AI_ASSISTANT_ID } from '@/app/dashboard/types'; // Import AI_ASSISTANT_ID
+import { calculateLevel } from '@/lib/utils/levelCalculator';
+import { getBadgesForUsers } from './dailyPointsService';
+import { getStreaksForUsers } from './streakService';
 
 /**
  * Searches for users by display name (case-insensitive prefix match).
@@ -41,19 +42,47 @@ export async function searchUsers(currentUserId: string, searchQuery: string): P
             if (userId === currentUserId || userId === AI_ASSISTANT_ID) return null; // Exclude self and AI
 
             let requestStatus: SearchResultUser['requestStatus'] = 'none';
+            let totalPoints = 0;
+            let badges = 0;
+
             try {
                 const friendRef = doc(db, 'users', currentUserId, 'friends', userId);
                 const requestRef = doc(db, 'users', userId, 'viewRequests', currentUserId);
-                const [friendSnap, requestSnap] = await Promise.all([getDoc(friendRef), getDoc(requestRef)]);
+                const pointsRef = doc(db, 'users', userId, 'points', 'current');
+                
+                const [friendSnap, requestSnap, pointsSnap] = await Promise.all([
+                    getDoc(friendRef), 
+                    getDoc(requestRef),
+                    getDoc(pointsRef)
+                ]);
 
                 if (friendSnap.exists()) requestStatus = 'following';
                 else if (requestSnap.exists() && requestSnap.data()?.status === 'pending') requestStatus = 'pending';
 
-            } catch (reqError) { console.error(`[Social Service] Error checking request/friend status for user ${userId}:`, reqError); }
+                if (pointsSnap.exists()) {
+                    const pointsData = pointsSnap.data();
+                    totalPoints = pointsData.totalPoints || 0;
+                }
+
+                // Get badges for this user
+                const badgeResults = await getBadgesForUsers([userId]);
+                badges = badgeResults[userId] || 0;
+
+            } catch (reqError) { 
+                console.error(`[Social Service] Error checking request/friend status for user ${userId}:`, reqError); 
+            }
+
+            const level = calculateLevel(totalPoints);
 
             return {
-                id: userId, displayName: userData.displayName || 'Unnamed User', email: userData.email,
-                photoURL: userData.photoURL ?? null, requestStatus: requestStatus
+                id: userId, 
+                displayName: userData.displayName || 'Unnamed User', 
+                email: userData.email,
+                photoURL: userData.photoURL ?? null, 
+                requestStatus: requestStatus,
+                totalPoints,
+                level,
+                badges
             };
         });
 
@@ -191,11 +220,58 @@ export async function getFriends(currentUserId: string): Promise<UserFriend[]> {
         const friendsRef = collection(db, 'users', currentUserId, 'friends');
         const friendsQuery = query(friendsRef, orderBy('displayName', 'asc'));
         const friendsSnap = await getDocs(friendsQuery);
-        const friends = friendsSnap.docs
+        const friendsData = friendsSnap.docs
             .map(doc => ({ id: doc.id, ...doc.data() } as UserFriend))
             .filter(friend => friend.id !== AI_ASSISTANT_ID && !friend.isAI); // Explicitly filter out AI
-        console.log(`[Social Service] Found ${friends.length} human friends.`);
-        return friends;
+        
+        // Fetch points data for each friend to calculate their level
+        const friendsWithLevels = await Promise.all(
+            friendsData.map(async (friend) => {
+                try {
+                    const pointsDocRef = doc(db, 'users', friend.id, 'points', 'current');
+                    const pointsSnap = await getDoc(pointsDocRef);
+                    
+                    let totalPoints = 0;
+                    if (pointsSnap.exists()) {
+                        const pointsData = pointsSnap.data();
+                        totalPoints = pointsData.totalPoints || 0;
+                    }
+                    
+                    const level = calculateLevel(totalPoints);
+                    
+                    return {
+                        ...friend,
+                        totalPoints,
+                        level
+                    };
+                } catch (error) {
+                    console.warn(`[Social Service] Could not fetch points for friend ${friend.id}:`, error);
+                    // Return friend with default level 1 if points fetch fails
+                    return {
+                        ...friend,
+                        totalPoints: 0,
+                        level: 1
+                    };
+                }
+            })
+        );
+        
+        // Fetch badges and streaks for all friends efficiently
+        const friendIds = friendsWithLevels.map(friend => friend.id);
+        const [badgeResults, streakResults] = await Promise.all([
+            getBadgesForUsers(friendIds),
+            getStreaksForUsers(friendIds)
+        ]);
+        
+        // Combine level, badge, and streak data
+        const friendsWithCompleteData = friendsWithLevels.map(friend => ({
+            ...friend,
+            badges: badgeResults[friend.id] || 0,
+            dayStreak: streakResults[friend.id] || 0
+        }));
+        
+        console.log(`[Social Service] Found ${friendsWithCompleteData.length} human friends with levels, badges, and streaks calculated.`);
+        return friendsWithCompleteData;
     } catch (error: any) {
          if (error.code === 'failed-precondition' && error.message.includes('query requires an index')) {
              const indexUrl = `https://console.firebase.google.com/v1/r/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/firestore/indexes?create_composite=ClRwcm9qZWN0cy9udXRyaXRyYW5zZm9ybS1haS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvZnJpZW5kcy9pbmRleGVzL18QARIRCg1kaXNwbGF5TmFtZRABGgwKCF9fbmFtZV9fEAE`;

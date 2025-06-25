@@ -19,7 +19,7 @@ const ReportErrorState: React.FC<ReportErrorStateProps> = ({ message, onRetry, i
         <div className="flex justify-center items-center min-h-[calc(100vh-250px)] p-4">
             <Card className={`w-full max-w-md text-center shadow-lg transition-all duration-300 ${
                 isDark 
-                    ? 'border-red-500/30 bg-gray-800/60' 
+                    ? 'border-red-500/30 bg-[#2a2a2a]' 
                     : 'border-destructive'
             }`}>
                 <CardHeader>
@@ -39,14 +39,14 @@ const ReportErrorState: React.FC<ReportErrorStateProps> = ({ message, onRetry, i
                     {isProfileError ? (
                         <Link href="/profile">
                              <Button variant="secondary" className={`transition-all duration-300 ${
-                                 isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white' : ''
+                                 isDark ? 'bg-[#2a2a2a] hover:bg-[#3a3a3a] text-gray-300 hover:text-white' : ''
                              }`}>
                                  <User className="mr-2 h-4 w-4"/> Go to Profile
                              </Button>
                         </Link>
                     ) : (
                         <Button onClick={onRetry} variant="secondary" className={`transition-all duration-300 ${
-                            isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white' : ''
+                            isDark ? 'bg-[#2a2a2a] hover:bg-[#3a3a3a] text-gray-300 hover:text-white' : ''
                         }`}>
                             <RefreshCw className="mr-2 h-4 w-4"/>Retry
                         </Button>

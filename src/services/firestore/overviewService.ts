@@ -9,6 +9,7 @@ import type {
   StoredUserProfile, StoredExerciseLogEntry
 } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils';
+import { countUnhealthyFoods, calculateUnhealthyFoodPenalty } from '@/data/food-categories';
 
 interface PointsData {
   todayPoints: number;
@@ -225,23 +226,6 @@ export async function getOverviewData(
     };
 
     // 4. Calculate points (same logic as points page)
-    function countUnhealthyFoods(foodLogs: { foodItem: string }[]): number {
-      const unhealthyKeywords = [
-        'fried', 'deep fried', 'chips', 'fries', 'burger', 'pizza', 'soda', 'soft drink',
-        'candy', 'chocolate', 'ice cream', 'cake', 'cookies', 'donuts', 'pastry',
-        'fast food', 'junk food', 'processed', 'instant noodles', 'energy drink'
-      ];
-      return foodLogs.filter((log: { foodItem: string }) => {
-        const foodName = (log.foodItem || '').toLowerCase();
-        return unhealthyKeywords.some(keyword => foodName.includes(keyword));
-      }).length;
-    }
-    function calculateUnhealthyFoodPenalty(unhealthyCount: number): number {
-      if (unhealthyCount >= 3) return 10;
-      if (unhealthyCount === 2) return 5;
-      if (unhealthyCount === 1) return 2;
-      return 0;
-    }
     let points = 0;
     const caloriesPercent = targets.calories > 0 ? (todayProgress.calories / targets.calories) * 100 : 0;
     const proteinPercent = targets.protein > 0 ? (todayProgress.protein / targets.protein) * 100 : 0;
@@ -266,7 +250,7 @@ export async function getOverviewData(
     if (caloriesPercent >= 100 && proteinPercent >= 100 && carbsPercent >= 100 && fatPercent >= 100) {
       points += 10;
     }
-    const unhealthyFoodCount = countUnhealthyFoods(todayFoodLogs as { foodItem: string }[]);
+    const unhealthyFoodCount = countUnhealthyFoods(todayFoodLogs as Array<{ foodItem: string; identifiedFoodName?: string }>);
     const penalty = calculateUnhealthyFoodPenalty(unhealthyFoodCount);
     points -= penalty;
     points = Math.max(0, Math.min(points, 100));

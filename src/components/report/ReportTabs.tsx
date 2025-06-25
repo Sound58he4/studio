@@ -16,7 +16,7 @@ const ReportTabs: React.FC<ReportTabsProps> = ({ activeTab, setActiveTab, isDark
     return (
         <TabsList className={`grid w-full grid-cols-3 rounded-none border-b shadow-inner h-11 sm:h-12 transition-all duration-300 ${
             isDark 
-                ? 'bg-gray-700/50 border-gray-600' 
+                ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
                 : 'bg-muted/80'
         }`}>
             <TabsTrigger value="daily" className={`text-xs sm:text-sm transition-all duration-300 ${

@@ -24,6 +24,25 @@ import {
 function EnhancedBackground() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; speed: number }>>([]);
+  const [isDark, setIsDark] = useState(false);
+
+  // Detect theme from HTML class (consistent with other pages)
+  useEffect(() => {
+    const updateDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    updateDark(); // Initial check
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -74,10 +93,15 @@ function EnhancedBackground() {
       <motion.div
         className="absolute inset-0 opacity-30"
         style={{
-          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, 
-                      rgba(139, 92, 246, 0.15), 
-                      rgba(59, 130, 246, 0.1), 
-                      transparent 50%)`
+          background: isDark 
+            ? `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, 
+                          rgba(100, 100, 100, 0.15), 
+                          rgba(80, 80, 80, 0.1), 
+                          transparent 50%)`
+            : `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, 
+                          rgba(139, 92, 246, 0.15), 
+                          rgba(59, 130, 246, 0.1), 
+                          transparent 50%)`
         }}
       />
 
@@ -85,7 +109,7 @@ function EnhancedBackground() {
       {particles.map((particle) => (
         <motion.div
           key={particle.id}
-          className="absolute rounded-full bg-primary/20"
+          className={`absolute rounded-full ${isDark ? 'bg-gray-600/20' : 'bg-primary/20'}`}
           style={{
             width: particle.size,
             height: particle.size,
@@ -156,10 +180,12 @@ function EnhancedBackground() {
           {Array.from({ length: 96 }).map((_, i) => (
             <motion.div
               key={i}
-              className="border border-primary/20"
+              className={`border ${isDark ? 'border-gray-600/20' : 'border-primary/20'}`}
               animate={{
                 opacity: [0.2, 0.5, 0.2],
-                borderColor: ['rgba(139, 92, 246, 0.1)', 'rgba(59, 130, 246, 0.3)', 'rgba(139, 92, 246, 0.1)']
+                borderColor: isDark 
+                  ? ['rgba(100, 100, 100, 0.1)', 'rgba(120, 120, 120, 0.3)', 'rgba(100, 100, 100, 0.1)']
+                  : ['rgba(139, 92, 246, 0.1)', 'rgba(59, 130, 246, 0.3)', 'rgba(139, 92, 246, 0.1)']
               }}
               transition={{
                 duration: 4,
@@ -174,7 +200,9 @@ function EnhancedBackground() {
 
       {/* Pulsing orbs */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-32 h-32 bg-primary/10 rounded-full blur-xl"
+        className={`absolute top-1/4 left-1/4 w-32 h-32 rounded-full blur-xl ${
+          isDark ? 'bg-gray-600/10' : 'bg-primary/10'
+        }`}
         animate={{
           scale: [1, 1.5, 1],
           opacity: [0.3, 0.6, 0.3],
@@ -186,7 +214,9 @@ function EnhancedBackground() {
         }}
       />
       <motion.div
-        className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-accent/10 rounded-full blur-xl"
+        className={`absolute bottom-1/4 right-1/4 w-40 h-40 rounded-full blur-xl ${
+          isDark ? 'bg-gray-500/10' : 'bg-accent/10'
+        }`}
         animate={{
           scale: [1.2, 0.8, 1.2],
           opacity: [0.4, 0.7, 0.4],
@@ -199,7 +229,9 @@ function EnhancedBackground() {
         }}
       />
       <motion.div
-        className="absolute top-3/4 left-3/4 w-24 h-24 bg-blue-500/10 rounded-full blur-xl"
+        className={`absolute top-3/4 left-3/4 w-24 h-24 rounded-full blur-xl ${
+          isDark ? 'bg-gray-400/10' : 'bg-blue-500/10'
+        }`}
         animate={{
           scale: [0.8, 1.3, 0.8],
           opacity: [0.2, 0.5, 0.2],
