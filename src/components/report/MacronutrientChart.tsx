@@ -20,9 +20,10 @@ interface MacronutrientChartProps {
     targetKey: keyof ChartData;
     unit: string;
     showLabels?: boolean; // Optional prop to show labels on bars
+    isDark?: boolean;
 }
 
-const MacronutrientChart: React.FC<MacronutrientChartProps> = ({ data, title, valueKey, targetKey, unit, showLabels = false }) => {
+const MacronutrientChart: React.FC<MacronutrientChartProps> = ({ data, title, valueKey, targetKey, unit, showLabels = false, isDark = false }) => {
 
      // Ensure data has valid numeric values, default to 0 if not
      const processedData = data.map(item => ({
@@ -37,7 +38,11 @@ const MacronutrientChart: React.FC<MacronutrientChartProps> = ({ data, title, va
           const target = payload[0].payload[targetKey];
           const percentage = target > 0 ? ((consumed / target) * 100).toFixed(0) : 0;
           return (
-            <div className="p-2 bg-background/80 border border-border rounded-md shadow-lg backdrop-blur-sm text-xs">
+            <div className={`p-2 border rounded-md shadow-lg backdrop-blur-sm text-xs transition-all duration-300 ${
+                isDark 
+                    ? 'bg-gray-800/80 border-gray-600 text-gray-200' 
+                    : 'bg-background/80 border-border'
+            }`}>
               <p className="font-semibold">{label}</p>
               <p>Consumed: {consumed.toFixed(1)}{unit}</p>
               <p>Target: {target.toFixed(1)}{unit}</p>
@@ -50,15 +55,36 @@ const MacronutrientChart: React.FC<MacronutrientChartProps> = ({ data, title, va
 
     return (
         <div className="space-y-2 h-[200px] md:h-[250px]"> {/* Added height constraint */}
-             <h4 className="text-sm font-medium text-center text-muted-foreground">{title}</h4>
+             <h4 className={`text-sm font-medium text-center transition-all duration-300 ${
+                 isDark ? 'text-gray-400' : 'text-muted-foreground'
+             }`}>{title}</h4>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={processedData} layout="vertical" margin={{ top: 5, right: 10, left: showLabels ? 0 : -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.5)" />
-                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} tickFormatter={(value) => `${value}${unit}`} />
-                     <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} width={showLabels ? 60 : 0} tickLine={showLabels} axisLine={showLabels} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted)/0.3)' }}/>
+                    <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgb(75 85 99 / 0.5)' : 'hsl(var(--border)/0.5)'} />
+                     <XAxis 
+                         type="number" 
+                         stroke={isDark ? 'rgb(156 163 175)' : 'hsl(var(--muted-foreground))'} 
+                         fontSize={10} 
+                         tickFormatter={(value) => `${value}${unit}`} 
+                     />
+                     <YAxis 
+                         type="category" 
+                         dataKey="name" 
+                         stroke={isDark ? 'rgb(156 163 175)' : 'hsl(var(--muted-foreground))'} 
+                         fontSize={10} 
+                         width={showLabels ? 60 : 0} 
+                         tickLine={showLabels} 
+                         axisLine={showLabels} 
+                     />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgb(75 85 99 / 0.3)' : 'hsl(var(--muted)/0.3)' }}/>
                      {/* Background Bar for Target */}
-                     <Bar dataKey={targetKey} fill="hsl(var(--muted)/0.5)" radius={[0, 4, 4, 0]} background={{ fill: 'hsl(var(--background))', radius: 4 }} barSize={16} />
+                     <Bar 
+                         dataKey={targetKey} 
+                         fill={isDark ? 'rgb(75 85 99 / 0.5)' : 'hsl(var(--muted)/0.5)'} 
+                         radius={[0, 4, 4, 0]} 
+                         background={{ fill: isDark ? 'rgb(31 41 55)' : 'hsl(var(--background))', radius: 4 }} 
+                         barSize={16} 
+                     />
                      {/* Consumed Bar */}
                      <Bar dataKey={valueKey} radius={[0, 4, 4, 0]} barSize={16}>
                         {processedData.map((entry, index) => (

@@ -176,6 +176,30 @@ export default function ProfilePage() {
     message: ''
   });
 
+  // Dark theme state and detection
+  const [isClient, setIsClient] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => { setIsClient(true); }, []);
+
+  // Detect theme from HTML class (consistent with Overview page)
+  useEffect(() => {
+    const updateDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    updateDark(); // Initial check
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Weight reminder state
   const weightReminder = useWeightReminder();
   const [reminderEnabled, setReminderEnabled] = useState(false);
@@ -548,8 +572,12 @@ export default function ProfilePage() {
          className={cn(
            "rounded-xl text-sm h-auto min-h-[3rem] px-4 py-3 shadow-sm transition-all justify-start text-left",
            field.value === option.value 
-             ? "bg-primary text-primary-foreground border-primary font-semibold shadow-md" 
-             : "border-input hover:bg-primary/5 hover:border-primary/50",
+             ? isDark
+               ? "bg-blue-600 text-white border-blue-600 font-semibold shadow-md hover:bg-blue-700" 
+               : "bg-primary text-primary-foreground border-primary font-semibold shadow-md"
+             : isDark
+               ? "border-[#3a3a3a] bg-[#2a2a2a] text-gray-300 hover:bg-[#323232] hover:border-blue-500/50"
+               : "border-input hover:bg-primary/5 hover:border-primary/50",
            "animate-in fade-in zoom-in-95"
          )}
          style={{ animationDelay: `${index * 50}ms` }}
@@ -558,7 +586,13 @@ export default function ProfilePage() {
          }}
        >
          <div className="flex items-center gap-2 w-full">
-           {option.icon && React.createElement(option.icon, { className: "h-4 w-4 flex-shrink-0" })}
+           {option.icon && React.createElement(option.icon, { 
+             className: `h-4 w-4 flex-shrink-0 ${
+               field.value === option.value 
+                 ? 'text-current' 
+                 : isDark ? 'text-blue-400' : 'text-primary'
+             }` 
+           })}
            <span className="text-sm font-medium leading-tight break-words">{option.label}</span>
          </div>
        </Button>
@@ -577,9 +611,11 @@ export default function ProfilePage() {
                   htmlFor={`checkbox-${field.name}-${item.value}`}
                   data-state={isChecked ? 'checked' : 'unchecked'}
                   className={cn(
-                    "flex flex-row items-center space-x-3 space-y-0 rounded-xl border-2 p-3 transition-all hover:bg-muted/30 cursor-pointer",
-                    "data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:shadow-sm",
-                    "animate-in fade-in zoom-in-95 min-h-[52px]"
+                    "flex flex-row items-center space-x-3 space-y-0 rounded-xl border-2 p-3 transition-all cursor-pointer",
+                    "animate-in fade-in zoom-in-95 min-h-[52px]",
+                    isDark 
+                      ? "border-[#3a3a3a] hover:bg-[#323232] data-[state=checked]:bg-blue-600/20 data-[state=checked]:border-blue-500/50 data-[state=checked]:shadow-sm"
+                      : "border-input hover:bg-muted/30 data-[state=checked]:bg-primary/10 data-[state=checked]:border-primary/50 data-[state=checked]:shadow-sm"
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                >
@@ -595,8 +631,14 @@ export default function ProfilePage() {
                     className="h-5 w-5 flex-shrink-0"
                   />
                 </FormControl>
-                 <span className="font-medium text-sm flex items-center gap-2 flex-grow">
-                    {item.icon && React.createElement(item.icon, { className: "h-4 w-4 text-muted-foreground flex-shrink-0" })}
+                 <span className={`font-medium text-sm flex items-center gap-2 flex-grow ${
+                   isDark ? 'text-gray-300' : 'text-foreground'
+                 }`}>
+                    {item.icon && React.createElement(item.icon, { 
+                      className: `h-4 w-4 flex-shrink-0 ${
+                        isDark ? 'text-gray-400' : 'text-muted-foreground'
+                      }` 
+                    })}
                     <span className="break-words">{item.label}</span>
                  </span>
                </ShadCnFormLabel>
@@ -610,26 +652,42 @@ export default function ProfilePage() {
   // Main component return JSX
   if (authLoading || isLoading || !hasFetchedProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200 flex items-center justify-center p-4 animate-fade-in">
+      <div className={`min-h-screen flex items-center justify-center p-4 animate-fade-in transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#0f0f0f]' 
+          : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+      }`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
           className="max-w-3xl w-full"
         >
-          <Card className="bg-clayGlass backdrop-blur-xl border-0 shadow-clay rounded-3xl">
+          <Card className={`backdrop-blur-xl border-0 rounded-3xl shadow-lg ${
+            isDark 
+              ? 'bg-[#1a1a1a] border border-[#2a2a2a]' 
+              : 'bg-clayGlass shadow-clay'
+          }`}>
             <CardHeader className="text-center p-6 sm:p-8">
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                 className="mx-auto mb-4"
               >
-                <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-clayInset">
+                <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shadow-lg ${
+                  isDark 
+                    ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80' 
+                    : 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-clayInset'
+                }`}>
                   <User className="h-8 w-8 text-white" />
                 </div>
               </motion.div>
-              <Skeleton className="h-6 w-48 mx-auto bg-white/30 mb-2 rounded-2xl" />
-              <Skeleton className="h-4 w-64 mx-auto bg-white/20 rounded-2xl" />
+              <Skeleton className={`h-6 w-48 mx-auto mb-2 rounded-2xl ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-white/30'
+              }`} />
+              <Skeleton className={`h-4 w-64 mx-auto rounded-2xl ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-white/20'
+              }`} />
             </CardHeader>
             <CardContent className="p-6 sm:p-8 space-y-8">
               {[1, 2, 3, 4].map((i) => (
@@ -638,19 +696,32 @@ export default function ProfilePage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="space-y-6 p-6 border-0 rounded-3xl bg-white/30 backdrop-blur-sm shadow-clayInset"
-                >
-                  <Skeleton className="h-5 w-1/3 bg-white/40 rounded-2xl" />
+                  className={`space-y-6 p-6 border-0 rounded-3xl backdrop-blur-sm transition-all duration-300 ${
+                    isDark 
+                      ? 'bg-[#252525] border border-[#3a3a3a]' 
+                      : 'bg-white/30 shadow-clayInset'
+                  }`}>
+                  <Skeleton className={`h-5 w-1/3 rounded-2xl ${
+                    isDark ? 'bg-[#3a3a3a]' : 'bg-white/40'
+                  }`} />
                   <div className="space-y-4">
-                    <Skeleton className="h-12 w-full bg-white/40 rounded-2xl" />
-                    <Skeleton className="h-12 w-full bg-white/40 rounded-2xl" />
-                    {i === 3 && <Skeleton className="h-24 w-full bg-white/40 rounded-2xl" />}
+                    <Skeleton className={`h-12 w-full rounded-2xl ${
+                      isDark ? 'bg-[#3a3a3a]' : 'bg-white/40'
+                    }`} />
+                    <Skeleton className={`h-12 w-full rounded-2xl ${
+                      isDark ? 'bg-[#3a3a3a]' : 'bg-white/40'
+                    }`} />
+                    {i === 3 && <Skeleton className={`h-24 w-full rounded-2xl ${
+                      isDark ? 'bg-[#3a3a3a]' : 'bg-white/40'
+                    }`} />}
                   </div>
                 </motion.div>
               ))}
             </CardContent>
             <CardFooter className="pt-6 pb-8 justify-center">
-              <Skeleton className="h-12 w-48 bg-white/40 rounded-3xl" />
+              <Skeleton className={`h-12 w-48 rounded-3xl ${
+                isDark ? 'bg-[#3a3a3a]' : 'bg-white/40'
+              }`} />
             </CardFooter>
           </Card>
         </motion.div>
@@ -660,13 +731,21 @@ export default function ProfilePage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200 flex items-center justify-center p-4 animate-fade-in">
+      <div className={`min-h-screen flex items-center justify-center p-4 animate-fade-in transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#0f0f0f]' 
+          : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+      }`}>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="w-full max-w-md text-center border-0 bg-clayGlass backdrop-blur-xl shadow-clayStrong rounded-3xl">
+          <Card className={`w-full max-w-md text-center border-0 backdrop-blur-xl rounded-3xl shadow-lg ${
+            isDark 
+              ? 'bg-[#1a1a1a] border border-[#2a2a2a]' 
+              : 'bg-clayGlass shadow-clayStrong'
+          }`}>
             <CardHeader className="p-8">
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
@@ -674,8 +753,12 @@ export default function ProfilePage() {
               >
                 <AlertCircle className="mx-auto h-16 w-16 text-red-500 mb-4" />
               </motion.div>
-              <CardTitle className="text-red-600 text-xl">Profile Error</CardTitle>
-              <CardDescription className="text-base mt-2 text-gray-700">{loadError}</CardDescription>
+              <CardTitle className={`text-xl ${
+                isDark ? 'text-red-400' : 'text-red-600'
+              }`}>Profile Error</CardTitle>
+              <CardDescription className={`text-base mt-2 ${
+                isDark ? 'text-gray-400' : 'text-gray-700'
+              }`}>{loadError}</CardDescription>
             </CardHeader>
             <CardFooter className="justify-center pb-8">
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -743,19 +826,40 @@ export default function ProfilePage() {
     );
   }
   return (
-    <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200">
+    <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+      isDark 
+        ? 'bg-[#0f0f0f]' 
+        : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+    }`}>
       <div className="max-w-2xl mx-auto px-3 py-4 md:px-6 md:py-8 space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="mb-6 md:mb-8 animate-slide-down">          <div className="backdrop-blur-sm rounded-3xl shadow-clay border-0 p-6 text-center transition-all duration-500 bg-clayGlass">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-scale-in bg-gradient-to-br from-blue-400 to-blue-600">
+        <div className="mb-6 md:mb-8 animate-slide-down">
+          <div className={`backdrop-blur-sm rounded-3xl shadow-lg border-0 p-6 text-center transition-all duration-500 ${
+            isDark 
+              ? 'bg-[#1a1a1a] border border-[#2a2a2a]' 
+              : 'bg-clayGlass shadow-clay'
+          }`}>
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-scale-in shadow-lg ${
+              isDark 
+                ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80' 
+                : 'bg-gradient-to-br from-blue-400 to-blue-600'
+            }`}>
               <User className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold mb-2 text-gray-800">Complete Your Profile</h1>
-            <p className="text-sm md:text-base text-gray-600">Customize your Bago experience</p>
+            <h1 className={`text-xl md:text-2xl font-bold mb-2 ${
+              isDark ? 'text-white' : 'text-gray-800'
+            }`}>Complete Your Profile</h1>
+            <p className={`text-sm md:text-base ${
+              isDark ? 'text-gray-400' : 'text-gray-600'
+            }`}>Customize your Bago experience</p>
           </div>
         </div>
 
-        <Card className="backdrop-blur-sm border-0 hover:shadow-clayStrong transition-all duration-300 rounded-3xl animate-fade-in bg-clayGlass shadow-clay">
+        <Card className={`backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in ${
+          isDark 
+            ? 'bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a]' 
+            : 'bg-clayGlass shadow-clay hover:shadow-clayStrong'
+        }`}>
           <CardContent className="p-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
@@ -770,17 +874,36 @@ export default function ProfilePage() {
                   );
                 })} className="space-y-8">                  {/* Step 1: Basic Info */}
                   <div className="space-y-6 animate-stagger-in">
-                    <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                      <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white text-sm flex items-center justify-center font-medium">
+                    <div className={`backdrop-blur-sm rounded-2xl p-4 transition-all duration-300 ${
+                      isDark 
+                        ? 'bg-[#252525] border border-[#3a3a3a]' 
+                        : 'bg-white/40 shadow-clayInset'
+                    }`}>
+                      <div className={`flex items-center gap-3 pb-3 mb-4 border-b transition-all duration-300 ${
+                        isDark 
+                          ? 'border-[#3a3a3a]' 
+                          : 'border-blue-200/50'
+                      }`}>
+                        <div className={`w-10 h-10 rounded-2xl text-white text-sm flex items-center justify-center font-medium shadow-lg ${
+                          isDark 
+                            ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80' 
+                            : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                        }`}>
                           <User className="h-5 w-5" />
                         </div>
-                        <h2 className="text-lg font-semibold text-gray-800">Basic Information</h2>
+                        <h2 className={`text-lg font-semibold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Basic Information</h2>
                       </div>
 
                       <FormField control={form.control} name="displayName" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                            <User className="h-4 w-4 text-blue-600" />
+                          <ShadCnFormLabel className={`flex items-center gap-2 text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>
+                            <User className={`h-4 w-4 ${
+                              isDark ? 'text-blue-400' : 'text-blue-600'
+                            }`} />
                             Display Name *
                           </ShadCnFormLabel>
                           <FormControl>
@@ -788,10 +911,16 @@ export default function ProfilePage() {
                               placeholder="Choose a unique display name" 
                               {...field} 
                               value={field.value ?? ''} 
-                              className="h-11 text-base bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay transition-all duration-300"
+                              className={`h-11 text-base backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] text-white placeholder:text-gray-500 focus:bg-[#323232]' 
+                                  : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                              }`}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-gray-600">
+                          <FormDescription className={`text-xs ${
+                            isDark ? 'text-gray-400' : 'text-gray-600'
+                          }`}>
                             Visible to others if you enable sharing. Letters, numbers, underscores only.
                           </FormDescription>
                           <FormMessage className="text-xs" />
@@ -802,8 +931,12 @@ export default function ProfilePage() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <FormField control={form.control} name="height" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                              <Ruler className="h-4 w-4 text-blue-600" />
+                            <ShadCnFormLabel className={`flex items-center gap-2 text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              <Ruler className={`h-4 w-4 ${
+                                isDark ? 'text-blue-400' : 'text-blue-600'
+                              }`} />
                               Height (cm) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -812,7 +945,11 @@ export default function ProfilePage() {
                                 placeholder="175" 
                                 {...field} 
                                 value={field.value ?? ''} 
-                                className="h-11 text-base bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay transition-all duration-300"
+                                className={`h-11 text-base backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                  isDark 
+                                    ? 'bg-[#2a2a2a] text-white placeholder:text-gray-500 focus:bg-[#323232]' 
+                                    : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                                }`}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -821,8 +958,12 @@ export default function ProfilePage() {
 
                         <FormField control={form.control} name="weight" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                              <Weight className="h-4 w-4 text-blue-600" />
+                            <ShadCnFormLabel className={`flex items-center gap-2 text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              <Weight className={`h-4 w-4 ${
+                                isDark ? 'text-blue-400' : 'text-blue-600'
+                              }`} />
                               Weight (kg) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -831,7 +972,11 @@ export default function ProfilePage() {
                                 placeholder="70" 
                                 {...field} 
                                 value={field.value ?? ''} 
-                                className="h-11 text-base bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay transition-all duration-300"
+                                className={`h-11 text-base backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                  isDark 
+                                    ? 'bg-[#2a2a2a] text-white placeholder:text-gray-500 focus:bg-[#323232]' 
+                                    : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                                }`}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -840,8 +985,12 @@ export default function ProfilePage() {
 
                         <FormField control={form.control} name="age" render={({ field }) => (
                           <FormItem>
-                            <ShadCnFormLabel className="flex items-center gap-2 text-sm font-medium text-gray-800">
-                              <Calendar className="h-4 w-4 text-blue-600" />
+                            <ShadCnFormLabel className={`flex items-center gap-2 text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>
+                              <Calendar className={`h-4 w-4 ${
+                                isDark ? 'text-blue-400' : 'text-blue-600'
+                              }`} />
                               Age (years) *
                             </ShadCnFormLabel>
                             <FormControl>
@@ -850,7 +999,11 @@ export default function ProfilePage() {
                                 placeholder="25" 
                                 {...field} 
                                 value={field.value ?? ''} 
-                                className="h-11 text-base bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay transition-all duration-300"
+                                className={`h-11 text-base backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                  isDark 
+                                    ? 'bg-[#2a2a2a] text-white placeholder:text-gray-500 focus:bg-[#323232]' 
+                                    : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                                }`}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -860,7 +1013,9 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="gender" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">Gender *</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Gender *</ShadCnFormLabel>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {genderOptions.map((option) => (
                               <Button
@@ -870,8 +1025,12 @@ export default function ProfilePage() {
                                 className={cn(
                                   "h-12 text-sm font-medium rounded-2xl border-0 transition-all duration-300",
                                   field.value === option.value 
-                                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-clay hover:shadow-clayStrong" 
-                                    : "bg-white/60 backdrop-blur-sm shadow-clayInset text-gray-700 hover:bg-white/80 hover:shadow-clay"
+                                    ? isDark
+                                      ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg hover:shadow-xl" 
+                                      : "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-clay hover:shadow-clayStrong"
+                                    : isDark
+                                      ? "bg-[#2a2a2a] text-gray-300 hover:bg-[#323232] border border-[#3a3a3a]"
+                                      : "bg-white/60 backdrop-blur-sm shadow-clayInset text-gray-700 hover:bg-white/80 hover:shadow-clay"
                                 )}
                                 onClick={() => field.onChange(option.value)}
                               >
@@ -886,16 +1045,33 @@ export default function ProfilePage() {
 
                     {/* Step 2: Goals & Activity */}
                     <div className="space-y-6 animate-stagger-in">
-                      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                        <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm flex items-center justify-center font-medium">
+                      <div className={`backdrop-blur-sm rounded-2xl p-4 transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-[#252525] border border-[#3a3a3a]' 
+                          : 'bg-white/40 shadow-clayInset'
+                      }`}>
+                        <div className={`flex items-center gap-3 pb-3 mb-4 border-b transition-all duration-300 ${
+                          isDark 
+                            ? 'border-[#3a3a3a]' 
+                            : 'border-blue-200/50'
+                        }`}>
+                          <div className={`w-10 h-10 rounded-2xl text-white text-sm flex items-center justify-center font-medium shadow-lg ${
+                            isDark 
+                              ? 'bg-gradient-to-br from-purple-600/80 to-purple-700/80' 
+                              : 'bg-gradient-to-br from-purple-400 to-purple-600'
+                          }`}>
                             <TargetIcon className="h-5 w-5" />
                           </div>
-                          <h2 className="text-lg font-semibold text-gray-800">Your Goals & Activity</h2>
+                          <h2 className={`text-lg font-semibold ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Your Goals & Activity</h2>
                         </div>
 
                       <FormField control={form.control} name="fitnessGoal" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">What's your main goal? *</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>What's your main goal? *</ShadCnFormLabel>
                           {renderChips(field, goalOptions)}
                           <FormMessage />
                         </FormItem>
@@ -903,10 +1079,14 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="activityLevel" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">How active are you? *</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>How active are you? *</ShadCnFormLabel>
                           {renderChips(field, activityOptions)}
                           {field.value && (
-                            <p className="text-xs text-gray-600 mt-2">
+                            <p className={`text-xs mt-2 ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
                               {activityOptions.find(opt => opt.value === field.value)?.description}
                             </p>
                           )}
@@ -915,10 +1095,18 @@ export default function ProfilePage() {
                       )} />
 
                       <FormField control={form.control} name="preferFewerRestDays" render={({ field }) => (
-                        <FormItem className="flex items-center justify-between p-4 border-0 rounded-2xl bg-white/40 backdrop-blur-sm shadow-clayInset">
+                        <FormItem className={`flex items-center justify-between p-4 border-0 rounded-2xl backdrop-blur-sm transition-all duration-300 ${
+                          isDark 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                            : 'bg-white/40 shadow-clayInset'
+                        }`}>
                           <div>
-                            <ShadCnFormLabel className="text-sm font-medium text-gray-800">Prefer intense workouts?</ShadCnFormLabel>
-                            <FormDescription className="text-xs text-gray-600 mt-1">
+                            <ShadCnFormLabel className={`text-sm font-medium ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>Prefer intense workouts?</ShadCnFormLabel>
+                            <FormDescription className={`text-xs mt-1 ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
                               Fewer rest days, more challenging routines
                             </FormDescription>
                           </div>
@@ -934,17 +1122,34 @@ export default function ProfilePage() {
 
                     {/* Step 3: Preferences & Targets */}
                     <div className="space-y-6 animate-stagger-in">
-                      <div className="backdrop-blur-sm rounded-2xl p-4 shadow-clayInset bg-white/40">                        <div className="flex items-center gap-3 pb-3 mb-4 border-b border-blue-200/50">
-                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-400 to-green-600 text-white text-sm flex items-center justify-center font-medium">
+                      <div className={`backdrop-blur-sm rounded-2xl p-4 transition-all duration-300 ${
+                        isDark 
+                          ? 'bg-[#252525] border border-[#3a3a3a]' 
+                          : 'bg-white/40 shadow-clayInset'
+                      }`}>
+                        <div className={`flex items-center gap-3 pb-3 mb-4 border-b transition-all duration-300 ${
+                          isDark 
+                            ? 'border-[#3a3a3a]' 
+                            : 'border-blue-200/50'
+                        }`}>
+                          <div className={`w-10 h-10 rounded-2xl text-white text-sm flex items-center justify-center font-medium shadow-lg ${
+                            isDark 
+                              ? 'bg-gradient-to-br from-green-600/80 to-green-700/80' 
+                              : 'bg-gradient-to-br from-green-400 to-green-600'
+                          }`}>
                             <Utensils className="h-5 w-5" />
                           </div>
-                          <h2 className="text-lg font-semibold text-gray-800">Preferences & Targets</h2>
+                          <h2 className={`text-lg font-semibold ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Preferences & Targets</h2>
                         </div>
 
                       {/* Quick Dietary Preferences */}
                       <FormField control={form.control} name="dietaryStyles" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">Diet Type (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Diet Type (Optional)</ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, dietaryStyleOptions)}
                           <FormMessage />
                         </FormItem>
@@ -952,7 +1157,9 @@ export default function ProfilePage() {
 
                       <FormField control={form.control} name="allergies" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">Food Allergies (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Food Allergies (Optional)</ShadCnFormLabel>
                           {renderMultiSelectCheckbox(field, allergyOptions)}
                           <FormMessage />
                         </FormItem>
@@ -961,11 +1168,17 @@ export default function ProfilePage() {
                       {/* Simplified food preferences in one field */}
                       <FormField control={form.control} name="foodPreferences" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">Food Notes (Optional)</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Food Notes (Optional)</ShadCnFormLabel>
                           <FormControl>
                             <Textarea 
                               placeholder="Any food preferences, dislikes, or special requirements..." 
-                              className="resize-none text-sm min-h-[80px] bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay transition-all duration-300" 
+                              className={`resize-none text-sm min-h-[80px] backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] text-white placeholder:text-gray-500 focus:bg-[#323232]' 
+                                  : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                              }`}
                               {...field} 
                               value={field.value ?? ''} 
                             />
@@ -977,15 +1190,29 @@ export default function ProfilePage() {
                       {/* Language Preference */}
                       <FormField control={form.control} name="translatePreference" render={({ field }) => (
                         <FormItem>
-                          <ShadCnFormLabel className="text-sm font-medium text-gray-800">Language</ShadCnFormLabel>
+                          <ShadCnFormLabel className={`text-sm font-medium ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                          }`}>Language</ShadCnFormLabel>
                           <FormControl>
                             <Select onValueChange={field.onChange} value={field.value || 'en'}>
-                              <SelectTrigger className="h-11 bg-white/60 backdrop-blur-sm border-0 shadow-clayInset rounded-2xl focus:shadow-clay">
+                              <SelectTrigger className={`h-11 backdrop-blur-sm border-0 rounded-2xl transition-all duration-300 ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] text-white border border-[#3a3a3a] focus:bg-[#323232]' 
+                                  : 'bg-white/60 shadow-clayInset focus:shadow-clay'
+                              }`}>
                                 <SelectValue placeholder="Select language..." />
                               </SelectTrigger>
-                              <SelectContent className="bg-clayGlass backdrop-blur-sm border-0 shadow-clayStrong rounded-2xl">
+                              <SelectContent className={`backdrop-blur-sm border-0 rounded-2xl shadow-lg ${
+                                isDark 
+                                  ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                                  : 'bg-clayGlass shadow-clayStrong'
+                              }`}>
                                 {translatePreferenceOptions.map(option => (
-                                  <SelectItem key={option.value} value={option.value} className="rounded-xl">
+                                  <SelectItem key={option.value} value={option.value} className={`rounded-xl ${
+                                    isDark 
+                                      ? 'text-gray-300 hover:bg-[#323232] focus:bg-[#323232]' 
+                                      : 'hover:bg-white/80 focus:bg-white/80'
+                                  }`}>
                                     {option.label}
                                   </SelectItem>
                                 ))}
@@ -998,10 +1225,18 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Target Settings - Simplified */}
-                    <div className="space-y-6 p-4 border-0 rounded-3xl bg-gradient-to-br from-blue-50/80 to-purple-50/80 backdrop-blur-sm shadow-clayInset animate-stagger-in">
+                    <div className={`space-y-6 p-4 border-0 rounded-3xl backdrop-blur-sm animate-stagger-in transition-all duration-300 ${
+                      isDark 
+                        ? 'bg-gradient-to-br from-blue-900/30 to-purple-900/30 border border-[#3a3a3a]' 
+                        : 'bg-gradient-to-br from-blue-50/80 to-purple-50/80 shadow-clayInset'
+                    }`}>
                       <div className="text-center">
-                        <h3 className="text-lg font-semibold mb-2 text-gray-800">How should we set your daily targets?</h3>
-                        <p className="text-sm text-gray-600">Choose how to calculate your nutrition goals</p>
+                        <h3 className={`text-lg font-semibold mb-2 ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>How should we set your daily targets?</h3>
+                        <p className={`text-sm ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>Choose how to calculate your nutrition goals</p>
                       </div>
 
                       <FormField control={form.control} name="useAiTargets" render={({ field }) => (
@@ -1010,39 +1245,65 @@ export default function ProfilePage() {
                           <motion.div
                             whileTap={{ scale: 0.98 }}
                             className={cn(
-                              "relative p-4 border-0 rounded-2xl cursor-pointer transition-all duration-300 backdrop-blur-sm shadow-clayInset",
+                              "relative p-4 border-0 rounded-2xl cursor-pointer transition-all duration-300 backdrop-blur-sm",
                               field.value 
-                                ? "bg-white/80 shadow-clay ring-2 ring-blue-500/50" 
-                                : "bg-white/40 hover:bg-white/60 hover:shadow-clay"
+                                ? isDark
+                                  ? "bg-[#2a2a2a] shadow-lg ring-2 ring-blue-500/50 border border-blue-500/30" 
+                                  : "bg-white/80 shadow-clay ring-2 ring-blue-500/50"
+                                : isDark
+                                  ? "bg-[#252525] hover:bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#4a4a4a]"
+                                  : "bg-white/40 hover:bg-white/60 hover:shadow-clay shadow-clayInset"
                             )}
                             onClick={() => field.onChange(true)}
                           >
                             <div className="flex items-start gap-3">
                               <div className={cn(
                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors",
-                                field.value ? "border-blue-500 bg-blue-500" : "border-gray-400"
+                                field.value 
+                                  ? isDark 
+                                    ? "border-blue-400 bg-blue-400" 
+                                    : "border-blue-500 bg-blue-500"
+                                  : isDark 
+                                    ? "border-gray-500" 
+                                    : "border-gray-400"
                               )}>
                                 {field.value && <div className="w-2 h-2 bg-white rounded-full" />}
                               </div>
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center gap-2">
                                   <Sparkles className="h-4 w-4 text-yellow-500" />
-                                  <ShadCnFormLabel className="text-sm sm:text-base font-semibold cursor-pointer text-gray-800">
+                                  <ShadCnFormLabel className={`text-sm sm:text-base font-semibold cursor-pointer ${
+                                    isDark ? 'text-white' : 'text-gray-800'
+                                  }`}>
                                     Smart AI Targets (Recommended)
                                   </ShadCnFormLabel>
                                 </div>
-                                <FormDescription className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                <FormDescription className={`text-xs sm:text-sm leading-relaxed ${
+                                  isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}>
                                   Let our AI automatically calculate your perfect daily nutrition goals based on your body stats, 
                                   fitness goals, and activity level. This uses proven BMR/TDEE formulas for accuracy.
                                 </FormDescription>
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    isDark 
+                                      ? 'bg-green-900/50 text-green-300 border border-green-700/50' 
+                                      : 'bg-green-100 text-green-800'
+                                  }`}>
                                     ✓ Personalized
                                   </span>
-                                  <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    isDark 
+                                      ? 'bg-blue-900/50 text-blue-300 border border-blue-700/50' 
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}>
                                     ✓ Science-based
                                   </span>
-                                  <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    isDark 
+                                      ? 'bg-purple-900/50 text-purple-300 border border-purple-700/50' 
+                                      : 'bg-purple-100 text-purple-800'
+                                  }`}>
                                     ✓ Auto-updated
                                   </span>
                                 </div>
@@ -1054,36 +1315,58 @@ export default function ProfilePage() {
                           <motion.div
                             whileTap={{ scale: 0.98 }}
                             className={cn(
-                              "relative p-4 border-0 rounded-2xl cursor-pointer transition-all duration-300 backdrop-blur-sm shadow-clayInset",
+                              "relative p-4 border-0 rounded-2xl cursor-pointer transition-all duration-300 backdrop-blur-sm",
                               !field.value 
-                                ? "bg-white/80 shadow-clay ring-2 ring-orange-500/50" 
-                                : "bg-white/40 hover:bg-white/60 hover:shadow-clay"
+                                ? isDark
+                                  ? "bg-[#2a2a2a] shadow-lg ring-2 ring-orange-500/50 border border-orange-500/30" 
+                                  : "bg-white/80 shadow-clay ring-2 ring-orange-500/50"
+                                : isDark
+                                  ? "bg-[#252525] hover:bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#4a4a4a]"
+                                  : "bg-white/40 hover:bg-white/60 hover:shadow-clay shadow-clayInset"
                             )}
                             onClick={() => field.onChange(false)}
                           >
                             <div className="flex items-start gap-3">
                               <div className={cn(
                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors",
-                                !field.value ? "border-orange-500 bg-orange-500" : "border-gray-400"
+                                !field.value 
+                                  ? isDark 
+                                    ? "border-orange-400 bg-orange-400" 
+                                    : "border-orange-500 bg-orange-500"
+                                  : isDark 
+                                    ? "border-gray-500" 
+                                    : "border-gray-400"
                               )}>
                                 {!field.value && <div className="w-2 h-2 bg-white rounded-full" />}
                               </div>
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center gap-2">
                                   <Settings className="h-4 w-4 text-orange-500" />
-                                  <ShadCnFormLabel className="text-sm sm:text-base font-semibold cursor-pointer text-gray-800">
+                                  <ShadCnFormLabel className={`text-sm sm:text-base font-semibold cursor-pointer ${
+                                    isDark ? 'text-white' : 'text-gray-800'
+                                  }`}>
                                     Manual Targets (Advanced)
                                   </ShadCnFormLabel>
                                 </div>
-                                <FormDescription className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                <FormDescription className={`text-xs sm:text-sm leading-relaxed ${
+                                  isDark ? 'text-gray-400' : 'text-gray-600'
+                                }`}>
                                   Set your own daily nutrition targets if you have specific requirements from a nutritionist, 
                                   dietitian, or personal experience. You'll need to enter calories, protein, carbs, and fat manually.
                                 </FormDescription>
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded-full">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    isDark 
+                                      ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50' 
+                                      : 'bg-orange-100 text-orange-800'
+                                  }`}>
                                     ⚙️ Full control
                                   </span>
-                                  <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    isDark 
+                                      ? 'bg-gray-800/50 text-gray-300 border border-gray-600/50' 
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
                                     📊 Custom values
                                   </span>
                                 </div>

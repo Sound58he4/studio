@@ -51,6 +51,28 @@ export default function ReportPage() {
     const [isFetchingProfile, setIsFetchingProfile] = useState(true);
     const [periodDataMap, setPeriodDataMap] = useState<Record<string, PeriodData>>({});
     const [hasLoadedInitialProfile, setHasLoadedInitialProfile] = useState(false);
+    const [isClient, setIsClient] = useState(false);
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => { setIsClient(true); }, []);
+
+    // Detect theme from HTML class (consistent with Overview page)
+    useEffect(() => {
+        const updateDark = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        updateDark(); // Initial check
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(updateDark);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, []);
 
     const getDateRangeKey = useCallback((type: ReportType, date: Date): string => {
         switch (type) {
@@ -221,32 +243,68 @@ export default function ReportPage() {
 
     if (isFetchingProfile && !hasLoadedInitialProfile) { // Show skeleton only during initial profile fetch
         console.log("[Report Page] Rendering initial profile loading skeleton.");
-        return <ReportLoadingSkeleton />;
+        return (
+            <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+            }`}>
+                <ReportLoadingSkeleton isDark={isDark} />
+            </div>
+        );
     }
 
     if (!userProfile && !isFetchingProfile && hasLoadedInitialProfile) { // Profile fetch attempted and failed
         console.log("[Report Page] Rendering profile error state (profile load failed).");
         const initialError = periodDataMap[getDateRangeKey(activeTab, selectedDate)]?.error || "Could not load your profile. Please try again or contact support.";
-        return <ReportErrorState message={initialError} onRetry={loadInitialProfile} />;
+        return (
+            <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+            }`}>
+                <ReportErrorState message={initialError} onRetry={loadInitialProfile} isDark={isDark} />
+            </div>
+        );
     }
     
     const profileIncomplete = !userProfile || !(userProfile.targetCalories || userProfile.manualTargetCalories) || !(userProfile.targetProtein || userProfile.manualTargetProtein) || !(userProfile.targetCarbs || userProfile.manualTargetCarbs) || !(userProfile.targetFat || userProfile.manualTargetFat);
 
     if (profileIncomplete && !isFetchingProfile && userProfile) { // Profile loaded but incomplete
         console.log("[Report Page] Rendering profile incomplete state.");
-        return <ReportErrorState message="Your profile is missing required nutritional targets. Please update your profile to generate reports." onRetry={() => window.location.href = '/profile'} isProfileError={true} />;
+        return (
+            <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+            }`}>
+                <ReportErrorState message="Your profile is missing required nutritional targets. Please update your profile to generate reports." onRetry={() => window.location.href = '/profile'} isProfileError={true} isDark={isDark} />
+            </div>
+        );
     }
 
     // If profile is still loading but initial fetch is done, show general skeleton.
     // This might happen if loadInitialProfile is called again due to some state change.
     if (isFetchingProfile && hasLoadedInitialProfile) {
-        return <ReportLoadingSkeleton />;
+        return (
+            <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+                isDark 
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+            }`}>
+                <ReportLoadingSkeleton isDark={isDark} />
+            </div>
+        );
     }
 
 
     console.log(`[Report Page] Rendering main report view for key: ${currentPeriodKey}. isLoadingLogs: ${currentPeriodData.isLoadingLogs}, isLoadingReport: ${currentPeriodData.isLoadingReport}`);
     return (
-        <div className="min-h-screen bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200 animate-fade-in pb-20 md:pb-0">
+        <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+            isDark 
+                ? 'bg-[#1a1a1a]' 
+                : 'bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200'
+        }`}>
             <div className="p-6">
                 <div className="max-w-6xl mx-auto">
                     {/* Header */}
@@ -256,16 +314,28 @@ export default function ReportPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <div className="bg-clayGlass backdrop-blur-sm rounded-3xl shadow-clay border-0 p-6 transition-all duration-500">
+                        <div className={`backdrop-blur-sm rounded-3xl shadow-lg border-0 p-6 transition-all duration-500 ${
+                            isDark 
+                                ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                                : 'bg-clayGlass shadow-clay'
+                        }`}>
                             <div className="flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center mb-2">
-                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-clayInset mr-3 animate-scale-in">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-clayInset mr-3 animate-scale-in ${
+                                            isDark 
+                                                ? 'bg-gradient-to-br from-purple-500 to-purple-700' 
+                                                : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                                        }`}>
                                             <FileText className="w-6 h-6 text-white" />
                                         </div>
-                                        <h1 className="text-3xl font-bold text-gray-800">Your Progress Report</h1>
+                                        <h1 className={`text-3xl font-bold ${
+                                            isDark ? 'text-white' : 'text-gray-800'
+                                        }`}>Your Progress Report</h1>
                                     </div>
-                                    <p className="text-gray-600">Review your performance and get AI-powered insights.</p>
+                                    <p className={`${
+                                        isDark ? 'text-gray-400' : 'text-gray-600'
+                                    }`}>Review your performance and get AI-powered insights.</p>
                                 </div>
                             </div>
                         </div>
@@ -273,7 +343,11 @@ export default function ReportPage() {
 
                     {/* Main Card Container */}
                     <motion.div
-                        className="bg-clayGlass backdrop-blur-sm rounded-3xl shadow-clay border-0 animate-scale-in"
+                        className={`backdrop-blur-sm rounded-3xl border-0 animate-scale-in transition-all duration-500 ${
+                            isDark 
+                                ? 'bg-[#2a2a2a] border border-[#3a3a3a] shadow-lg' 
+                                : 'bg-clayGlass shadow-clay'
+                        }`}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
@@ -310,9 +384,10 @@ export default function ReportPage() {
                                     report={currentPeriodData.report}
                                     reportContentRef={reportContentRef}
                                     getDateRange={getDateRange}
+                                    isDark={isDark}
                                 />
                                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ReportType)} className="w-full">
-                                    <ReportTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+                                    <ReportTabs activeTab={activeTab} setActiveTab={setActiveTab} isDark={isDark} />
                                     <ReportContentArea
                                         activeTab={activeTab}
                                         isLoading={currentPeriodData.isLoadingLogs || currentPeriodData.isLoadingReport}
@@ -322,6 +397,7 @@ export default function ReportPage() {
                                         fetchAndGenerateForTab={fetchReportData}
                                         selectedDate={selectedDate}
                                         userProfile={userProfile}
+                                        isDark={isDark}
                                     />
                                 </Tabs>
                             </motion.div>

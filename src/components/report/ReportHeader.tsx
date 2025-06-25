@@ -24,6 +24,7 @@ interface ReportHeaderProps {
     report: ProgressReportOutput | null;
     reportContentRef: React.RefObject<HTMLDivElement | null>;
     getDateRange: (type: ReportType, date: Date) => { start: Date; end: Date };
+    isDark?: boolean;
 }
 
 const ReportHeader: React.FC<ReportHeaderProps> = ({
@@ -36,6 +37,7 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     report,
     reportContentRef,
     getDateRange,
+    isDark = false,
 }) => {
     const { toast } = useToast();
 
@@ -121,13 +123,21 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
     }, [activeTab, report, selectedDate, reportContentRef, toast, setIsDownloading]);
 
     return (
-        <CardHeader className="bg-gradient-to-r from-primary/10 via-card to-card border-b p-4 sm:p-5 md:p-6">
+        <CardHeader className={`border-b p-4 sm:p-5 md:p-6 transition-all duration-300 ${
+            isDark 
+                ? 'bg-gradient-to-r from-gray-800/50 via-gray-700/50 to-gray-800/50' 
+                : 'bg-gradient-to-r from-primary/10 via-card to-card'
+        }`}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                 <div>
-                    <CardTitle className="text-xl md:text-2xl font-bold text-primary flex items-center gap-2">
+                    <CardTitle className={`text-xl md:text-2xl font-bold flex items-center gap-2 ${
+                        isDark ? 'text-white' : 'text-primary'
+                    }`}>
                         <FileText className="h-6 w-6" /> Your Progress Report
                     </CardTitle>
-                    <CardDescription className="text-sm md:text-base mt-1">
+                    <CardDescription className={`text-sm md:text-base mt-1 ${
+                        isDark ? 'text-gray-400' : ''
+                    }`}>
                         Review your performance and get AI-powered insights.
                     </CardDescription>
                 </div>
@@ -135,7 +145,11 @@ const ReportHeader: React.FC<ReportHeaderProps> = ({
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>} {isDownloading ? "Downloading..." : "Download PDF"}
                 </Button>
             </div>
-            <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-muted/50 p-2 rounded-md border shadow-inner">
+            <div className={`mt-4 flex flex-col sm:flex-row justify-between items-center gap-3 p-2 rounded-md border shadow-inner transition-all duration-300 ${
+                isDark 
+                    ? 'bg-gray-700/50 border-gray-600' 
+                    : 'bg-muted/50'
+            }`}>
                 <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => navigateDate('prev')} aria-label="Previous Period"> <ChevronLeft className="h-4 w-4" /> </Button>
                 <Popover>
                     <PopoverTrigger asChild>

@@ -150,11 +150,38 @@ export default function PointsPage() {
   const { userId, loading: authLoading } = useAuth();
   const router = useRouter();
   const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
-  const [pointsData, setPointsData] = useState<PointsData | null>(null);  const [todayProgress, setTodayProgress] = useState<TodayProgress | null>(null);
+  const [pointsData, setPointsData] = useState<PointsData | null>(null);
+  const [todayProgress, setTodayProgress] = useState<TodayProgress | null>(null);
   const [todayFoodLogs, setTodayFoodLogs] = useState<StoredFoodLogEntry[]>([]);
   const [dailyTargets, setDailyTargets] = useState<DailyNutritionTargets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);  const calculatePointsFromProgress = useCallback((progress: TodayProgress, targets: DailyNutritionTargets, foodLogs: StoredFoodLogEntry[]): number => {
+  const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => { setIsClient(true); }, []);
+
+  // Detect theme from HTML class (consistent with Overview page)
+  useEffect(() => {
+    const updateDark = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+
+    updateDark(); // Initial check
+    
+    // Watch for theme changes
+    const observer = new MutationObserver(updateDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // ...existing code...
+
+  const calculatePointsFromProgress = useCallback((progress: TodayProgress, targets: DailyNutritionTargets, foodLogs: StoredFoodLogEntry[]): number => {
     let points = 0;
 
     // Calculate percentage achievements
@@ -448,40 +475,56 @@ export default function PointsPage() {
   };
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
+      <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#0f0f0f]' 
+          : 'bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300'
+      }`}>
         <div className="p-3 md:p-6">
           <div className="max-w-4xl mx-auto space-y-4 md:space-y-6 animate-pulse">
             <div className="space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-96" />
+              <Skeleton className={`h-8 w-48 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
+              <Skeleton className={`h-4 w-96 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
+              <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl ${
+                isDark 
+                  ? 'bg-[#1a1a1a] border-[#2a2a2a]' 
+                  : 'bg-clayGlass shadow-clay'
+              }`}>
                 <CardHeader>
-                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className={`h-6 w-32 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className={`h-16 w-full ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
                 </CardContent>
               </Card>
-              <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
+              <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl ${
+                isDark 
+                  ? 'bg-[#1a1a1a] border-[#2a2a2a]' 
+                  : 'bg-clayGlass shadow-clay'
+              }`}>
                 <CardHeader>
-                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className={`h-6 w-32 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
                 </CardHeader>
                 <CardContent>
-                  <Skeleton className="h-16 w-full" />
+                  <Skeleton className={`h-16 w-full ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
                 </CardContent>
               </Card>
             </div>
-            <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl">
+            <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#2a2a2a]' 
+                : 'bg-clayGlass shadow-clay'
+            }`}>
               <CardHeader>
-                <Skeleton className="h-6 w-48" />
+                <Skeleton className={`h-6 w-48 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
               </CardHeader>
               <CardContent className="space-y-4">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="flex items-center justify-between">
-                    <Skeleton className="h-8 w-32" />
-                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className={`h-8 w-32 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
+                    <Skeleton className={`h-6 w-16 ${isDark ? 'bg-[#3a3a3a]' : ''}`} />
                   </div>
                 ))}
               </CardContent>
@@ -493,16 +536,26 @@ export default function PointsPage() {
   }
   if (error) {
     return (
-      <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
+      <div className={`min-h-screen pb-20 md:pb-0 ${
+        isDark 
+          ? 'bg-[#0f0f0f]' 
+          : 'bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300'
+      }`}>
         <div className="p-3 md:p-6">
           <div className="max-w-xl mx-auto text-center">
-            <Card className="backdrop-blur-sm border-0 bg-clayGlass shadow-clay rounded-3xl border-destructive">
+            <Card className={`backdrop-blur-sm border-0 shadow-lg rounded-3xl border-destructive ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-red-800' 
+                : 'bg-clayGlass shadow-clay'
+            }`}>
               <CardHeader>
                 <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
-                <CardTitle className="text-destructive">Error Loading Points</CardTitle>
+                <CardTitle className={`text-destructive ${isDark ? 'text-red-400' : ''}`}>Error Loading Points</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">{error}</p>
+                <p className={`mb-4 ${
+                  isDark ? 'text-gray-400' : 'text-muted-foreground'
+                }`}>{error}</p>
                 <Button onClick={fetchData} variant="outline" className="rounded-2xl">Try Again</Button>
               </CardContent>
             </Card>
@@ -516,7 +569,11 @@ export default function PointsPage() {
   const totalPossibleToday = 100;
   const achievedAllGoals = breakdown.every(item => item.achieved);
   return (
-    <div className="min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300">
+    <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
+      isDark 
+        ? 'bg-[#0f0f0f]' 
+        : 'bg-gradient-to-br from-clay-100 via-clay-200 to-clay-300'
+    }`}>
       <div className="p-3 md:p-6">
         <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
           {/* Header */}
@@ -526,8 +583,14 @@ export default function PointsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <div className="backdrop-blur-sm rounded-3xl shadow-lg border-0 p-4 md:p-6 text-center bg-clayGlass shadow-clay transition-all duration-500">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2 text-gray-800 flex items-center justify-center gap-2">
+            <div className={`backdrop-blur-sm rounded-3xl shadow-lg border-0 p-4 md:p-6 text-center transition-all duration-500 ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#2a2a2a]' 
+                : 'bg-clayGlass shadow-clay'
+            }`}>
+              <h1 className={`text-2xl md:text-3xl lg:text-4xl font-bold mb-2 flex items-center justify-center gap-2 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>
                 <motion.div
                   animate={{ 
                     rotate: [0, 10, -5, 0],
@@ -544,7 +607,9 @@ export default function PointsPage() {
                 </motion.div>
                 Your Points
               </h1>
-              <p className="text-sm md:text-base text-gray-600">
+              <p className={`text-sm md:text-base ${
+                isDark ? 'text-gray-400' : 'text-gray-600'
+              }`}>
                 Earn up to 100 points daily by achieving your nutrition goals!
               </p>
             </div>
@@ -557,27 +622,49 @@ export default function PointsPage() {
             transition={{ duration: 0.6, delay: 0.3 }}
             whileHover={{ scale: 1.02, y: -2 }}
           >
-            <Card className="backdrop-blur-sm border-0 hover:shadow-clayStrong transition-all duration-300 rounded-3xl bg-clayGlass shadow-clay animate-fade-in">
+            <Card className={`backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#3a3a3a]' 
+                : 'bg-clayGlass shadow-clay hover:shadow-clayStrong'
+            }`}>
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-orange-400 to-orange-600 shadow-clayInset animate-scale-in">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg animate-scale-in ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-orange-600/80 to-orange-700/80' 
+                      : 'bg-gradient-to-br from-orange-400 to-orange-600 shadow-clayInset'
+                  }`}>
                     <Award className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800">Today's Points</h2>
+                  <h2 className={`text-xl font-bold ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                  }`}>Today's Points</h2>
                 </div>
                 
                 <div className="flex items-center justify-between mb-6">
-                  <div className="text-5xl font-bold text-orange-600">{pointsData?.todayPoints || 0}</div>
+                  <div className={`text-5xl font-bold ${
+                    isDark ? 'text-orange-400' : 'text-orange-600'
+                  }`}>{pointsData?.todayPoints || 0}</div>
                   <div className="text-right">
-                    <div className="text-sm font-medium text-gray-600">{pointsData?.todayPoints || 0}/{totalPossibleToday}</div>
-                    <div className="text-xs text-gray-500">Daily Goal</div>
+                    <div className={`text-sm font-medium ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>{pointsData?.todayPoints || 0}/{totalPossibleToday}</div>
+                    <div className={`text-xs ${
+                      isDark ? 'text-gray-500' : 'text-gray-500'
+                    }`}>Daily Goal</div>
                   </div>
                 </div>
                 
                 <div className="relative">
-                  <div className="w-full h-4 rounded-full bg-gray-200 shadow-clayInset">
+                  <div className={`w-full h-4 rounded-full ${
+                    isDark ? 'bg-[#2a2a2a]' : 'bg-gray-200 shadow-clayInset'
+                  }`}>
                     <motion.div 
-                      className="bg-gradient-to-r from-orange-400 to-orange-500 h-4 rounded-full transition-all duration-500 shadow-sm"
+                      className={`h-4 rounded-full transition-all duration-500 shadow-sm ${
+                        isDark 
+                          ? 'bg-gradient-to-r from-orange-600 to-orange-500' 
+                          : 'bg-gradient-to-r from-orange-400 to-orange-500'
+                      }`}
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(((pointsData?.todayPoints || 0) / totalPossibleToday) * 100, 100)}%` }}
                       transition={{ duration: 1.5, delay: 0.7, ease: "easeOut" }}
@@ -595,22 +682,42 @@ export default function PointsPage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             whileHover={{ scale: 1.02, y: -2 }}
           >
-            <Card className="backdrop-blur-sm border-0 hover:shadow-clayStrong transition-all duration-300 rounded-3xl bg-clayGlass shadow-clay animate-fade-in" style={{ animationDelay: '100ms' }}>
+            <Card className={`backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#3a3a3a]' 
+                : 'bg-clayGlass shadow-clay hover:shadow-clayStrong'
+            }`} style={{ animationDelay: '100ms' }}>
               <CardContent className="p-4 md:p-6">
                 <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-blue-400 to-blue-600 shadow-clayInset animate-scale-in">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg animate-scale-in ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80' 
+                      : 'bg-gradient-to-br from-blue-400 to-blue-600 shadow-clayInset'
+                  }`}>
                     <Star className="w-6 h-6 text-white" />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800">Total Points</h2>
+                  <h2 className={`text-xl font-bold ${
+                    isDark ? 'text-white' : 'text-gray-800'
+                  }`}>Total Points</h2>
                 </div>
                 
                 <div className="flex items-center justify-between">
-                  <div className="text-5xl font-bold text-blue-600">{pointsData?.totalPoints || 0}</div>
-                  <div className="backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg bg-white/40 shadow-clayInset">
-                    <span className="text-sm font-bold text-gray-700">All Time</span>
+                  <div className={`text-5xl font-bold ${
+                    isDark ? 'text-blue-400' : 'text-blue-600'
+                  }`}>{pointsData?.totalPoints || 0}</div>
+                  <div className={`backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg ${
+                    isDark 
+                      ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                      : 'bg-white/40 shadow-clayInset'
+                  }`}>
+                    <span className={`text-sm font-bold ${
+                      isDark ? 'text-gray-400' : 'text-gray-700'
+                    }`}>All Time</span>
                   </div>
                 </div>
-                <p className="text-sm mt-3 font-medium text-gray-600">Keep building your streak!</p>
+                <p className={`text-sm mt-3 font-medium ${
+                  isDark ? 'text-gray-400' : 'text-gray-600'
+                }`}>Keep building your streak!</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -621,15 +728,27 @@ export default function PointsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <Card className="backdrop-blur-sm border-0 hover:shadow-clayStrong transition-all duration-300 rounded-3xl bg-clayGlass shadow-clay animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <Card className={`backdrop-blur-sm border-0 hover:shadow-lg transition-all duration-300 rounded-3xl animate-fade-in ${
+              isDark 
+                ? 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#3a3a3a]' 
+                : 'bg-clayGlass shadow-clay hover:shadow-clayStrong'
+            }`} style={{ animationDelay: '200ms' }}>
               <CardHeader className="pb-2 md:pb-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg bg-gradient-to-br from-purple-400 to-purple-600 shadow-clayInset animate-scale-in">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg animate-scale-in ${
+                    isDark 
+                      ? 'bg-gradient-to-br from-purple-600/80 to-purple-700/80' 
+                      : 'bg-gradient-to-br from-purple-400 to-purple-600 shadow-clayInset'
+                  }`}>
                     <Target className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl text-gray-800">Today's Progress</CardTitle>
-                    <p className="text-sm font-medium text-gray-700">Track your nutrition goals and earn points</p>
+                    <CardTitle className={`text-xl ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>Today's Progress</CardTitle>
+                    <p className={`text-sm font-medium ${
+                      isDark ? 'text-gray-400' : 'text-gray-700'
+                    }`}>Track your nutrition goals and earn points</p>
                   </div>
                 </div>
               </CardHeader>
@@ -656,49 +775,69 @@ export default function PointsPage() {
                     className="group relative animate-stagger-in"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <div className="backdrop-blur-sm border rounded-2xl p-5 shadow-lg bg-clayGlass border-white/40 transition-all duration-500">
+                    <div className={`backdrop-blur-sm border rounded-2xl p-5 shadow-lg transition-all duration-500 ${
+                      isDark 
+                        ? 'bg-[#252525] border-[#3a3a3a]' 
+                        : 'bg-clayGlass border-white/40'
+                    }`}>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center">                          <div className={cn(
+                        <div className="flex items-center">
+                          <div className={cn(
                             "w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg",
                             item.achieved 
-                              ? "bg-green-100 ring-2 ring-green-200" 
-                              : item.color === 'text-orange-500' ? "bg-orange-50" :
-                                item.color === 'text-blue-500' ? "bg-blue-50" :
-                                item.color === 'text-green-500' ? "bg-green-50" :
-                                item.color === 'text-purple-500' ? "bg-purple-50" :
-                                item.color === 'text-red-500' ? "bg-red-50" :
-                                "bg-gray-50"
+                              ? isDark ? "bg-green-900/80 ring-2 ring-green-600/50" : "bg-green-100 ring-2 ring-green-200"
+                              : item.color === 'text-orange-500' ? isDark ? "bg-orange-900/30" : "bg-orange-50" :
+                                item.color === 'text-blue-500' ? isDark ? "bg-blue-900/30" : "bg-blue-50" :
+                                item.color === 'text-green-500' ? isDark ? "bg-green-900/30" : "bg-green-50" :
+                                item.color === 'text-purple-500' ? isDark ? "bg-purple-900/30" : "bg-purple-50" :
+                                item.color === 'text-red-500' ? isDark ? "bg-red-900/30" : "bg-red-50" :
+                                isDark ? "bg-gray-800" : "bg-gray-50"
                           )}>
                             <item.icon className={cn(
                               "w-6 h-6",
-                              item.achieved ? "text-green-600" : item.color
+                              item.achieved ? isDark ? "text-green-400" : "text-green-600" : item.color
                             )} />
                           </div>
                           <div>
-                            <h3 className="font-bold text-lg text-gray-800">{item.label}</h3>
-                            <p className="text-sm font-medium text-gray-600">
+                            <h3 className={`font-bold text-lg ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>{item.label}</h3>
+                            <p className={`text-sm font-medium ${
+                              isDark ? 'text-gray-400' : 'text-gray-600'
+                            }`}>
                               {item.points < 0 ? `${item.current} ${item.unit}` : `${item.current}/${item.target} ${item.unit}`}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="backdrop-blur-sm px-3 py-2 rounded-xl shadow-lg bg-white/60 shadow-clayInset">
-                            <span className="text-sm font-bold text-gray-700">{item.points > 0 ? '+' : ''}{item.points} pts</span>
+                          <div className={`backdrop-blur-sm px-3 py-2 rounded-xl shadow-lg ${
+                            isDark 
+                              ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+                              : 'bg-white/60 shadow-clayInset'
+                          }`}>
+                            <span className={`text-sm font-bold ${
+                              isDark ? 'text-gray-300' : 'text-gray-700'
+                            }`}>{item.points > 0 ? '+' : ''}{item.points} pts</span>
                           </div>
-                          <div className="text-sm mt-1 font-medium text-gray-600">{Math.round(item.progress)}%</div>
+                          <div className={`text-sm mt-1 font-medium ${
+                            isDark ? 'text-gray-400' : 'text-gray-600'
+                          }`}>{Math.round(item.progress)}%</div>
                         </div>
                       </div>
                       
                       {item.points >= 0 && (
                         <div className="mb-4">
-                          <div className="w-full h-3 rounded-full bg-gray-200 shadow-clayInset">                            <motion.div 
+                          <div className={`w-full h-3 rounded-full ${
+                            isDark ? 'bg-[#2a2a2a]' : 'bg-gray-200 shadow-clayInset'
+                          }`}>
+                            <motion.div 
                               className={cn(
-                                item.achieved ? "bg-green-400" : 
-                                item.color === 'text-orange-500' ? "bg-orange-400" :
-                                item.color === 'text-blue-500' ? "bg-blue-400" :
-                                item.color === 'text-green-500' ? "bg-green-400" :
-                                item.color === 'text-purple-500' ? "bg-purple-400" :
-                                "bg-gray-400",
+                                item.achieved ? isDark ? "bg-green-500" : "bg-green-400" : 
+                                item.color === 'text-orange-500' ? isDark ? "bg-orange-500" : "bg-orange-400" :
+                                item.color === 'text-blue-500' ? isDark ? "bg-blue-500" : "bg-blue-400" :
+                                item.color === 'text-green-500' ? isDark ? "bg-green-500" : "bg-green-400" :
+                                item.color === 'text-purple-500' ? isDark ? "bg-purple-500" : "bg-purple-400" :
+                                isDark ? "bg-gray-500" : "bg-gray-400",
                                 "h-3 rounded-full transition-all duration-500 shadow-sm"
                               )}
                               initial={{ width: 0 }}
@@ -713,7 +852,9 @@ export default function PointsPage() {
                         </div>
                       )}
                       
-                      <div className="flex justify-between items-center text-sm text-gray-600">
+                      <div className={`flex justify-between items-center text-sm ${
+                        isDark ? 'text-gray-400' : 'text-gray-600'
+                      }`}>
                         <div className="flex items-center font-medium">
                           <span>📈 {Math.round(100 - item.progress)}% to go</span>
                           <span className="ml-4">Max: {item.maxPoints} pts</span>
@@ -722,18 +863,30 @@ export default function PointsPage() {
                       
                       <div className="flex justify-between mt-3 text-sm">
                         <div>
-                          <div className="text-xs font-medium text-gray-500">Current</div>
+                          <div className={`text-xs font-medium ${
+                            isDark ? 'text-gray-500' : 'text-gray-500'
+                          }`}>Current</div>
                           <div className={cn("font-bold text-lg", item.color)}>{item.current} {item.unit}</div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-medium text-gray-500">Target</div>
-                          <div className="font-bold text-lg text-gray-700">{item.target} {item.unit}</div>
+                          <div className={`text-xs font-medium ${
+                            isDark ? 'text-gray-500' : 'text-gray-500'
+                          }`}>Target</div>
+                          <div className={`font-bold text-lg ${
+                            isDark ? 'text-gray-300' : 'text-gray-700'
+                          }`}>{item.target} {item.unit}</div>
                         </div>
                       </div>
                       
                       {item.points < 0 && (
-                        <div className="mt-4 backdrop-blur-sm rounded-xl p-3 shadow-lg bg-red-50/80 shadow-clayInset">
-                          <p className="text-sm text-center font-medium text-red-600">Penalty for unhealthy choices</p>
+                        <div className={`mt-4 backdrop-blur-sm rounded-xl p-3 shadow-lg ${
+                          isDark 
+                            ? 'bg-red-900/20 border border-red-800/30' 
+                            : 'bg-red-50/80 shadow-clayInset'
+                        }`}>
+                          <p className={`text-sm text-center font-medium ${
+                            isDark ? 'text-red-400' : 'text-red-600'
+                          }`}>Penalty for unhealthy choices</p>
                         </div>
                       )}
                     </div>
@@ -754,8 +907,12 @@ export default function PointsPage() {
               <Card className={cn(
                 "backdrop-blur-sm border-0 transition-all duration-500 rounded-3xl shadow-lg animate-fade-in",
                 achievedAllGoals 
-                  ? "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-green-300 shadow-clayStrong" 
-                  : "bg-clayGlass shadow-clay hover:shadow-clayStrong"
+                  ? isDark 
+                    ? "bg-gradient-to-r from-green-900/40 via-emerald-900/40 to-green-900/40 border-green-600/50" 
+                    : "bg-gradient-to-r from-green-50 via-emerald-50 to-green-50 border-green-300 shadow-clayStrong"
+                  : isDark 
+                    ? "bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#3a3a3a]" 
+                    : "bg-clayGlass shadow-clay hover:shadow-clayStrong"
               )} style={{ animationDelay: '400ms' }}>
                 <CardContent className="p-4 md:p-6">
                   <div className="flex items-center justify-between">
@@ -763,18 +920,26 @@ export default function PointsPage() {
                       <div className={cn(
                         "w-12 h-12 rounded-2xl flex items-center justify-center mr-4 shadow-lg",
                         achievedAllGoals 
-                          ? "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-clayInset" 
-                          : "bg-gradient-to-br from-gray-100 to-gray-200 shadow-clayInset"
+                          ? isDark 
+                            ? "bg-gradient-to-br from-yellow-500/80 to-yellow-600/80" 
+                            : "bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-clayInset"
+                          : isDark 
+                            ? "bg-gradient-to-br from-gray-700 to-gray-800" 
+                            : "bg-gradient-to-br from-gray-100 to-gray-200 shadow-clayInset"
                       )}>
                         {achievedAllGoals ? (
                           <Star className="w-6 h-6 text-white" />
                         ) : (
-                          <Trophy className="w-6 h-6 text-gray-400" />
+                          <Trophy className={`w-6 h-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                         )}
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-800">Perfect Day Bonus</h3>
-                        <p className="text-sm font-medium text-gray-600">
+                        <h3 className={`font-bold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Perfect Day Bonus</h3>
+                        <p className={`text-sm font-medium ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
                           {achievedAllGoals 
                             ? "🎉 All goals completed! Bonus awarded!" 
                             : "Complete all goals to earn bonus"
@@ -783,10 +948,13 @@ export default function PointsPage() {
                       </div>
                     </div>
                     <div className={cn(
-                      "text-white px-4 py-2 rounded-2xl shadow-lg",
+                      "px-4 py-2 rounded-2xl shadow-lg",
                       achievedAllGoals 
-                        ? "bg-gradient-to-r from-green-400 to-green-500" 
-                        : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"                    )}>
+                        ? "bg-gradient-to-r from-green-400 to-green-500 text-white" 
+                        : isDark 
+                          ? "backdrop-blur-sm bg-[#2a2a2a] border border-[#3a3a3a] text-gray-500" 
+                          : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"
+                    )}>
                       <span className="text-sm font-bold">+{achievedAllGoals ? 10 : 0} pts</span>
                     </div>
                   </div>

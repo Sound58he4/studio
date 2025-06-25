@@ -11,28 +11,43 @@ interface ReportErrorStateProps {
     message: string;
     onRetry: () => void;
     isProfileError?: boolean; // Optional flag for profile-specific errors
+    isDark?: boolean;
 }
 
-const ReportErrorState: React.FC<ReportErrorStateProps> = ({ message, onRetry, isProfileError = false }) => {
+const ReportErrorState: React.FC<ReportErrorStateProps> = ({ message, onRetry, isProfileError = false, isDark = false }) => {
     return (
         <div className="flex justify-center items-center min-h-[calc(100vh-250px)] p-4">
-            <Card className="w-full max-w-md text-center border-destructive shadow-lg">
+            <Card className={`w-full max-w-md text-center shadow-lg transition-all duration-300 ${
+                isDark 
+                    ? 'border-red-500/30 bg-gray-800/60' 
+                    : 'border-destructive'
+            }`}>
                 <CardHeader>
-                    <AlertCircle className="mx-auto h-10 w-10 text-destructive" />
-                    <CardTitle className="text-destructive">
+                    <AlertCircle className={`mx-auto h-10 w-10 ${
+                        isDark ? 'text-red-400' : 'text-destructive'
+                    }`} />
+                    <CardTitle className={`${
+                        isDark ? 'text-red-400' : 'text-destructive'
+                    }`}>
                        {isProfileError ? "Profile Issue" : "Report Error"}
                     </CardTitle>
-                    <CardDescription>{message}</CardDescription>
+                    <CardDescription className={`${
+                        isDark ? 'text-gray-400' : ''
+                    }`}>{message}</CardDescription>
                 </CardHeader>
                 <CardFooter className="justify-center">
                     {isProfileError ? (
                         <Link href="/profile">
-                             <Button variant="secondary">
+                             <Button variant="secondary" className={`transition-all duration-300 ${
+                                 isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white' : ''
+                             }`}>
                                  <User className="mr-2 h-4 w-4"/> Go to Profile
                              </Button>
                         </Link>
                     ) : (
-                        <Button onClick={onRetry} variant="secondary">
+                        <Button onClick={onRetry} variant="secondary" className={`transition-all duration-300 ${
+                            isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white' : ''
+                        }`}>
                             <RefreshCw className="mr-2 h-4 w-4"/>Retry
                         </Button>
                     )}
