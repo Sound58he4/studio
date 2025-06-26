@@ -37,7 +37,8 @@ import type {
 } from './types';
 import { useToast } from "@/hooks/use-toast";
 import { Card } from '@/components/ui/card';
-import { Loader2, Calendar, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Calendar, User, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedWrapper from '@/components/ui/animated-wrapper';
 
@@ -363,6 +364,11 @@ export function DashboardMainPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { userId, loading: authLoading } = useAuth();
+    
+    // Upgrade to PRO handler
+    const handleUpgradeToPro = () => {
+        router.push('/pro-upgrade');
+    };
     
     // Performance monitoring
     const performanceRef = usePerformanceMonitor('Dashboard');
@@ -1237,9 +1243,22 @@ export function DashboardMainPage() {
                                         </div>
                                     </div>                                </div>
                                 
-                                <div className="text-left sm:text-right">
-                                    <div className={`text-lg sm:text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-700'}`}>{getDayName()}</div>
-                                    <div className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{new Date().toLocaleDateString()}</div>
+                                <div className="flex items-center gap-4 sm:gap-6">
+                                    <div className="text-left sm:text-right">
+                                        <div className={`text-lg sm:text-xl font-semibold mb-1 ${isDark ? 'text-white' : 'text-gray-700'}`}>{getDayName()}</div>
+                                        <div className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{new Date().toLocaleDateString()}</div>
+                                    </div>
+                                    
+                                    {/* Upgrade to PRO Button - Positioned to the right of date with more spacing */}
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className={`border transition-all duration-300 hover:scale-105 text-xs px-3 py-1.5 ml-2 ${isDark ? 'border-orange-500/50 bg-[#1a1a1a] hover:bg-orange-500/10 text-orange-400 hover:text-orange-300' : 'border-orange-300 bg-white/50 backdrop-blur-sm hover:bg-orange-50 text-orange-600 hover:text-orange-700'}`} 
+                                        onClick={handleUpgradeToPro}
+                                    >
+                                        <Crown size={12} className="mr-1.5" />
+                                        Upgrade to PRO
+                                    </Button>
                                 </div>
                             </div>
                         </div>

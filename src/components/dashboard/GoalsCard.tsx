@@ -3,12 +3,13 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProgressTracker from '@/components/dashboard/ProgressTracker';
-import { RefreshCw, Flame, Leaf, Zap, Dumbbell, Info, Target, Activity, CheckCircle, Loader2, Droplets, Beef, Wheat, RotateCcw, Sparkles } from 'lucide-react';
+import { RefreshCw, Flame, Leaf, Zap, Dumbbell, Info, Target, Activity, CheckCircle, Loader2, Droplets, Beef, Wheat, RotateCcw, Sparkles, Crown } from 'lucide-react';
 import type { CalculateTargetsOutput } from '@/ai/flows/dashboard-update';
 import { cn } from "@/lib/utils";
 import { Progress } from '@/components/ui/progress'; 
@@ -45,7 +46,12 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
   isLoadingSuggestion,
   calorieAdjustmentSuggestion,
   isDark,
-}) => {const calculatePercentage = (current: number, target: number) => {
+}) => {
+  const router = useRouter();
+
+  const handleUpgradeToPro = () => {
+    router.push('/pro-upgrade');
+  };const calculatePercentage = (current: number, target: number) => {
     if (!target || target <= 0) {
       console.log(`[GoalsCard] Zero or invalid target detected: current=${current}, target=${target}`);
       return 0;
@@ -325,6 +331,7 @@ const GoalsCard: React.FC<GoalsCardProps> = ({
                 <p className={`text-sm text-gray-500 italic ${isDark ? 'text-gray-400' : ''}`}>Set an activity burn goal in your profile.</p>
               )}
             </div>
+            
               <Link href="/log">
               <Button className={`rounded-full shadow-lg transition-all duration-200 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base hover:scale-105 text-white ${isDark ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' : 'bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600'}`}>
                 <Zap className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />

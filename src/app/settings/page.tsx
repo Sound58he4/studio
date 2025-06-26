@@ -167,6 +167,16 @@ export default function SettingsPage() {
     root.classList.remove('light', 'dark');
     root.classList.add(settings.theme);
     
+    // Sync with localStorage for compatibility with other components
+    localStorage.setItem('lightTheme', (settings.theme === 'light').toString());
+    
+    // Dispatch storage event to notify other components
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'lightTheme',
+      newValue: (settings.theme === 'light').toString(),
+      oldValue: localStorage.getItem('lightTheme')
+    }));
+    
     root.classList.remove('accent-blue', 'accent-purple', 'accent-green', 'accent-orange', 'accent-red', 'accent-cyan');
     root.classList.add(`accent-${settings.accentColor}`);
     
