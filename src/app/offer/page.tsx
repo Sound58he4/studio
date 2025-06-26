@@ -116,7 +116,7 @@ const OfferPage = () => {
                       </Button>
                     </div>
                     <div className="text-xl font-mono font-bold text-center py-2 text-foreground">
-                      BAGOM30
+                      Bagom30
                     </div>
                   </div>
                   
@@ -219,7 +219,7 @@ const OfferPage = () => {
                       </Button>
                     </div>
                     <div className="text-xl font-mono font-bold text-center py-2 text-foreground">
-                      BAGOY50
+                      Bagoy50
                     </div>
                   </div>
                   

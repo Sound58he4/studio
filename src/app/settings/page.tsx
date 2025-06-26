@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false); // Track if user settings have been loaded
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -126,12 +127,14 @@ export default function SettingsPage() {
                  theme: rawSettings.theme === 'system' ? 'light' : (rawSettings.theme as 'light' | 'dark')
              };
              setSettings(loadedSettings);
+             setSettingsLoaded(true); // Mark that user settings have been loaded
               console.log("[Settings Page] Loaded settings:", loadedSettings);
               fetchIncomingRequests();
               fetchFriends();
           } else {
               console.log("[Settings Page] No profile found, using defaults and creating profile.");
               setSettings(DEFAULT_SETTINGS);
+              setSettingsLoaded(true); // Mark that settings have been determined (using defaults)
           }
       } catch (error: any) {
           console.error("[Settings Page] Error loading profile/settings:", error);
@@ -141,6 +144,7 @@ export default function SettingsPage() {
             toast({ variant: "destructive", title: "Load Error", description: "Could not load settings." });
           }
           setSettings(DEFAULT_SETTINGS);
+          setSettingsLoaded(true); // Even on error, mark settings as determined
       } finally {
           setIsLoading(false);
       }
@@ -355,7 +359,8 @@ export default function SettingsPage() {
      };
 
    if (authLoading || isLoading) {
-     const isDark = settings.theme === 'dark';
+     // During loading, only show dark theme if user settings have been loaded and dark theme is selected
+     const isDark = settingsLoaded && settings.theme === 'dark';
      return (
        <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center ${
          isDark 
@@ -420,7 +425,8 @@ export default function SettingsPage() {
 
     // Display Firestore error prominently
     if (firestoreError) {
-        const isDark = settings.theme === 'dark';
+        // Only show dark theme if user settings have been loaded and dark theme is selected
+        const isDark = settingsLoaded && settings.theme === 'dark';
         return (
             <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center p-4 ${
               isDark 
