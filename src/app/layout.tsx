@@ -9,7 +9,7 @@ import { Lexend as FontSans } from 'next/font/google';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Settings, Menu, User, History as HistoryIcon, BarChart2, Bot, Users, Activity, ClipboardList, ListChecks, LayoutDashboard, Star, ArrowLeft } from 'lucide-react';
+import { LogOut, Settings, Menu, User, History as HistoryIcon, BarChart2, Bot, Users, Activity, ClipboardList, ListChecks, LayoutDashboard, Star, ArrowLeft, Gift } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from '@/context/AuthContext';
@@ -178,6 +178,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/friends", label: "Friends", icon: Users },
     { href: "/report", label: "Report", icon: BarChart2 },
     { href: "/history", label: "History", icon: HistoryIcon },
+    { href: "/offer", label: "Offer", icon: Gift },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
@@ -366,28 +367,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       <Toaster />
       <RoutePreloader />        {/* Bottom Navigation - Mobile Only */}
       {shouldShowBottomNav && (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40">
-          <div
-            className={cn(
-              "backdrop-blur-xl border-t shadow-lg py-2 transition-all duration-500",
-              isDark 
-                ? "bg-[#1a1a1a] border-[#2a2a2a]" 
-                : "bg-clayGlass border-white/50 shadow-clayStrong"
-            )}
-            style={{
-              paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
-            }}
-          >            <div data-bottom-nav>
-              <BottomNavigationBar
-                navLinks={navLinks}
-                handleLogout={handleLogout}
-                isSheetOpen={isMobileMenuOpen}
-                setIsSheetOpen={setIsMobileMenuOpen}
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        </div>
+        <BottomNavigationBar
+          navLinks={navLinks}
+          handleLogout={handleLogout}
+          isSheetOpen={isMobileMenuOpen}
+          setIsSheetOpen={setIsMobileMenuOpen}
+          isDark={isDark}
+        />
       )}
     </div>
   );
