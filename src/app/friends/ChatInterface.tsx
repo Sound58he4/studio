@@ -33,16 +33,43 @@ interface ChatInterfaceProps {
     friend: UserFriend | null;
     currentUserId: string | null;
     chatId: string | null; 
+    isDark?: boolean;
 }
 
 export interface ChatInterfaceHandle {
     performClearLocalAIChat: () => void;
 }
 
-const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ friend, currentUserId, chatId }, ref) => {
+const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ friend, currentUserId, chatId, isDark: propIsDark }, ref) => {
     // Performance monitoring
     const performanceRef = usePerformanceMonitor('ChatInterface');
     const firebasePerf = useFirebasePerformance();
+    
+    // Dark theme state management
+    const [isDark, setIsDark] = useState(propIsDark || false);
+    
+    // Detect theme from HTML class if not provided as prop
+    useEffect(() => {
+        if (propIsDark !== undefined) {
+            setIsDark(propIsDark);
+            return;
+        }
+        
+        const updateDark = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        updateDark(); // Initial check
+        
+        // Watch for theme changes
+        const observer = new MutationObserver(updateDark);
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+
+        return () => observer.disconnect();
+    }, [propIsDark]);
     
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const initialAIMessage: ChatMessage = {
@@ -273,19 +300,18 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
     }, [friend]);
 
     return (
-        <div className="flex flex-col h-full w-full bg-clayGlass backdrop-blur-sm overflow-hidden relative shadow-clay rounded-2xl" data-chat-container>
+        <div className={`flex flex-col h-full w-full backdrop-blur-sm overflow-hidden relative shadow-clay rounded-2xl ${
+            isDark 
+                ? 'bg-[#2a2a2a]/90 border border-[#3a3a3a]/30' 
+                : 'bg-clayGlass'
+        }`} data-chat-container>
             {friend ? (
                 <>
                     <div className="flex-1 min-h-0 overflow-hidden">
                         <div 
                             ref={scrollAreaRef}
-                            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth"
+                            className="h-full overflow-y-auto overflow-x-hidden scroll-smooth pb-4 break-words"
                             onScroll={handleScroll}
-                            style={{
-                                scrollBehavior: 'smooth',
-                                paddingBottom: '1rem',
-                                wordWrap: 'break-word'
-                            }}
                         >
                             <MessageList
                                 messages={isAISelected ? aiLocalMessages : messages}
@@ -295,6 +321,7 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                                 friend={friend}
                                 isAISelected={isAISelected}
                                 scrollAreaRef={scrollAreaRef}
+                                isDark={isDark}
                             />
                         </div>
                     </div>
@@ -303,7 +330,11 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     <AnimatePresence>
                         {!shouldAutoScroll && (
                             <motion.button
-                                className="absolute bottom-20 right-4 z-30 bg-primary text-primary-foreground p-2 rounded-full shadow-lg"
+                                className={`absolute bottom-20 right-4 z-30 p-2 rounded-full shadow-lg transition-all duration-200 ${
+                                    isDark 
+                                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                                        : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                }`}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 exit={{ scale: 0, opacity: 0 }}
@@ -316,33 +347,50 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                     </AnimatePresence>
 
                     {isAISelected && showSuggestions && (
-                        <div className="flex-shrink-0 bg-clayGlass backdrop-blur-sm border-t border-clay-300/30">
+                        <div className={`flex-shrink-0 backdrop-blur-sm border-t ${
+                            isDark 
+                                ? 'bg-[#2a2a2a]/80 border-[#3a3a3a]/30' 
+                                : 'bg-clayGlass border-clay-300/30'
+                        }`}>
                             <AISuggestionBar 
                                 onSuggestionClick={(prompt) => {
                                     setNewMessage(prompt); 
                                     setShowSuggestions(false); 
                                     focusInput(); 
                                 }} 
-                                onHide={() => setShowSuggestions(false)} 
+                                onHide={() => setShowSuggestions(false)}
+                                isDark={isDark}
                             />
                         </div>
                     )}
                     
                     {isAISelected && !showSuggestions && (
-                        <div className="px-2 py-1 border-t bg-clayGlass backdrop-blur-sm border-clay-300/30 flex justify-center flex-shrink-0 shadow-clay">
+                        <div className={`px-2 py-1 border-t backdrop-blur-sm flex justify-center flex-shrink-0 shadow-clay ${
+                            isDark 
+                                ? 'bg-[#2a2a2a]/80 border-[#3a3a3a]/30' 
+                                : 'bg-clayGlass border-clay-300/30'
+                        }`}>
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowSuggestions(true)}
-                                className="text-xs px-3 py-1 h-6 rounded-xl bg-clayGlass backdrop-blur-sm border-0 shadow-clay hover:shadow-clayStrong text-gray-700 hover:text-blue-600 transition-all duration-300 hover:scale-105"
+                                className={`text-xs px-3 py-1 h-6 rounded-xl backdrop-blur-sm border-0 shadow-clay hover:shadow-clayStrong transition-all duration-300 hover:scale-105 ${
+                                    isDark 
+                                        ? 'bg-[#3a3a3a]/60 text-gray-300 hover:text-blue-400 hover:bg-[#4a4a4a]/60' 
+                                        : 'bg-clayGlass text-gray-700 hover:text-blue-600'
+                                }`}
                             >
                                 Show AI Suggestions
                             </Button>
                         </div>
                     )}
                     
-                    <div className="flex-shrink-0 bg-clayGlass backdrop-blur-sm border-t border-clay-300/30">
+                    <div className={`flex-shrink-0 backdrop-blur-sm border-t ${
+                        isDark 
+                            ? 'bg-[#2a2a2a]/80 border-[#3a3a3a]/30' 
+                            : 'bg-clayGlass border-clay-300/30'
+                    }`}>
                         <MessageInput
                             ref={messageInputRef} 
                             newMessage={newMessage}
@@ -350,12 +398,19 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                             onSendMessage={handleSendMessage}
                             isSending={isSending || isAIChatting}
                             isAISelected={isAISelected}
+                            isDark={isDark}
                         />
                     </div>
                 </>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-gray-600 italic p-4 text-center bg-clayGlass/20 backdrop-blur-sm rounded-2xl shadow-clay">
-                     <Loader2 size={32} className="mb-3 opacity-40 animate-spin"/>
+                <div className={`flex flex-col items-center justify-center h-full italic p-4 text-center backdrop-blur-sm rounded-2xl shadow-clay ${
+                    isDark 
+                        ? 'text-gray-400 bg-[#2a2a2a]/20' 
+                        : 'text-gray-600 bg-clayGlass/20'
+                }`}>
+                     <Loader2 size={32} className={`mb-3 opacity-40 animate-spin ${
+                         isDark ? 'text-gray-400' : 'text-gray-600'
+                     }`}/>
                     <span className="text-sm">Loading chat...</span>
                 </div>
             )}

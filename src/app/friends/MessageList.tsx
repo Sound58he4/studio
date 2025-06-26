@@ -67,7 +67,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                         "p-2 px-3 rounded-2xl text-sm shadow-clay relative",
                                         "transition-all duration-200 ease-out group-hover:scale-[1.01] group-hover:shadow-clayStrong",
                                         isUserMessage
-                                            ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-md"
+                                            ? "bg-blue-600 text-white rounded-br-md"
                                             : msg.isAI ? "bg-clayGlass backdrop-blur-sm border border-clay-300/30 text-gray-900 rounded-bl-md" : "bg-clayGlass backdrop-blur-sm border border-clay-300/30 text-gray-900 rounded-bl-md",
                                         isTemp && "opacity-70" 
                                     )}>

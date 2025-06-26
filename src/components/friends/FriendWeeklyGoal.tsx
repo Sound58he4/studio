@@ -67,27 +67,25 @@ const FriendWeeklyGoal: React.FC<FriendWeeklyGoalProps> = ({
       progress: weeklyGoal.progress.fat,
       unit: 'g',
       icon: Wheat,
-      color: 'purple',
+      color: 'blue',
       shortName: 'Fat'
     }
   ];
 
   const getColorClasses = (color: string) => {
     const colorMap = {
-      blue: isDark ? 'text-blue-400' : 'text-blue-500',
+      blue: isDark ? 'text-blue-400' : 'text-blue-600',
       orange: isDark ? 'text-orange-400' : 'text-orange-500',
       green: isDark ? 'text-emerald-400' : 'text-emerald-500',
-      purple: isDark ? 'text-purple-400' : 'text-purple-500',
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
 
   const getProgressBarColor = (color: string) => {
     const colorMap = {
-      blue: 'bg-gradient-to-r from-blue-400 to-blue-500',
-      orange: 'bg-gradient-to-r from-orange-400 to-orange-500',
-      green: 'bg-gradient-to-r from-emerald-400 to-emerald-500',
-      purple: 'bg-gradient-to-r from-purple-400 to-purple-500',
+      blue: isDark ? 'bg-blue-400' : 'bg-blue-600',
+      orange: isDark ? 'bg-orange-400' : 'bg-orange-500',
+      green: isDark ? 'bg-emerald-400' : 'bg-emerald-500',
     };
     return colorMap[color as keyof typeof colorMap] || colorMap.blue;
   };
@@ -112,7 +110,7 @@ const FriendWeeklyGoal: React.FC<FriendWeeklyGoalProps> = ({
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-2">
-              <Target className={cn("w-4 h-4", isDark ? 'text-purple-400' : 'text-purple-600')} />
+              <Target className={cn("w-4 h-4", isDark ? 'text-blue-400' : 'text-blue-600')} />
               <span className={cn("text-sm font-medium", isDark ? 'text-white' : 'text-gray-900')}>
                 Weekly Goal
               </span>
@@ -171,7 +169,7 @@ const FriendWeeklyGoal: React.FC<FriendWeeklyGoalProps> = ({
           <div className="flex items-center space-x-3">
             <div className={cn(
               "w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg",
-              isDark ? 'bg-purple-600' : 'bg-gradient-to-br from-purple-500 to-purple-600'
+              isDark ? 'bg-blue-400' : 'bg-blue-600'
             )}>
               <Target className="w-5 h-5 text-white" />
             </div>

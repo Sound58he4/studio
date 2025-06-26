@@ -21,10 +21,11 @@ interface MessageListProps {
     scrollAreaRef: React.RefObject<HTMLDivElement>; // This ref is for the viewport
     isAIProcessing?: boolean; // New prop to show AI processing state
     className?: string;
+    isDark?: boolean;
 }
 
 const MessageList: React.FC<MessageListProps> = React.memo(({
-    messages, currentUserId, isLoading, error, friend, isAISelected, scrollAreaRef, isAIProcessing = false, className
+    messages, currentUserId, isLoading, error, friend, isAISelected, scrollAreaRef, isAIProcessing = false, className, isDark: propIsDark
 }) => {
     const [lightTheme, setLightTheme] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -34,7 +35,12 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
         return true; // Default to light theme
     });
 
+    // Use prop value if provided, otherwise detect from document
+    const isDark = propIsDark !== undefined ? propIsDark : !lightTheme;
+
     useEffect(() => {
+        if (propIsDark !== undefined) return; // Skip detection if prop is provided
+        
         const handleThemeChange = () => {
             if (typeof window !== 'undefined') {
                 setLightTheme(!document.documentElement.classList.contains('dark'));
@@ -54,9 +60,9 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
         }
 
         return () => observer.disconnect();
-    }, []);
+    }, [propIsDark]);
 
-    const isDark = !lightTheme;return (
+    return (
         <div className="space-y-4 sm:space-y-5">
             {isLoading && ( 
                 <motion.div 
@@ -69,7 +75,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     >
-                        <Loader2 className={`h-6 w-6 ${isDark ? 'text-[#8b5cf6]' : 'text-blue-600'}`} />
+                        <Loader2 className={`h-6 w-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                     </motion.div>
                 </motion.div> 
             )}
@@ -86,8 +92,8 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                         <div className="flex items-start space-x-3 sm:space-x-4">
                             <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-xl ring-2 ${
                                 isDark 
-                                    ? 'bg-[#8b5cf6] ring-[#8b5cf6]/30' 
-                                    : 'bg-gradient-to-br from-blue-400 to-purple-500 ring-blue-200/50'
+                                    ? 'bg-blue-600 ring-blue-400/30' 
+                                    : 'bg-blue-500 ring-blue-200/50'
                             }`}>
                                 <motion.div
                                     animate={{ rotate: 360 }}
@@ -98,15 +104,15 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                             </div>
                             <div className="flex flex-col">                                <div className={`rounded-tl-lg sm:rounded-tl-xl p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl shadow-xl backdrop-blur-sm border-2 relative overflow-hidden ${
                                     isDark 
-                                        ? 'bg-[#3a3a3a] text-gray-200 border-[#8b5cf6]/30' 
-                                        : 'bg-gradient-to-br from-blue-50 to-purple-50 text-gray-800 border-blue-200/60'
+                                        ? 'bg-[#3a3a3a] text-gray-200 border-blue-500/30' 
+                                        : 'bg-blue-50 text-gray-800 border-blue-200/60'
                                 }`}>
                                     {/* Background animation */}
                                     <motion.div
                                         className={`absolute inset-0 ${
                                             isDark 
                                                 ? 'bg-gradient-to-r from-[#8b5cf6]/10 to-[#7c3aed]/10' 
-                                                : 'bg-gradient-to-r from-blue-200/20 to-purple-200/20'
+                                                : 'bg-gradient-to-r from-blue-200/20 to-blue-300/20'
                                         }`}
                                         animate={{ x: [-100, 100] }}
                                         transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -122,7 +128,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                                 />
                                                 <motion.div
                                                     className={`w-3 h-3 rounded-full ${
-                                                        isDark ? 'bg-[#7c3aed]' : 'bg-purple-500'
+                                                        isDark ? 'bg-[#3b82f6]' : 'bg-blue-500'
                                                     }`}
                                                     animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
                                                     transition={{ duration: 1.2, repeat: Infinity, delay: 0.3 }}
@@ -237,7 +243,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                     <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1 shadow-lg ${
                                         isDark 
                                             ? 'bg-[#8b5cf6]' 
-                                            : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                            : 'bg-gradient-to-br from-blue-500 to-blue-600'
                                     }`}>
                                         <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                                     </div>
@@ -247,7 +253,7 @@ const MessageList: React.FC<MessageListProps> = React.memo(({
                                         isUserMessage 
                                             ? isDark
                                                 ? "bg-[#8b5cf6] text-white rounded-tr-lg sm:rounded-tr-xl ml-auto border-[#8b5cf6]/30" 
-                                                : "bg-gradient-to-br from-blue-400 to-purple-500 text-white rounded-tr-lg sm:rounded-tr-xl ml-auto border-blue-300/30"
+                                                : "bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-lg sm:rounded-tr-xl ml-auto border-blue-300/30"
                                             : msg.isAI 
                                                 ? isDark
                                                     ? "bg-[#3a3a3a] text-gray-200 rounded-tl-lg sm:rounded-tl-xl border-[#4a4a4a]" 

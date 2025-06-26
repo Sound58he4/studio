@@ -230,16 +230,42 @@ export default function FriendsPage() {
         };
     }, []);
 
+    // Function to determine if a user is recently active
+    const getUserActivityStatus = (friend: UserFriend, friendWeeklyGoal?: FriendWeeklyGoalType): 'online' | 'offline' => {
+        // For now, use a simple heuristic: if user has significant progress this week, they're likely active
+        if (friendWeeklyGoal?.progress) {
+            const totalProgress = (friendWeeklyGoal.progress.calories + friendWeeklyGoal.progress.protein + 
+                                 friendWeeklyGoal.progress.carbohydrates + friendWeeklyGoal.progress.fat) / 4;
+            if (totalProgress > 20) { // If they have more than 20% progress this week, consider them active
+                return 'online';
+            }
+        }
+        
+        // For now, fall back to random status as placeholder until we have last_seen data
+        return Math.random() > 0.3 ? 'online' : 'offline';
+    };
+
+    // Function to get a meaningful last activity message
+    const getLastActivityMessage = (status: 'online' | 'offline', friend: UserFriend, friendWeeklyGoal?: FriendWeeklyGoalType): string => {
+        if (status === 'online') {
+            return 'Active now';
+        }
+        
+        // For offline users, show a generic recent time for now
+        const recentTimes = ['1h ago', '2h ago', '3h ago', '5h ago', '1d ago'];
+        return recentTimes[Math.floor(Math.random() * recentTimes.length)];
+    };
+
     if (authLoading || (isLoadingFriends && !hasFetchedFriends)) {
         return ( 
             <div className={`min-h-screen flex flex-col transition-all duration-500 ${
                 isDark 
-                    ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-800' 
-                    : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-100'
             }`}>
                 <div className="flex justify-center items-center min-h-[calc(100dvh-100px)] p-4">
                     <Loader2 className={`h-12 w-12 animate-spin ${
-                        isDark ? 'text-purple-400' : 'text-primary'
+                        isDark ? 'text-white' : 'text-primary'
                     }`} />
                 </div>
             </div>
@@ -251,12 +277,12 @@ export default function FriendsPage() {
             <div className={`min-h-screen flex flex-col transition-all duration-500 ${
                 isDark 
                     ? 'bg-[#1a1a1a]' 
-                    : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                    : 'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-100'
             }`}>
                 <div className="flex justify-center items-center min-h-[calc(100dvh-100px)] p-4">
                     <Card className={`w-full max-w-md text-center border-0 shadow-lg rounded-3xl ${
                         isDark 
-                            ? 'bg-[#2a2a2a] border border-purple-500/20 backdrop-blur-sm' 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a] backdrop-blur-sm' 
                             : 'backdrop-blur-sm bg-white/70 border-destructive'
                     }`}>
                         <CardHeader>
@@ -289,7 +315,7 @@ export default function FriendsPage() {
                                  onClick={() => { setHasFetchedFriends(false); fetchFriendsCallback(); }}
                                  className={`transition-all duration-300 hover:scale-105 ${
                                      isDark 
-                                         ? 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' 
+                                         ? 'bg-blue-600 hover:bg-blue-700' 
                                          : ''
                                  }`}
                              >
@@ -308,11 +334,12 @@ export default function FriendsPage() {
             <motion.div 
                 className={`h-[calc(100dvh-var(--header-height,60px)-var(--bottom-nav-height,64px))] flex flex-col md:flex-row overflow-hidden relative transition-all duration-500 ${
                     isDark 
-                        ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-800' 
-                        : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                        ? 'bg-[#1a1a1a]' 
+                        : 'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-100'
                 }`}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}                transition={{ duration: 0.6 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
                 style={{ zIndex: 1 }}
             >
                 {/* Mobile Navigation Toggle */}
@@ -321,8 +348,8 @@ export default function FriendsPage() {
                         <motion.button
                             className={`md:hidden fixed bottom-20 left-4 z-50 text-white p-3 rounded-full shadow-lg transition-all duration-300 ${
                                 isDark 
-                                    ? 'bg-gradient-to-br from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800' 
-                                    : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                    ? 'bg-blue-600 hover:bg-blue-700' 
+                                    : 'bg-blue-500 hover:bg-blue-600'
                             }`}
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
@@ -343,7 +370,7 @@ export default function FriendsPage() {
                         !selectedFriendAction && "w-full md:flex",
                         selectedFriendAction && isNavMinimized && "hidden",                        selectedFriendAction && !isNavMinimized && "w-full md:w-80 lg:w-96",
                         isDark 
-                            ? 'border-r border-purple-500/20 bg-[#2a2a2a]' 
+                            ? 'border-r border-[#3a3a3a] bg-[#2a2a2a]' 
                             : 'border-r border-gray-200/50 bg-white/90'
                     )}
                     initial={{ x: -20, opacity: 0 }}
@@ -352,18 +379,18 @@ export default function FriendsPage() {
                 >
                     <div className={`p-3 flex items-center justify-between sticky top-0 z-10 h-14 flex-shrink-0 backdrop-blur-sm transition-all duration-300 ${
                         isDark 
-                            ? 'border-b border-purple-500/20 bg-[#2a2a2a]' 
+                            ? 'border-b border-[#3a3a3a] bg-[#2a2a2a]' 
                             : 'border-b border-gray-200/50 bg-white/95'
                     }`}>
                         <h2 className={`text-lg font-semibold flex items-center gap-2 ${
                             isDark 
-                                ? 'bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent' 
-                                : 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'
+                                ? 'text-white' 
+                                : 'text-blue-600'
                         }`}>
                             <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
                                 isDark 
-                                    ? 'bg-gradient-to-r from-purple-500 to-blue-600' 
-                                    : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                                    ? 'bg-blue-600' 
+                                    : 'bg-blue-500'
                             }`}>
                                 <Users className="w-2 h-2 text-white" />
                             </div>
@@ -378,7 +405,7 @@ export default function FriendsPage() {
                                         onClick={clearSelection} 
                                         className={`md:hidden text-xs h-8 px-3 rounded-xl backdrop-blur-sm transition-all duration-300 ${
                                             isDark 
-                                                ? 'bg-gray-700/60 hover:bg-gray-600/80 text-gray-300 hover:text-white' 
+                                                ? 'bg-[#3a3a3a] hover:bg-gray-600/80 text-gray-400 hover:text-white' 
                                                 : 'bg-white/60 hover:bg-gray-50/80'
                                         }`}
                                     >
@@ -390,7 +417,7 @@ export default function FriendsPage() {
                     </div>
                     <div className={`flex-1 min-h-0 ${
                         isDark 
-                            ? 'bg-gradient-to-br from-gray-800/50 to-purple-900/30' 
+                            ? 'bg-[#1a1a1a]' 
                             : 'bg-gradient-to-br from-gray-50/50 to-blue-50/30'
                     }`}>
                         <div className="p-2 space-y-1">
@@ -408,38 +435,37 @@ export default function FriendsPage() {
                                                 "p-3 rounded-xl transition-all duration-300 ease-out cursor-pointer group hover:shadow-md",
                                                 isDark ? (
                                                     selectedFriendAction?.friend.id === friend.id 
-                                                        ? "bg-gradient-to-r from-purple-800/60 to-blue-800/60 backdrop-blur-sm shadow-md hover:from-purple-700/70 hover:to-blue-700/70"
-                                                        : "hover:bg-gradient-to-r hover:from-purple-800/30 hover:to-blue-800/30 hover:backdrop-blur-sm"
+                                                        ? "bg-gradient-to-r from-blue-800/60 to-blue-700/60 backdrop-blur-sm shadow-md hover:from-blue-700/70 hover:to-blue-600/70"
+                                                        : "hover:bg-gradient-to-r hover:from-blue-800/30 hover:to-blue-700/30 hover:backdrop-blur-sm"
                                                 ) : (
                                                     selectedFriendAction?.friend.id === friend.id 
-                                                        ? "bg-gradient-to-r from-blue-100/60 to-indigo-100/60 backdrop-blur-sm shadow-md"
-                                                        : "hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 hover:backdrop-blur-sm"
+                                                        ? "bg-gradient-to-r from-blue-100/60 to-blue-200/60 backdrop-blur-sm shadow-md"
+                                                        : "hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-blue-100/50 hover:backdrop-blur-sm"
                                                 )
                                             )}
                                         >
                                             <div className="flex items-center gap-3">
                                                 <div className="relative">
                                                     <Avatar className={`h-10 w-10 border-2 shadow-md flex-shrink-0 ${
-                                                        isDark ? 'border-purple-500/30' : 'border-white/50'
+                                                        isDark ? 'border-blue-500/30' : 'border-white/50'
                                                     }`}>
-                                                        <AvatarImage src={friend.photoURL ?? undefined} alt={friend.displayName || 'F'} />
-                                                        <AvatarFallback className={`text-sm backdrop-blur-sm font-medium ${
-                                                            isDark 
-                                                                ? 'bg-gradient-to-br from-purple-700/80 to-blue-700/80 text-purple-200' 
-                                                                : 'bg-gradient-to-br from-blue-100/80 to-purple-100/80 text-blue-600'
-                                                        }`}>
+                                                        <AvatarImage src={friend.photoURL ?? undefined} alt={friend.displayName || 'F'} />                                        <AvatarFallback className={`text-sm backdrop-blur-sm font-medium ${
+                                            isDark 
+                                                ? 'bg-[#3a3a3a] text-gray-100' 
+                                                : 'bg-blue-100/80 text-blue-600'
+                                        }`}>
                                                             {friend.displayName?.charAt(0).toUpperCase() || 'U'}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border ${
-                                                        isDark ? 'border-gray-800' : 'border-white'
+                                                        isDark ? 'border-[#2a2a2a]' : 'border-white'
                                                     }`}></div>
                                                 </div>
                                                 <div className="flex-grow min-w-0">
                                                     <div className="flex items-center justify-between">
                                                         <span className={`text-base font-medium truncate transition-colors duration-300 ${
                                                             isDark 
-                                                                ? 'text-white group-hover:text-purple-300' 
+                                                                ? 'text-white group-hover:text-gray-100' 
                                                                 : 'text-gray-900 group-hover:text-blue-700'
                                                         }`}>
                                                             {friend.displayName}
@@ -448,8 +474,8 @@ export default function FriendsPage() {
                                                             variant="secondary" 
                                                             className={`ml-2 text-xs px-2 py-0.5 rounded-full transition-colors duration-300 ${
                                                                 isDark 
-                                                                    ? 'bg-gradient-to-r from-purple-700/50 to-blue-700/50 text-purple-200 border-purple-600/30' 
-                                                                    : 'bg-gradient-to-r from-blue-100/80 to-purple-100/80 text-blue-700 border-blue-200/50'
+                                                                    ? 'bg-[#3a3a3a] text-gray-100 border-blue-500/20' 
+                                                                    : 'bg-blue-100/80 text-blue-700 border-blue-200/50'
                                                             }`}
                                                         >
                                                             Level {friend.level || 1}
@@ -457,7 +483,7 @@ export default function FriendsPage() {
                                                     </div>
                                                     <p className={`text-xs transition-colors duration-300 ${
                                                         isDark 
-                                                            ? 'text-gray-400 group-hover:text-purple-400' 
+                                                            ? 'text-gray-400 group-hover:text-gray-300' 
                                                             : 'text-gray-600 group-hover:text-blue-600'
                                                     }`}>
                                                         Online • {friend.totalPoints?.toLocaleString() || 0} pts • {friend.badges || 0} badges • {friend.dayStreak || 0} day streak
@@ -476,7 +502,7 @@ export default function FriendsPage() {
                                                     
                                                     {!friendsWeeklyGoals[friend.id] && !isLoadingWeeklyGoals && (
                                                         <div className={`mt-2 p-2 rounded-lg text-xs text-center ${
-                                                            isDark ? 'bg-gray-700/50 text-gray-400' : 'bg-gray-100/70 text-gray-500'
+                                                            isDark ? 'bg-[#3a3a3a] text-gray-400' : 'bg-gray-100/70 text-gray-500'
                                                         }`}>
                                                             Weekly goals not available
                                                         </div>
@@ -489,7 +515,7 @@ export default function FriendsPage() {
                                                             size="icon" 
                                                             className={`h-7 w-7 backdrop-blur-sm rounded-lg transition-all duration-300 ${
                                                                 isDark 
-                                                                    ? 'text-gray-400 hover:text-purple-300 hover:bg-purple-800/50' 
+                                                                    ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]' 
                                                                     : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/50'
                                                             }`}
                                                             onClick={(e) => { e.stopPropagation(); handleSelectAction(friend, 'chat'); }} 
@@ -504,7 +530,7 @@ export default function FriendsPage() {
                                                             size="icon" 
                                                             className={`h-7 w-7 backdrop-blur-sm rounded-lg transition-all duration-300 ${
                                                                 isDark 
-                                                                    ? 'text-gray-400 hover:text-purple-300 hover:bg-purple-800/50' 
+                                                                    ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]' 
                                                                     : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/50'
                                                             }`}
                                                             onClick={(e) => { e.stopPropagation(); handleSelectAction(friend, 'progress'); }} 
@@ -520,7 +546,7 @@ export default function FriendsPage() {
                                                                 size="icon" 
                                                                 className={`h-7 w-7 backdrop-blur-sm rounded-lg transition-all duration-300 ${
                                                                     isDark 
-                                                                        ? 'text-gray-400 hover:text-purple-300 hover:bg-purple-800/50' 
+                                                                        ? 'text-gray-400 hover:text-white hover:bg-[#3a3a3a]' 
                                                                         : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50/50'
                                                                 }`}
                                                                 onClick={(e) => { e.stopPropagation(); handleSelectAction(friend, 'weeklyGoal'); }} 
@@ -555,7 +581,7 @@ export default function FriendsPage() {
                                         </motion.div>
                                        No friends yet.
                                          <Link href="/settings" className={`ml-1 font-medium hover:underline ${
-                                             isDark ? 'text-purple-400 hover:text-purple-300' : 'text-blue-600 hover:text-blue-700'
+                                             isDark ? 'text-white hover:text-gray-100' : 'text-blue-600 hover:text-blue-700'
                                          }`}>Add some!</Link>
                                     </motion.div>
                                  )
@@ -585,12 +611,12 @@ export default function FriendsPage() {
                             className="flex flex-col h-full w-full"                        >
                             {selectedFriendAction.action === 'progress' && (
                                 <div className="flex-1 min-h-0">
-                                    <ProgressViewer friend={selectedFriendAction.friend} currentUserId={userId} />
+                                    <ProgressViewer friend={selectedFriendAction.friend} currentUserId={userId} isDark={isDark} />
                                 </div>
                             )}
                             {selectedFriendAction.action === 'profile' && (
                                 <div className="flex-1 min-h-0 overflow-auto">
-                                    <FriendProfile friend={selectedFriendAction.friend} onBack={clearSelection} />
+                                    <FriendProfile friend={selectedFriendAction.friend} onBack={clearSelection} isDark={isDark} />
                                 </div>
                             )}
                             {selectedFriendAction.action === 'weeklyGoal' && (
@@ -646,21 +672,21 @@ export default function FriendsPage() {
     return (        <motion.div 
             className={`min-h-screen flex flex-col overflow-hidden touch-pan-y transition-all duration-500 ${
                 isDark 
-                    ? 'bg-gradient-to-br from-gray-900 via-purple-900 to-gray-800' 
-                    : 'bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'
+                    ? 'bg-[#1a1a1a]' 
+                    : 'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-100'
             }`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
         >
             <div className={`flex-1 w-full max-w-6xl mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 overflow-y-auto scrollbar-thin scrollbar-track-transparent hover:scrollbar-thumb-gray-400 friends-scroll-container scroll-smooth overscroll-contain pb-safe ${
-                isDark ? 'scrollbar-thumb-purple-600' : 'scrollbar-thumb-blue-300'
+                isDark ? 'scrollbar-thumb-white/20' : 'scrollbar-thumb-blue-300'
             }`}>
                 {/* Header Section */}
                 <motion.div 
                     className={`backdrop-blur-sm p-4 sm:p-6 shadow-lg rounded-2xl sm:rounded-3xl mb-4 sm:mb-6 transition-all duration-300 ${
                         isDark 
-                            ? 'border border-purple-500/20 bg-[#2a2a2a]' 
+                            ? 'border border-[#3a3a3a] bg-[#2a2a2a]' 
                             : 'border border-gray-200/50 bg-white/90'
                     }`}
                     initial={{ y: -20, opacity: 0 }}
@@ -692,7 +718,7 @@ export default function FriendsPage() {
                                 onChange={e => setSearchQuery(e.target.value)} 
                                 className={`pl-10 rounded-xl sm:rounded-2xl border-0 h-11 sm:h-12 text-sm backdrop-blur-sm transition-all duration-300 ${
                                     isDark 
-                                        ? 'bg-gray-700/60 focus:bg-gray-700/80 text-gray-100 placeholder:text-gray-400' 
+                                        ? 'bg-[#3a3a3a] focus:bg-[#3a3a3a] text-gray-100 placeholder:text-gray-400' 
                                         : 'bg-gray-100/80 focus:bg-white/80 placeholder:text-gray-500'
                                 }`}
                             />
@@ -703,8 +729,8 @@ export default function FriendsPage() {
                                 onClick={() => router.push('/settings')}
                                 className={`h-11 sm:h-12 px-4 sm:px-6 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm text-sm sm:text-base ${
                                     isDark 
-                                        ? 'border-purple-400/30 bg-purple-800/50 text-purple-300 hover:bg-purple-700/60' 
-                                        : 'border-purple-200/50 bg-purple-50/80 text-purple-700 hover:bg-purple-100/80'
+                                        ? 'border-blue-500/30 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
+                                        : 'border-blue-200/50 bg-blue-50/80 text-blue-700 hover:bg-blue-100/80'
                                 }`}
                             >
                                 <Settings className="w-4 h-4 mr-2" />
@@ -716,12 +742,12 @@ export default function FriendsPage() {
                 </motion.div>                {/* Loading State */}
                 {(authLoading || (isLoadingFriends && !hasFetchedFriends)) && (
                     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 pr-2 pb-20 sm:pb-8 ${
-                        isDark ? 'scrollbar-thumb-purple-600' : 'scrollbar-thumb-gray-300'
+                        isDark ? 'scrollbar-thumb-white/20' : 'scrollbar-thumb-gray-300'
                     }`}>
                         {[1,2,3,4,5,6].map(i => (
                             <Card key={i} className={`backdrop-blur-sm shadow-lg rounded-2xl sm:rounded-3xl ${
                                 isDark 
-                                    ? 'border border-purple-500/20 bg-gray-800/60' 
+                                    ? 'border border-[#3a3a3a] bg-[#2a2a2a]' 
                                     : 'border border-gray-200/50 bg-white/90'
                             }`}>
                                 <CardHeader className="pb-3 sm:pb-4">
@@ -767,7 +793,7 @@ export default function FriendsPage() {
                 {firestoreError && (
                     <Card className={`w-full max-w-2xl mx-auto text-center mb-20 sm:mb-8 shadow-lg rounded-3xl ${
                         isDark 
-                            ? 'bg-gray-800/60 border border-purple-500/20 backdrop-blur-sm' 
+                            ? 'bg-[#2a2a2a] border border-[#3a3a3a] backdrop-blur-sm' 
                             : 'border-destructive bg-white/90'
                     }`}>
                         <CardHeader>
@@ -800,7 +826,7 @@ export default function FriendsPage() {
                                  onClick={() => { setHasFetchedFriends(false); fetchFriendsCallback(); }}
                                  className={`transition-all duration-300 hover:scale-105 ${
                                      isDark 
-                                         ? 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700' 
+                                         ? 'bg-blue-600 hover:bg-blue-700' 
                                          : ''
                                  }`}
                              >
@@ -811,18 +837,44 @@ export default function FriendsPage() {
                 )}                {/* Friends Grid */}
                 {!authLoading && !isLoadingFriends && !firestoreError && filteredFriends.length > 0 && (
                     <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-h-[calc(100vh-320px)] sm:max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin scrollbar-track-gray-100 pr-2 pb-20 sm:pb-8 ${
-                        isDark ? 'scrollbar-thumb-purple-600 hover:scrollbar-thumb-purple-500' : 'scrollbar-thumb-blue-300 hover:scrollbar-thumb-blue-400'
+                        isDark ? 'scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30' : 'scrollbar-thumb-blue-300 hover:scrollbar-thumb-blue-400'
                     }`}>
                         {filteredFriends.map((friend, index) => {
-                            // Mock data for better visual presentation (keeping some stats as mock for now)
-                            const mockStats = {
-                                weeklyGoal: Math.floor(Math.random() * 5) + 3,
-                                completedWorkouts: Math.floor(Math.random() * 6) + 1,
-                                streak: Math.floor(Math.random() * 25) + 1,
-                                status: Math.random() > 0.3 ? 'online' : 'offline'
-                            };
+                            // Get real data from Firebase
+                            const friendWeeklyGoal = friendsWeeklyGoals[friend.id];
+                            const dayStreak = friend.dayStreak || 0;
+                            const badges = friend.badges || 0;
+                            const totalPoints = friend.totalPoints || 0;
+                            const level = friend.level || 1;
                             
-                            const progressPercentage = Math.min((mockStats.completedWorkouts / mockStats.weeklyGoal) * 100, 100);
+                            // Debug logging to see what data we're getting
+                            console.log(`[Friends Page] Friend ${friend.displayName}:`, {
+                                dayStreak,
+                                badges,
+                                totalPoints,
+                                level,
+                                hasWeeklyGoal: !!friendWeeklyGoal
+                            });
+                            
+                            // Calculate weekly progress if weekly goal data exists
+                            let weeklyProgress = 0;
+                            let completedGoals = 0;
+                            let totalGoals = 4; // calories, protein, carbs, fat
+                            
+                            if (friendWeeklyGoal?.progress) {
+                                const progress = friendWeeklyGoal.progress;
+                                if (progress.calories >= 80) completedGoals++;
+                                if (progress.protein >= 80) completedGoals++;
+                                if (progress.carbohydrates >= 80) completedGoals++;
+                                if (progress.fat >= 80) completedGoals++;
+                                weeklyProgress = (completedGoals / totalGoals) * 100;
+                            }
+                            
+                            // Get activity status based on recent data
+                            const status = getUserActivityStatus(friend, friendWeeklyGoal);
+                            const lastActivityMessage = getLastActivityMessage(status, friend, friendWeeklyGoal);
+                            
+                            const progressPercentage = weeklyProgress;
                             const getProgressWidth = (percentage: number) => {
                                 if (percentage >= 100) return 'w-full';
                                 if (percentage >= 90) return 'w-11/12';
@@ -848,7 +900,7 @@ export default function FriendsPage() {
                                 >
                                     <Card className={`backdrop-blur-sm shadow-lg rounded-2xl sm:rounded-3xl transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group scroll-mt-4 ${
                                         isDark 
-                                            ? 'border border-purple-500/20 bg-[#2a2a2a] hover:bg-[#3a3a3a]' 
+                                            ? 'border border-[#3a3a3a] bg-[#2a2a2a] hover:bg-[#3a3a3a]' 
                                             : 'border border-gray-200/50 bg-white/90'
                                     }`}
                                           onClick={() => handleSelectAction(friend, 'profile')}>
@@ -857,8 +909,8 @@ export default function FriendsPage() {
                                                 <div className="relative flex-shrink-0">
                                                     <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full p-0.5 ${
                                                         isDark 
-                                                            ? 'bg-gradient-to-br from-purple-400 to-blue-500' 
-                                                            : 'bg-gradient-to-br from-blue-400 to-purple-500'
+                                                            ? 'bg-blue-600' 
+                                                            : 'bg-blue-400'
                                                     }`}>
                                                         <div className={`w-full h-full rounded-full flex items-center justify-center ${
                                                             isDark ? 'bg-[#2a2a2a]' : 'bg-white'
@@ -867,7 +919,7 @@ export default function FriendsPage() {
                                                                 <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
                                                             ) : (
                                                                 <span className={`text-lg sm:text-xl font-bold ${
-                                                                    isDark ? 'text-gray-200' : 'text-gray-700'
+                                                                    isDark ? 'text-gray-100' : 'text-gray-700'
                                                                 }`}>
                                                                     {friend.displayName?.charAt(0).toUpperCase() || 'U'}
                                                                 </span>
@@ -875,8 +927,8 @@ export default function FriendsPage() {
                                                         </div>
                                                     </div>
                                                     <div className={`absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 ${
-                                                        isDark ? 'border-gray-800' : 'border-white'
-                                                    } ${mockStats.status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                                        isDark ? 'border-[#2a2a2a]' : 'border-white'
+                                                    } ${status === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <h3 className={`font-semibold text-base sm:text-lg truncate ${
@@ -887,15 +939,15 @@ export default function FriendsPage() {
                                                     <div className="flex items-center space-x-2 mt-1">
                                                         <Badge variant="secondary" className={`text-xs px-2 py-0.5 sm:py-1 ${
                                                             isDark 
-                                                                ? 'bg-purple-800/60 text-purple-200' 
-                                                                : 'bg-purple-100 text-purple-700'
+                                                                ? 'bg-[#3a3a3a] text-gray-100' 
+                                                                : 'bg-blue-100 text-blue-700'
                                                         }`}>
                                                             Level {friend.level || 1}
                                                         </Badge>
                                                         <span className={`text-xs truncate ${
                                                             isDark ? 'text-gray-400' : 'text-gray-500'
                                                         }`}>
-                                                            {mockStats.status === 'online' ? 'Active now' : '2h ago'} • {friend.totalPoints?.toLocaleString() || 0} pts • {friend.badges || 0} badges
+                                                            {lastActivityMessage} • {totalPoints.toLocaleString()} pts • {badges} badges
                                                         </span>
                                                     </div>
                                                 </div>
@@ -904,28 +956,28 @@ export default function FriendsPage() {
                                           <CardContent className="space-y-3 sm:space-y-4">
                                             {/* Weekly Progress */}
                                             <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${
-                                                isDark ? 'bg-gray-700/60' : 'bg-gray-50/80'
+                                                isDark ? 'bg-[#3a3a3a]' : 'bg-gray-50/80'
                                             }`}>
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className={`text-xs sm:text-sm font-medium ${
-                                                        isDark ? 'text-gray-300' : 'text-gray-600'
+                                                        isDark ? 'text-gray-400' : 'text-gray-600'
                                                     }`}>
-                                                        Weekly Goal
+                                                        Weekly Goals
                                                     </span>
                                                     <span className={`text-xs sm:text-sm font-bold ${
                                                         isDark ? 'text-white' : 'text-gray-900'
                                                     }`}>
-                                                        {mockStats.completedWorkouts}/{mockStats.weeklyGoal}
+                                                        {completedGoals}/{totalGoals}
                                                     </span>
                                                 </div>
                                                 <div className={`w-full rounded-full h-2 ${
-                                                    isDark ? 'bg-gray-600' : 'bg-gray-200'
+                                                    isDark ? 'bg-[#1a1a1a]' : 'bg-gray-200'
                                                 }`}>
                                                     <div 
                                                         className={`h-2 rounded-full transition-all duration-300 ${
                                                             isDark 
-                                                                ? 'bg-gradient-to-r from-purple-400 to-blue-500' 
-                                                                : 'bg-gradient-to-r from-blue-400 to-purple-500'
+                                                                ? 'bg-blue-600' 
+                                                                : 'bg-blue-400'
                                                         } ${getProgressWidth(progressPercentage)}`}
                                                     ></div>
                                                 </div>
@@ -934,12 +986,12 @@ export default function FriendsPage() {
                                             {/* Stats */}
                                             <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                                 <div className={`text-center p-2 sm:p-3 rounded-lg sm:rounded-xl ${
-                                                    isDark ? 'bg-gray-700/60' : 'bg-gray-50/80'
+                                                    isDark ? 'bg-[#3a3a3a]' : 'bg-gray-50/80'
                                                 }`}>
                                                     <div className={`text-base sm:text-lg font-bold ${
                                                         isDark ? 'text-white' : 'text-gray-900'
                                                     }`}>
-                                                        {mockStats.streak}
+                                                        {dayStreak}
                                                     </div>
                                                     <div className={`text-xs ${
                                                         isDark ? 'text-gray-400' : 'text-gray-500'
@@ -948,7 +1000,7 @@ export default function FriendsPage() {
                                                     </div>
                                                 </div>
                                                 <div className={`text-center p-2 sm:p-3 rounded-lg sm:rounded-xl ${
-                                                    isDark ? 'bg-gray-700/60' : 'bg-gray-50/80'
+                                                    isDark ? 'bg-[#3a3a3a]' : 'bg-gray-50/80'
                                                 }`}>
                                                     <div className={`text-base sm:text-lg font-bold ${
                                                         isDark ? 'text-white' : 'text-gray-900'
@@ -971,8 +1023,8 @@ export default function FriendsPage() {
                                                     size="sm" 
                                                     className={`flex-1 rounded-lg sm:rounded-xl transition-all duration-300 text-xs sm:text-sm h-8 sm:h-9 ${
                                                         isDark 
-                                                            ? 'border-purple-400/30 bg-purple-800/50 text-purple-200 hover:bg-purple-700/60' 
-                                                            : 'border-purple-200/50 bg-purple-50/50 text-purple-700 hover:bg-purple-100/80'
+                                                            ? 'border-blue-500/30 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30' 
+                                                            : 'border-blue-200/50 bg-blue-50/50 text-blue-700 hover:bg-blue-100/80'
                                                     }`}
                                                 >
                                                     <span className="hidden sm:inline">View Profile</span>
@@ -983,8 +1035,8 @@ export default function FriendsPage() {
                                                     size="sm" 
                                                     className={`rounded-lg sm:rounded-xl transition-all duration-300 text-white h-8 sm:h-9 px-3 sm:px-4 ${
                                                         isDark 
-                                                            ? 'bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700' 
-                                                            : 'bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600'
+                                                            ? 'bg-blue-600 hover:bg-blue-700' 
+                                                            : 'bg-blue-400 hover:bg-blue-500'
                                                     }`}
                                                 >
                                                     <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1008,7 +1060,7 @@ export default function FriendsPage() {
                             isDark ? 'text-gray-500' : 'text-gray-400'
                         }`} />
                         <h3 className={`text-lg sm:text-xl font-semibold mb-2 ${
-                            isDark ? 'text-gray-300' : 'text-gray-600'
+                            isDark ? 'text-gray-400' : 'text-gray-600'
                         }`}>
                             {searchQuery ? 'No friends found' : 'No friends yet'}
                         </h3>
@@ -1022,8 +1074,8 @@ export default function FriendsPage() {
                                 onClick={() => router.push('/settings')}
                                 className={`px-6 sm:px-8 py-2 sm:py-3 rounded-xl sm:rounded-2xl shadow-lg transition-all duration-300 hover:scale-[1.02] text-white text-sm sm:text-base ${
                                     isDark 
-                                        ? 'bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700' 
-                                        : 'bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600'
+                                        ? 'bg-blue-600 hover:bg-blue-700' 
+                                        : 'bg-blue-400 hover:bg-blue-500'
                                 }`}
                             >
                                 <UserPlus className="w-4 h-4 mr-2" />
@@ -1041,8 +1093,8 @@ export default function FriendsPage() {
                     <motion.button
                         className={`fixed bottom-24 sm:bottom-20 right-4 z-50 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 backdrop-blur-sm border border-white/20 ${
                             isDark 
-                                ? 'bg-gradient-to-br from-purple-600 to-blue-700 hover:from-purple-700 hover:to-blue-800' 
-                                : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                ? 'bg-blue-600 hover:bg-blue-700' 
+                                : 'bg-blue-500 hover:bg-blue-600'
                         }`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -1060,7 +1112,8 @@ export default function FriendsPage() {
                 <FriendChatModal 
                     friend={chatModalFriend} 
                     isOpen={showChatModal} 
-                    onClose={closeChatModal} 
+                    onClose={closeChatModal}
+                    isDark={isDark}
                 />
             )}
         </motion.div>

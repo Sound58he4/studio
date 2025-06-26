@@ -16,9 +16,10 @@ interface FriendChatModalProps {
   friend: UserFriend;
   isOpen: boolean;
   onClose: () => void;
+  isDark?: boolean;
 }
 
-const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
+const FriendChatModal = ({ friend, isOpen, onClose, isDark = false }: FriendChatModalProps) => {
   const { userId } = useAuth();
   const { toast } = useToast();
   const [message, setMessage] = useState('');
@@ -154,15 +155,23 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
           transition={{ duration: 0.2 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <Card className="w-full max-w-2xl max-h-[90vh] bg-white/95 backdrop-blur-sm flex flex-col border-0 shadow-2xl rounded-3xl overflow-hidden">
+          <Card className={`w-full max-w-2xl max-h-[90vh] backdrop-blur-sm flex flex-col border-0 shadow-2xl rounded-3xl overflow-hidden ${
+            isDark ? 'bg-[#2a2a2a]/95' : 'bg-white/95'
+          }`}>
             {/* Chat Header */}
-            <CardHeader className="flex flex-row items-center justify-between border-b border-gray-200/50 p-4 bg-gradient-to-r from-blue-50/80 to-purple-50/80">
+            <CardHeader className={`flex flex-row items-center justify-between border-b p-4 ${
+              isDark ? 'border-[#3a3a3a] bg-[#2a2a2a]' : 'border-gray-200/50 bg-gradient-to-r from-blue-50/80 to-gray-50/80'
+            }`}>
               <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full hover:bg-white/60">
+                <Button variant="ghost" size="sm" onClick={onClose} className={`rounded-full ${
+                  isDark ? 'hover:bg-[#3a3a3a]/60' : 'hover:bg-white/60'
+                }`}>
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                    isDark ? 'bg-blue-600' : 'bg-blue-400'
+                  }`}>
                     {friend.photoURL ? (
                       <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
                     ) : (
@@ -172,28 +181,34 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
                   <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-green-500"></div>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{friend.displayName || 'Friend'}</h3>
-                  <p className="text-sm text-gray-500">Active now</p>
+                  <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>{friend.displayName || 'Friend'}</h3>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Active now</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <MessageCircle className="w-5 h-5 text-purple-600" />
-                <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full hover:bg-white/60">
+                <MessageCircle className={`w-5 h-5 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                <Button variant="ghost" size="sm" onClick={onClose} className={`rounded-full ${
+                  isDark ? 'hover:bg-[#3a3a3a]/60' : 'hover:bg-white/60'
+                }`}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
 
             {/* Messages */}
-            <CardContent className="flex-1 p-0 bg-gradient-to-br from-gray-50/30 to-blue-50/30">
+            <CardContent className={`flex-1 p-0 ${
+              isDark ? 'bg-[#1a1a1a]' : 'bg-gradient-to-br from-gray-50/30 to-blue-50/30'
+            }`}>
               <ScrollArea className="h-[400px]">
                 <div className="p-4 space-y-4">
                   {isLoading ? (
                     <div className="flex justify-center items-center h-32">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                      <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                        isDark ? 'border-blue-400' : 'border-blue-600'
+                      }`}></div>
                     </div>
                   ) : messages.length === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
+                    <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                       <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
                       <p>Start your conversation with {friend.displayName}!</p>
                     </div>
@@ -208,7 +223,9 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
                       >
                         <div className={`max-w-[75%] ${msg.senderId !== userId ? 'flex items-start space-x-2' : ''}`}>
                           {msg.senderId !== userId && (
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1 ${
+                              isDark ? 'bg-blue-600' : 'bg-blue-400'
+                            }`}>
                               {friend.photoURL ? (
                                 <img src={friend.photoURL} alt={friend.displayName || 'F'} className="w-full h-full rounded-full object-cover" />
                               ) : (
@@ -219,12 +236,12 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
                           <div className="flex flex-col">
                             <div className={`p-3 rounded-2xl shadow-sm backdrop-blur-sm ${
                               msg.senderId !== userId
-                                ? 'bg-white/80 text-gray-800 rounded-tl-md border border-gray-200/50'
-                                : 'bg-gradient-to-br from-blue-400 to-purple-500 text-white rounded-tr-md ml-auto'
+                                ? isDark ? 'bg-[#2a2a2a]/80 text-gray-100 rounded-tl-md border border-[#3a3a3a]/50' : 'bg-white/80 text-gray-800 rounded-tl-md border border-gray-200/50'
+                                : isDark ? 'bg-blue-600 text-white rounded-tr-md ml-auto' : 'bg-blue-400 text-white rounded-tr-md ml-auto'
                             }`}>
                               <p className="text-sm leading-relaxed">{msg.text}</p>
                             </div>
-                            <p className={`text-xs mt-1 text-gray-500 ${msg.senderId === userId ? 'text-right' : ''}`}>
+                            <p className={`text-xs mt-1 ${isDark ? 'text-gray-500' : 'text-gray-500'} ${msg.senderId === userId ? 'text-right' : ''}`}>
                               {getTimeAgo(msg.timestamp)}
                             </p>
                           </div>
@@ -239,7 +256,11 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
             </CardContent>
 
             {/* Input Area */}
-            <div className="border-t border-gray-200/50 p-4 bg-white/80 backdrop-blur-sm">
+            <div className={`border-t p-4 backdrop-blur-sm ${
+              isDark 
+                ? 'border-[#3a3a3a] bg-[#2a2a2a]/80' 
+                : 'border-gray-200/50 bg-white/80'
+            }`}>
               <div className="flex items-center space-x-2">
                 <div className="flex-1 relative">
                   <Input
@@ -248,13 +269,21 @@ const FriendChatModal = ({ friend, isOpen, onClose }: FriendChatModalProps) => {
                     placeholder="Type a message..."
                     onKeyDown={handleKeyPress}
                     disabled={isSending || isLoading || !chatId}
-                    className="pr-12 border-0 rounded-full bg-gray-100/80 focus:bg-white/90 focus:ring-2 focus:ring-purple-200 backdrop-blur-sm"
+                    className={`pr-12 border-0 rounded-full backdrop-blur-sm ${
+                      isDark 
+                        ? 'bg-[#3a3a3a]/80 text-gray-100 placeholder:text-gray-400 focus:bg-[#3a3a3a]/90 focus:ring-2 focus:ring-blue-500/50' 
+                        : 'bg-gray-100/80 focus:bg-white/90 focus:ring-2 focus:ring-blue-200'
+                    }`}
                   />
                   <Button
                     onClick={handleSendMessage}
                     disabled={!message.trim() || isSending || isLoading || !chatId}
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600 disabled:opacity-50 transition-all duration-200"
+                    className={`absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full disabled:opacity-50 transition-all duration-200 ${
+                      isDark 
+                        ? 'bg-blue-600 hover:bg-blue-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
                     <Send className={`w-4 h-4 text-white ${isSending ? 'animate-pulse' : ''}`} />
                   </Button>

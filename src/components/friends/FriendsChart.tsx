@@ -230,7 +230,7 @@ const FriendsChart = ({ friends, isOpen, onClose }: FriendsChartProps) => {
                   >
                     <Card className="p-4 bg-clayGlass backdrop-blur-sm border-0 shadow-clay rounded-2xl hover:shadow-clayStrong transition-all duration-300">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-600">
+                        <div className="text-2xl font-bold text-blue-600">
                           {Math.round(chartData.reduce((sum, friend) => sum + friend.workouts, 0) / chartData.length)}
                         </div>
                         <div className="text-sm text-gray-600 font-medium">Average Workouts</div>

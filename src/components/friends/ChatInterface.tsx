@@ -350,8 +350,8 @@ const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>(({ fri
                             <motion.button
                                 className={`absolute bottom-4 right-4 z-30 text-white p-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 border border-white/20 backdrop-blur-sm ${
                                     isDark 
-                                        ? 'bg-[#8b5cf6] hover:bg-[#7c3aed]' 
-                                        : 'bg-gradient-to-br from-blue-500 to-purple-600'
+                                        ? 'bg-blue-600 hover:bg-blue-700' 
+                                        : 'bg-blue-600 hover:bg-blue-700'
                                 }`}
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}

@@ -25,9 +25,11 @@ interface AISuggestionBarProps {
     onSuggestionClick: (prompt: string) => void;
     onHide: () => void;
     className?: string;
+    isDark?: boolean;
 }
 
-const AISuggestionBar: React.FC<AISuggestionBarProps> = ({ onSuggestionClick, onHide, className }) => {    const [lightTheme, setLightTheme] = useState(() => {
+const AISuggestionBar: React.FC<AISuggestionBarProps> = ({ onSuggestionClick, onHide, className, isDark: propIsDark }) => {
+    const [lightTheme, setLightTheme] = useState(() => {
         if (typeof window !== 'undefined') {
             // Check if dark theme class is applied to document root
             return !document.documentElement.classList.contains('dark');
@@ -35,7 +37,12 @@ const AISuggestionBar: React.FC<AISuggestionBarProps> = ({ onSuggestionClick, on
         return true; // Default to light theme
     });
 
+    // Use prop value if provided, otherwise detect from document
+    const isDark = propIsDark !== undefined ? propIsDark : !lightTheme;
+
     useEffect(() => {
+        if (propIsDark !== undefined) return; // Skip detection if prop is provided
+        
         const handleThemeChange = () => {
             if (typeof window !== 'undefined') {
                 setLightTheme(!document.documentElement.classList.contains('dark'));
@@ -55,9 +62,7 @@ const AISuggestionBar: React.FC<AISuggestionBarProps> = ({ onSuggestionClick, on
         }
 
         return () => observer.disconnect();
-    }, []);
-
-    const isDark = !lightTheme;
+    }, [propIsDark]);
 
     return (
         <motion.div 
@@ -95,7 +100,7 @@ const AISuggestionBar: React.FC<AISuggestionBarProps> = ({ onSuggestionClick, on
                           size="sm"
                           className={`text-sm h-10 px-4 rounded-2xl backdrop-blur-sm border-0 shadow-lg transition-all duration-300 flex-shrink-0 ${
                               isDark 
-                                  ? 'bg-[#4a4a4a] hover:bg-[#5a5a5a] text-gray-300 hover:text-[#8b5cf6]' 
+                                  ? 'bg-[#4a4a4a] hover:bg-[#5a5a5a] text-gray-300 hover:text-blue-400' 
                                   : 'bg-white/60 shadow-clayInset hover:shadow-clay hover:bg-blue-50/80 text-gray-700 hover:text-blue-600'
                           }`}
                           onClick={() => onSuggestionClick(suggestion.prompt)}

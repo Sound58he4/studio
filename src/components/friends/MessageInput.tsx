@@ -15,11 +15,12 @@ interface MessageInputProps {
     onSendMessage: (text: string, voiceUri?: string, imageUri?: string) => void;
     isSending: boolean;
     isAISelected: boolean;
+    isDark?: boolean;
     className?: string;
 }
 
 const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
-    newMessage, onInputChange, onSendMessage, isSending, isAISelected, className
+    newMessage, onInputChange, onSendMessage, isSending, isAISelected, isDark = false, className
 }, ref) => {
     const { toast } = useToast();
     const [isRecording, setIsRecording] = useState(false);
@@ -145,7 +146,12 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                         size="icon" 
                         onClick={triggerImageUpload}
                         disabled={isSending || isRecording}
-                        className="h-8 w-8 sm:h-10 sm:w-10 rounded-full transition-all duration-300 flex-shrink-0 text-gray-500 hover:text-purple-600 hover:bg-purple-50/80"
+                        className={cn(
+                            "h-8 w-8 sm:h-10 sm:w-10 rounded-full transition-all duration-300 flex-shrink-0",
+                            isDark 
+                                ? "text-gray-400 hover:text-blue-400 hover:bg-blue-500/10" 
+                                : "text-gray-500 hover:text-blue-600 hover:bg-blue-50/80"
+                        )}
                     >
                         <Camera className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Button>
@@ -158,7 +164,9 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                             "h-8 w-8 sm:h-10 sm:w-10 rounded-full transition-all duration-300 flex-shrink-0",
                             isRecording 
                                 ? "text-red-600 hover:text-red-700 hover:bg-red-50/80" 
-                                : "text-gray-500 hover:text-purple-600 hover:bg-purple-50/80"
+                                : isDark
+                                    ? "text-gray-400 hover:text-blue-400 hover:bg-blue-500/10"
+                                    : "text-gray-500 hover:text-blue-600 hover:bg-blue-50/80"
                         )}
                     >
                         {isRecording ? <Pause className="w-4 h-4 sm:w-5 sm:h-5" /> : <Mic className="w-4 h-4 sm:w-5 sm:h-5" />}
@@ -183,13 +191,18 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                     placeholder="Type a message..."
                     onKeyDown={handleKeyDown}
                     disabled={isSending || isRecording}
-                    className="pr-10 sm:pr-12 border-0 rounded-full h-8 sm:h-10 text-xs sm:text-sm focus:ring-2 focus:ring-purple-200/50 transition-all backdrop-blur-sm bg-gray-100/80 focus:bg-white/80"
+                    className={cn(
+                        "pr-10 sm:pr-12 border-0 rounded-full h-8 sm:h-10 text-xs sm:text-sm transition-all backdrop-blur-sm",
+                        isDark 
+                            ? "bg-gray-800/80 text-gray-100 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500/50 focus:bg-gray-700/80" 
+                            : "bg-gray-100/80 text-gray-900 placeholder:text-gray-500 focus:ring-2 focus:ring-blue-200/50 focus:bg-white/80"
+                    )}
                 />
                 <Button
                     onClick={handleSend}
                     disabled={(!newMessage.trim() && !audioBlob && !imagePreview) || isSending || isRecording}
                     size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full disabled:opacity-50 shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-400 to-purple-500 hover:from-blue-500 hover:to-purple-600"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full disabled:opacity-50 shadow-lg transition-all duration-300 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                 >
                     {isSending ? (
                         <motion.div
@@ -208,7 +221,12 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
             <AnimatePresence mode="wait">
                 {(audioPreviewUrl || imagePreview) && (
                     <motion.div 
-                        className="absolute bottom-full left-0 right-0 mb-2 p-2 sm:p-3 border rounded-xl sm:rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg border-gray-200/50 relative"
+                        className={cn(
+                            "absolute bottom-full left-0 right-0 mb-2 p-2 sm:p-3 border rounded-xl sm:rounded-2xl backdrop-blur-sm shadow-lg relative",
+                            isDark 
+                                ? "bg-gray-800/90 border-gray-600/50" 
+                                : "bg-white/90 border-gray-200/50"
+                        )}
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
@@ -223,7 +241,12 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                                 transition={{ duration: 0.2 }}
                             >
                                 <audio controls src={audioPreviewUrl} className="w-full h-6 sm:h-8 rounded-xl"></audio>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500 hover:text-red-600 hover:bg-red-50/80 rounded-xl transition-all duration-300 flex-shrink-0" onClick={resetVoiceInput} title="Clear Audio"> 
+                                <Button variant="ghost" size="icon" className={cn(
+                                    "h-6 w-6 sm:h-8 sm:w-8 rounded-xl transition-all duration-300 flex-shrink-0",
+                                    isDark 
+                                        ? "text-gray-400 hover:text-red-400 hover:bg-red-500/10" 
+                                        : "text-gray-500 hover:text-red-600 hover:bg-red-50/80"
+                                )} onClick={resetVoiceInput} title="Clear Audio"> 
                                     <X size={14}/> 
                                 </Button>
                             </motion.div>
@@ -236,8 +259,16 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                                 transition={{ duration: 0.2 }}
                             >
                                 <img src={imagePreview} alt="Preview" className="h-8 w-8 sm:h-12 sm:w-12 object-cover rounded-xl shadow-lg flex-shrink-0" />
-                                <span className="text-xs sm:text-sm text-gray-600 truncate flex-grow font-medium">{imageFile?.name}</span>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-8 sm:w-8 text-gray-500 hover:text-red-600 hover:bg-red-50/80 rounded-xl transition-all duration-300 flex-shrink-0" onClick={resetImageInput} title="Clear Image"> 
+                                <span className={cn(
+                                    "text-xs sm:text-sm truncate flex-grow font-medium",
+                                    isDark ? "text-gray-300" : "text-gray-600"
+                                )}>{imageFile?.name}</span>
+                                <Button variant="ghost" size="icon" className={cn(
+                                    "h-6 w-6 sm:h-8 sm:w-8 rounded-xl transition-all duration-300 flex-shrink-0",
+                                    isDark 
+                                        ? "text-gray-400 hover:text-red-400 hover:bg-red-500/10" 
+                                        : "text-gray-500 hover:text-red-600 hover:bg-red-50/80"
+                                )} onClick={resetImageInput} title="Clear Image"> 
                                     <X size={14}/> 
                                 </Button>
                             </motion.div>
@@ -250,7 +281,12 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
             <AnimatePresence mode="wait">
                 {isRecording && (
                     <motion.div 
-                        className="absolute bottom-full left-0 right-0 mb-2 p-2 sm:p-3 border border-red-300/50 rounded-xl sm:rounded-2xl bg-red-50/90 backdrop-blur-sm flex items-center justify-between gap-2 sm:gap-3 shadow-lg"
+                        className={cn(
+                            "absolute bottom-full left-0 right-0 mb-2 p-2 sm:p-3 border rounded-xl sm:rounded-2xl backdrop-blur-sm flex items-center justify-between gap-2 sm:gap-3 shadow-lg",
+                            isDark 
+                                ? "border-red-500/50 bg-red-900/20" 
+                                : "border-red-300/50 bg-red-50/90"
+                        )}
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
@@ -263,13 +299,26 @@ const MessageInput = forwardRef<HTMLInputElement, MessageInputProps>(({
                                 animate={{ scale: [1, 1.2, 1] }}
                                 transition={{ duration: 1, repeat: Infinity }}
                             />
-                            <span className="text-xs sm:text-sm font-medium text-red-700">Recording...</span>
-                            <span className="text-xs sm:text-sm font-mono text-red-600 bg-red-100/80 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl">{formatTime(recordingTime)}</span>
+                            <span className={cn(
+                                "text-xs sm:text-sm font-medium",
+                                isDark ? "text-red-400" : "text-red-700"
+                            )}>Recording...</span>
+                            <span className={cn(
+                                "text-xs sm:text-sm font-mono px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-lg sm:rounded-xl",
+                                isDark 
+                                    ? "text-red-400 bg-red-500/10" 
+                                    : "text-red-600 bg-red-100/80"
+                            )}>{formatTime(recordingTime)}</span>
                         </div>
                         <Button 
                             variant="outline" 
                             size="icon" 
-                            className="h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-red-100/80 border-red-300/50 text-red-600 hover:bg-red-200/80 hover:border-red-400/50 transition-all duration-300 flex-shrink-0" 
+                            className={cn(
+                                "h-6 w-6 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl transition-all duration-300 flex-shrink-0",
+                                isDark 
+                                    ? "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-400/50" 
+                                    : "bg-red-100/80 border-red-300/50 text-red-600 hover:bg-red-200/80 hover:border-red-400/50"
+                            )} 
                             onClick={stopRecording} 
                             title="Stop Recording"
                         > 
