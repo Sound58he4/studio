@@ -16,9 +16,8 @@ const QUICK_LOG_ITEMS_COLLECTION = 'quickLogItems';
 
 export const addQuickLogItem = async (userId: string, itemData: Omit<FirestoreQuickLogData, 'createdAt'>): Promise<string> => {
   try {
-    const docRef = await addDoc(collection(db, QUICK_LOG_ITEMS_COLLECTION), {
+    const docRef = await addDoc(collection(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION), {
       ...itemData,
-      userId,
       createdAt: serverTimestamp(),
     });
     
@@ -61,7 +60,7 @@ export async function getQuickLogItems(userId: string): Promise<StoredQuickLogIt
 
 export const deleteQuickLogItem = async (userId: string, itemId: string): Promise<void> => {
   try {
-    const itemRef = doc(db, QUICK_LOG_ITEMS_COLLECTION, itemId);
+    const itemRef = doc(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION, itemId);
     await deleteDoc(itemRef);
     console.log(`[QuickLogService] Quick log item deleted: ${itemId}`);
   } catch (error) {
@@ -72,7 +71,7 @@ export const deleteQuickLogItem = async (userId: string, itemId: string): Promis
 
 export const updateQuickLogItem = async (userId: string, itemId: string, updates: Partial<Omit<FirestoreQuickLogData, 'createdAt' | 'userId'>>): Promise<void> => {
   try {
-    const itemRef = doc(db, QUICK_LOG_ITEMS_COLLECTION, itemId);
+    const itemRef = doc(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION, itemId);
     await updateDoc(itemRef, updates);
     console.log(`[QuickLogService] Quick log item updated: ${itemId}`);
   } catch (error) {

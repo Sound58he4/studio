@@ -162,6 +162,7 @@ export function CTASection() {
               variant="outline" 
               size="lg"
               className="group px-8 py-4 text-lg h-auto backdrop-blur-sm min-w-[200px]"
+              onClick={() => window.open('https://play.google.com/store/apps/details?id=com.bagoai.bagoai', '_blank')}
             >
               <Download className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
               Download App

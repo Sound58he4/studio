@@ -5,10 +5,11 @@ import { db } from '@/lib/firebase/exports';
 import { doc, getDoc, setDoc, collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { createFirestoreServiceError } from './utils';
 import { calculateBadgesAdvanced, getDayOfWeek, type DailyPointsRecord } from '@/lib/utils/badgeCalculator';
+import { format } from 'date-fns';
 
 /**
  * Updates daily points for a user and calculates badges
- * Also updates the user's day streak
+ * Also updates the user's day streak and main points document
  */
 export async function updateDailyPoints(userId: string, date: string, points: number): Promise<void> {
   if (!userId || !date) throw createFirestoreServiceError("User ID and date are required.", "invalid-argument");
@@ -23,6 +24,28 @@ export async function updateDailyPoints(userId: string, date: string, points: nu
       dayOfWeek: getDayOfWeek(date),
       lastUpdated: new Date().toISOString()
     });
+    
+    // Update main points document to sync today's points
+    try {
+      const { updateUserPointsSafely } = await import('./pointsService');
+      const { getUserPoints } = await import('./pointsService');
+      
+      // Get current points data
+      const currentPoints = await getUserPoints(userId);
+      if (currentPoints) {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        if (currentPoints.lastUpdated === today) {
+          // Update today's points
+          await updateUserPointsSafely(userId, {
+            ...currentPoints,
+            todayPoints: points
+          });
+        }
+      }
+    } catch (pointsError) {
+      console.warn(`[Daily Points Service] Could not sync main points for user ${userId}:`, pointsError);
+      // Don't fail the entire operation if points sync fails
+    }
     
     // Update streak when daily points are updated
     try {

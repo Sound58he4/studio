@@ -395,15 +395,15 @@ export default function PrivacyPolicyPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <Button asChild className="w-full sm:w-auto">
-                    <Link href="mailto:privacy@bago.app">
+                    <Link href="mailto:selvarasann09@gmail.com">
                       <Mail className="h-4 w-4 mr-2" />
-                      privacy@bago.app
+                      selvarasann09@gmail.com
                     </Link>
                   </Button>
                   <Button variant="outline" asChild className="w-full sm:w-auto">
                     <Link href="/settings">
                       <Shield className="h-4 w-4 mr-2" />
-                      Privacy Settings
+                      Authorize Page
                     </Link>
                   </Button>
                 </div>

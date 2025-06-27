@@ -24,6 +24,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import FriendChatModal from '@/components/friends/FriendChatModal';
 import FriendWeeklyGoal from '@/components/friends/FriendWeeklyGoal';
 import { getFriendsWeeklyGoals, type FriendWeeklyGoal as FriendWeeklyGoalType } from '@/services/firestore/friendNutritionService';
+import { formatPoints } from '@/lib/utils/pointsFormatter';
 
 interface SelectedFriendAction {
     friend: UserFriend;
@@ -486,7 +487,7 @@ export default function FriendsPage() {
                                                             ? 'text-gray-400 group-hover:text-gray-300' 
                                                             : 'text-gray-600 group-hover:text-blue-600'
                                                     }`}>
-                                                        Online • {friend.totalPoints?.toLocaleString() || 0} pts • {friend.badges || 0} badges • {friend.dayStreak || 0} day streak
+                                                        Online • {formatPoints(friend.totalPoints || 0)} pts • {friend.badges || 0} badges • {friend.dayStreak || 0} day streak
                                                     </p>
                                                     
                                                     {/* Weekly Goal Progress */}
@@ -947,7 +948,7 @@ export default function FriendsPage() {
                                                         <span className={`text-xs truncate ${
                                                             isDark ? 'text-gray-400' : 'text-gray-500'
                                                         }`}>
-                                                            {lastActivityMessage} • {totalPoints.toLocaleString()} pts • {badges} badges
+                                                            {lastActivityMessage} • {formatPoints(totalPoints)} pts • {badges} badges
                                                         </span>
                                                     </div>
                                                 </div>

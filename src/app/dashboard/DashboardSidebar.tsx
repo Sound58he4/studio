@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CompletedWorkouts, ExerciseDetail, WeeklyWorkoutPlan } from './types';
 import { motion } from 'framer-motion';
+import CalisthenicsCalorieLogger from '@/components/calisthenics/CalisthenicsCalorieLogger';
 
 interface DashboardSidebarProps {
     weeklyWorkoutPlan: WeeklyWorkoutPlan | null;
@@ -49,6 +50,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     const [exerciseToLog, setExerciseToLog] = useState<ExerciseDetail | null>(null);
     const [caloriesBurnedInput, setCaloriesBurnedInput] = useState<string>("");
     const [isMobile, setIsMobile] = useState(false);
+    const [showCalisthenicsUI, setShowCalisthenicsUI] = useState(false);
 
     // Detect mobile device
     React.useEffect(() => {
@@ -84,7 +86,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         setExerciseToLog(exercise);
         const currentLog = safeCompletedWorkouts[exercise.exercise];
         setCaloriesBurnedInput(currentLog?.loggedCalories?.toString() ?? "");
-        setIsLogModalOpen(true);
+        
+        // Show Calisthenics UI instead of simple modal
+        setShowCalisthenicsUI(true);
     };
 
     const handleConfirmLogWorkout = () => {
@@ -99,6 +103,21 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             }
         }
         setIsLogModalOpen(false);
+        setExerciseToLog(null);
+        setCaloriesBurnedInput("");
+    };
+
+    const handleCalisthenicsLog = (calories: number, isEstimated: boolean) => {
+        if (exerciseToLog) {
+            handleLogCompletedWorkout(exerciseToLog, calories, isEstimated);
+        }
+        setShowCalisthenicsUI(false);
+        setExerciseToLog(null);
+        setCaloriesBurnedInput("");
+    };
+
+    const handleCalisthenicsCancel = () => {
+        setShowCalisthenicsUI(false);
         setExerciseToLog(null);
         setCaloriesBurnedInput("");
     };    const handleExerciseToggle = (exerciseName: string) => {
@@ -270,7 +289,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                         </div>
                     )}
                 </div>
-            </motion.div>            {/* Log Workout Modal - Calisthenics Theme */}
+            </motion.div>            {/* Calisthenics Calorie Logger */}
+            {showCalisthenicsUI && exerciseToLog && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <CalisthenicsCalorieLogger
+                        exercise={exerciseToLog}
+                        onLogCalories={handleCalisthenicsLog}
+                        onCancel={handleCalisthenicsCancel}
+                        isDark={isDark}
+                        isEstimating={isEstimatingCalories === exerciseToLog.exercise}
+                    />
+                </div>
+            )}
+
+            {/* Legacy Log Workout Modal - Calisthenics Theme */}
             <AlertDialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
                 <AlertDialogContent className={`rounded-3xl border-0 shadow-2xl backdrop-blur-sm max-w-md mx-auto ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-gradient-to-br from-white/95 via-blue-50/80 to-purple-50/80'}`}>
                     {/* Header with Flame Icon */}

@@ -15,6 +15,7 @@ import type { WeeklyWorkoutPlan as CoreWeeklyWorkoutPlan, ExerciseDetail as Core
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CompletedWorkouts } from '@/app/dashboard/types';
+import CalisthenicsCalorieLogger from '@/components/calisthenics/CalisthenicsCalorieLogger';
 
 // Use core types directly or alias them if component-specific structure is identical
 type WeeklyWorkoutPlan = CoreWeeklyWorkoutPlan;
@@ -56,6 +57,7 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
     const [exerciseToLog, setExerciseToLog] = useState<ExerciseDetail | null>(null);
     const [caloriesBurnedInput, setCaloriesBurnedInput] = useState<string>("");
     const [isMobile, setIsMobile] = useState(false);
+    const [showCalisthenicsUI, setShowCalisthenicsUI] = useState(false);
 
     // Detect mobile device
     React.useEffect(() => {
@@ -82,7 +84,9 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
         setExerciseToLog(exercise);
         const currentLog = safeCompletedWorkouts[exercise.exercise];
         setCaloriesBurnedInput(currentLog?.loggedCalories?.toString() ?? "");
-        setIsLogModalOpen(true);
+        
+        // Show Calisthenics UI instead of simple modal
+        setShowCalisthenicsUI(true);
     };
 
     const handleConfirmLogWorkout = () => {
@@ -97,6 +101,21 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
              }
         }
         setIsLogModalOpen(false);
+        setExerciseToLog(null);
+        setCaloriesBurnedInput("");
+    };
+
+    const handleCalisthenicsLog = (calories: number, isEstimated: boolean) => {
+        if (exerciseToLog) {
+            onLogWorkout(exerciseToLog, calories, isEstimated);
+        }
+        setShowCalisthenicsUI(false);
+        setExerciseToLog(null);
+        setCaloriesBurnedInput("");
+    };
+
+    const handleCalisthenicsCancel = () => {
+        setShowCalisthenicsUI(false);
         setExerciseToLog(null);
         setCaloriesBurnedInput("");
     };
@@ -522,6 +541,28 @@ const WorkoutPlan: React.FC<WorkoutPlanProps> = ({
                 </CardFooter>
              )}
 
+            {/* Calisthenics Calorie Logger */}
+            {showCalisthenicsUI && exerciseToLog && (
+                <div className={cn(
+                    "fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm",
+                    isMobile ? "p-2" : "p-4"
+                )}>
+                    <div className={cn(
+                        "w-full",
+                        isMobile ? "max-w-xs max-h-[85vh]" : "max-w-2xl"
+                    )}>
+                        <CalisthenicsCalorieLogger
+                            exercise={exerciseToLog}
+                            onLogCalories={handleCalisthenicsLog}
+                            onCancel={handleCalisthenicsCancel}
+                            isDark={false} // You might want to pass isDark as a prop to WorkoutPlan
+                            isEstimating={isEstimatingCalories === exerciseToLog.exercise}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Legacy Modal */}
             <AlertDialog open={isLogModalOpen} onOpenChange={setIsLogModalOpen}>
                 <AlertDialogContent className={isMobile ? "mx-4 max-w-[calc(100vw-2rem)]" : ""}>
                     <AlertDialogHeader>

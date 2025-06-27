@@ -614,9 +614,9 @@ export default function TermsAndConditionsPage() {
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                   <Button asChild className="w-full sm:w-auto">
-                    <Link href="mailto:legal@bago.app">
+                    <Link href="mailto:selvarasann09@gmail.com">
                       <Mail className="h-4 w-4 mr-2" />
-                      legal@bago.app
+                      selvarasann09@gmail.com
                     </Link>
                   </Button>
                   <Button variant="outline" asChild className="w-full sm:w-auto">

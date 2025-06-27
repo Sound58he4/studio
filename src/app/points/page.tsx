@@ -41,11 +41,13 @@ import { startOfDay, endOfDay, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { fadeInVariants, staggerContainer, optimizedSlideVariants } from '@/lib/animations';
 import { usePerformanceMonitor, useFirebasePerformance } from '@/hooks/use-performance';
+import { formatPoints } from '@/lib/utils/pointsFormatter';
 
 interface PointsData {
   todayPoints: number;
   totalPoints: number;
   lastUpdated: string;
+  perfectDayBonusClaimed?: boolean;
 }
 
 interface DailyNutritionTargets {
@@ -110,11 +112,41 @@ const updateUserPointsData = async (userId: string, pointsData: PointsData): Pro
   
   try {
     const pointsDocRef = doc(db, 'users', userId, 'points', 'current');
-    await setDoc(pointsDocRef, pointsData, { merge: true });
+    const currentSnap = await getDoc(pointsDocRef);
+    
+    let finalData = pointsData;
+    
+    if (currentSnap.exists()) {
+      const currentData = currentSnap.data() as PointsData;
+      
+      // Check if it's a new day and transfer points
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (currentData.lastUpdated !== today) {
+        // Transfer yesterday's points to total and reset bonus
+        finalData = {
+          ...pointsData,
+          totalPoints: currentData.totalPoints + currentData.todayPoints,
+          lastUpdated: today,
+          perfectDayBonusClaimed: false // Reset bonus for new day
+        };
+        console.log(`[Points Service] Transferred ${currentData.todayPoints} points to total for new day`);
+      } else {
+        // Ensure total points never decrease
+        if (pointsData.totalPoints < currentData.totalPoints) {
+          finalData = {
+            ...pointsData,
+            totalPoints: currentData.totalPoints
+          };
+          console.log(`[Points Service] Prevented total points decrease for user: ${userId}`);
+        }
+      }
+    }
+    
+    await setDoc(pointsDocRef, finalData, { merge: true });
     
     // Update cache
     pointsCache.set(userId, {
-      data: pointsData,
+      data: finalData,
       timestamp: Date.now()
     });
     
@@ -137,6 +169,7 @@ export default function PointsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [isClaimingBonus, setIsClaimingBonus] = useState(false);
 
   useEffect(() => { setIsClient(true); }, []);
 
@@ -210,8 +243,15 @@ export default function PointsPage() {
   // Memoized calculation for points to prevent unnecessary recalculations
   const calculatedPoints = useMemo(() => {
     if (!todayProgress || !dailyTargets || !todayFoodLogs) return 0;
-    return calculatePointsFromProgress(todayProgress, dailyTargets, todayFoodLogs);
-  }, [todayProgress, dailyTargets, todayFoodLogs, calculatePointsFromProgress]);
+    let basePoints = calculatePointsFromProgress(todayProgress, dailyTargets, todayFoodLogs);
+    
+    // Add Perfect Day bonus if claimed
+    if (pointsData?.perfectDayBonusClaimed) {
+      basePoints += 10;
+    }
+    
+    return basePoints;
+  }, [todayProgress, dailyTargets, todayFoodLogs, calculatePointsFromProgress, pointsData?.perfectDayBonusClaimed]);
 
   // Memoized points breakdown to prevent unnecessary recalculations
   const pointsBreakdown = useMemo(() => {
@@ -321,15 +361,17 @@ export default function PointsPage() {
       // Get existing points or initialize
       let currentPointsData = existingPoints || { todayPoints: 0, totalPoints: 0, lastUpdated: format(new Date(), 'yyyy-MM-dd') };
 
-      // Check if we need to update today's points
+      // Check if we need to update today's points (new day)
       const today = format(new Date(), 'yyyy-MM-dd');
       if (currentPointsData.lastUpdated !== today) {
-        // New day - reset today's points and add previous day's points to total
+        // New day - transfer yesterday's points to total and reset today's points
         currentPointsData = {
           todayPoints: 0, // Will be calculated by useMemo after state updates
-          totalPoints: currentPointsData.totalPoints + currentPointsData.todayPoints,
+          totalPoints: currentPointsData.totalPoints + currentPointsData.todayPoints, // Add yesterday's points to total
           lastUpdated: today,
+          perfectDayBonusClaimed: false, // Reset bonus for new day
         };
+        console.log(`[Points Page] New day detected - transferred points to total: ${currentPointsData.totalPoints}`);
       }
 
       setPointsData(currentPointsData);
@@ -373,6 +415,31 @@ export default function PointsPage() {
       return () => clearTimeout(timeoutId);
     }
   }, [calculatedPoints, pointsData, userId]);
+
+  // Function to claim the Perfect Day Bonus
+  const claimPerfectDayBonus = useCallback(async () => {
+    if (!userId || !pointsData || isClaimingBonus) return;
+    
+    setIsClaimingBonus(true);
+    
+    try {
+      // Update points data to mark bonus as claimed
+      const updatedPointsData = {
+        ...pointsData,
+        perfectDayBonusClaimed: true,
+        todayPoints: pointsData.todayPoints + 10 // Add the bonus points
+      };
+      
+      await updateUserPointsData(userId, updatedPointsData);
+      setPointsData(updatedPointsData);
+      
+      console.log(`[Points Page] Perfect Day Bonus claimed for user: ${userId}`);
+    } catch (error) {
+      console.error("[Points Page] Error claiming Perfect Day Bonus:", error);
+    } finally {
+      setIsClaimingBonus(false);
+    }
+  }, [userId, pointsData, isClaimingBonus]);
 
   const getPointsBreakdown = () => {
     if (!todayProgress || !dailyTargets) return [];
@@ -693,7 +760,7 @@ export default function PointsPage() {
                 <div className="flex items-center justify-between">
                   <div className={`text-5xl font-bold ${
                     isDark ? 'text-blue-400' : 'text-blue-600'
-                  }`}>{pointsData?.totalPoints || 0}</div>
+                  }`}>{formatPoints(pointsData?.totalPoints || 0)}</div>
                   <div className={`backdrop-blur-sm px-4 py-2 rounded-2xl shadow-lg ${
                     isDark 
                       ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
@@ -917,7 +984,11 @@ export default function PointsPage() {
                             : "bg-gradient-to-br from-gray-100 to-gray-200 shadow-clayInset"
                       )}>
                         {achievedAllGoals ? (
-                          <Star className="w-6 h-6 text-white" />
+                          pointsData?.perfectDayBonusClaimed ? (
+                            <CheckCircle className="w-6 h-6 text-white" />
+                          ) : (
+                            <Star className="w-6 h-6 text-white" />
+                          )
                         ) : (
                           <Trophy className={`w-6 h-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
                         )}
@@ -930,22 +1001,44 @@ export default function PointsPage() {
                           isDark ? 'text-gray-400' : 'text-gray-600'
                         }`}>
                           {achievedAllGoals 
-                            ? "🎉 All goals completed! Bonus awarded!" 
+                            ? pointsData?.perfectDayBonusClaimed
+                              ? "✅ Bonus claimed! +10 points added to today's total"
+                              : "🎉 All goals completed! Claim your bonus!"
                             : "Complete all goals to earn bonus"
                           }
                         </p>
                       </div>
                     </div>
-                    <div className={cn(
-                      "px-4 py-2 rounded-2xl shadow-lg",
-                      achievedAllGoals 
-                        ? "bg-gradient-to-r from-green-400 to-green-500 text-white" 
-                        : isDark 
-                          ? "backdrop-blur-sm bg-[#2a2a2a] border border-[#3a3a3a] text-gray-500" 
-                          : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"
-                    )}>
-                      <span className="text-sm font-bold">+{achievedAllGoals ? 10 : 0} pts</span>
-                    </div>
+                    
+                    {/* Show claim button or points display */}
+                    {achievedAllGoals && !pointsData?.perfectDayBonusClaimed ? (
+                      <Button
+                        onClick={claimPerfectDayBonus}
+                        disabled={isClaimingBonus}
+                        className={cn(
+                          "px-4 py-2 rounded-2xl shadow-lg font-bold text-sm transition-all duration-300",
+                          "bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600",
+                          "text-white border-0"
+                        )}
+                      >
+                        {isClaimingBonus ? "Claiming..." : "Claim +10 pts"}
+                      </Button>
+                    ) : (
+                      <div className={cn(
+                        "px-4 py-2 rounded-2xl shadow-lg",
+                        achievedAllGoals && pointsData?.perfectDayBonusClaimed
+                          ? "bg-gradient-to-r from-green-400 to-green-500 text-white" 
+                          : achievedAllGoals 
+                            ? "bg-gradient-to-r from-yellow-400 to-yellow-500 text-white"
+                            : isDark 
+                              ? "backdrop-blur-sm bg-[#2a2a2a] border border-[#3a3a3a] text-gray-500" 
+                              : "backdrop-blur-sm bg-white/60 shadow-clayInset text-gray-500"
+                      )}>
+                        <span className="text-sm font-bold">
+                          +{achievedAllGoals ? 10 : 0} pts
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

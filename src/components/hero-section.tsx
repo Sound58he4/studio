@@ -3,7 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Star, Users, Activity } from "lucide-react";
+import { ArrowRight, Play, Star, Users, Activity, Zap, Target, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export function HeroSection() {
@@ -11,11 +11,6 @@ export function HeroSection() {
 
   const handleStartJourney = () => {
     router.push('/authorize');
-    //Refresh the apge after 100 milliseconds
-    setTimeout(() => {
-      window.location.reload();
-    }, 1000);
-
   };
 
   return (
@@ -32,7 +27,7 @@ export function HeroSection() {
           >
             <Star className="h-4 w-4 text-primary fill-current" />
             <span className="text-sm font-medium text-primary">
-              #1 AI-Powered Fitness App
+              #1 Calisthenics & Bodyweight Training App
             </span>
           </motion.div>
 
@@ -44,11 +39,11 @@ export function HeroSection() {
             className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Transform Your
+              Master Your
             </span>
             <br />
             <span className="text-foreground">
-              Fitness Journey
+              Calisthenics Journey
             </span>
           </motion.h1>
 
@@ -59,8 +54,8 @@ export function HeroSection() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
           >
-            Experience the future of fitness with AI-powered workouts, 
-            real-time tracking, and personalized insights that adapt to your goals.
+            Unlock your body's potential with progressive calisthenics training, 
+            skill-based movements, and strength-building routines that require no equipment.
           </motion.p>          {/* Features */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -69,19 +64,19 @@ export function HeroSection() {
             className="flex flex-wrap justify-center gap-8 mb-12"
           >
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Activity className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold text-foreground">AI-Powered</span>
-              <span>Workout Plans</span>
+              <Target className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold text-foreground">Progressive</span>
+              <span>Skill Development</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Users className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold text-foreground">Real-Time</span>
-              <span>Progress Tracking</span>
+              <Zap className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold text-foreground">Bodyweight</span>
+              <span>Strength Training</span>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Star className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold text-foreground">Personalized</span>
-              <span>Nutrition Insights</span>
+              <Trophy className="h-5 w-5 text-primary" />
+              <span className="text-lg font-semibold text-foreground">Advanced</span>
+              <span>Movement Mastery</span>
             </div>
           </motion.div>
 
@@ -97,7 +92,7 @@ export function HeroSection() {
               onClick={handleStartJourney}
             >
               <span className="relative z-10 flex items-center gap-2">
-                Start Your Journey
+                Begin Your Training
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
               </span>
               <motion.div
@@ -110,9 +105,10 @@ export function HeroSection() {
               variant="outline" 
               size="lg"
               className="group px-8 py-4 text-lg h-auto backdrop-blur-sm"
+              onClick={() => window.open('https://play.google.com/store/apps/details?id=com.bagoai.bagoai', '_blank')}
             >
               <Play className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-              Watch Demo
+              Download App
             </Button>
           </motion.div>
 
@@ -124,7 +120,7 @@ export function HeroSection() {
             className="mt-16 pt-8 border-t border-border/20"
           >
             <p className="text-sm text-muted-foreground mb-4">
-              Trusted by leading fitness professionals and athletes worldwide
+              Trusted by calisthenics athletes and bodyweight training enthusiasts worldwide
             </p>
             <div className="flex justify-center items-center gap-8 opacity-60">
               {/* Placeholder for brand logos */}
@@ -137,7 +133,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Floating elements */}
+      {/* Calisthenics-themed floating elements */}
       <motion.div
         className="absolute top-1/4 left-1/4 w-4 h-4 bg-primary/30 rounded-full blur-sm"
         animate={{
@@ -175,6 +171,33 @@ export function HeroSection() {
           repeat: Infinity,
           ease: "easeInOut",
           delay: 2,
+        }}
+      />
+      
+      {/* Additional calisthenics-themed elements */}
+      <motion.div
+        className="absolute top-1/2 left-1/6 w-1 h-1 bg-yellow-500/60 rounded-full blur-sm"
+        animate={{
+          scale: [1, 1.5, 1],
+          opacity: [0.6, 1, 0.6],
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5,
+        }}
+      />
+      <motion.div
+        className="absolute bottom-1/4 right-1/4 w-3 h-3 bg-green-500/40 rounded-full blur-sm"
+        animate={{
+          rotate: [0, 360],
+          scale: [1, 1.2, 1],
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "linear",
         }}
       />
     </section>

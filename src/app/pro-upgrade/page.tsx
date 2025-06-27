@@ -8,10 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useToast } from '@/hooks/use-toast';
 
 const ProUpgrade = () => {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [lightTheme, setLightTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('lightTheme') === 'true';
@@ -27,8 +29,24 @@ const ProUpgrade = () => {
       setLightTheme(localStorage.getItem('lightTheme') === 'true');
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    
+    // Show welcome toast for pro upgrade page
+    const showWelcomeToast = () => {
+      toast({
+        title: "🏋️ Upgrade to Pro",
+        description: "Unlock advanced features for your fitness journey",
+        duration: 8000,
+      });
+    };
+    
+    // Delay to ensure proper page load
+    const timer = setTimeout(showWelcomeToast, 1000);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearTimeout(timer);
+    };
+  }, [toast]);
 
   const isDark = !lightTheme;
 
@@ -91,22 +109,48 @@ const ProUpgrade = () => {
     popular: false
   }];
 
+  const handleUpgradeClick = () => {
+    console.log('Starting upgrade process for plan:', selectedPlan);
+    
+    // Show confirmation toast with sender information
+    toast({
+      title: "🚀 Upgrade Initiated",
+      description: `Your ${selectedPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan upgrade is processing. Sender: Bago Fitness Pro`,
+      duration: 6000,
+    });
+    
+    // Add your upgrade logic here
+    // For now, we'll simulate the upgrade process
+    setTimeout(() => {
+      toast({
+        title: "✅ Upgrade Successful!",
+        description: "Welcome to Pro! Your advanced features are now unlocked.",
+        duration: 8000,
+      });
+    }, 3000);
+  };
+
   return (
     <div className={`min-h-screen transition-all duration-500 ${isDark ? 'bg-[#1a1a1a]' : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'} relative overflow-hidden ${isMobile ? 'pb-20' : ''}`}>
       
       <div className={`container mx-auto px-4 py-6 ${isMobile ? 'py-4' : 'py-8'} relative z-10`}>
         {/* Header - Mobile Optimized */}
-        <div className={`flex items-center gap-3 ${isMobile ? 'mb-8' : 'mb-16'}`}>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => router.back()} 
-            className={`rounded-full transition-all duration-300 hover:scale-110 ${isMobile ? 'h-10 w-10' : ''} ${isDark ? 'hover:bg-[#2a2a2a] text-gray-300 border border-[#2a2a2a]' : 'hover:bg-gray-100 text-gray-600 border border-gray-200'}`}
-          >
-            <ArrowLeft size={isMobile ? 18 : 20} />
-          </Button>
-          <div className="flex-1">
-            <div className={`flex items-center gap-3 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+        <div className={`relative ${isMobile ? 'mb-8' : 'mb-16'}`}>
+          {/* Back Button - Hidden on mobile, positioned absolutely on desktop */}
+          {!isMobile && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => router.back()} 
+              className={`absolute left-0 top-0 rounded-full transition-all duration-300 hover:scale-110 ${isDark ? 'hover:bg-[#2a2a2a] text-gray-300 border border-[#2a2a2a]' : 'hover:bg-gray-100 text-gray-600 border border-gray-200'}`}
+            >
+              <ArrowLeft size={20} />
+            </Button>
+          )}
+          
+          {/* Centered Header Content */}
+          <div className="text-center">
+            <div className={`flex items-center justify-center gap-3 ${isMobile ? 'mb-2' : 'mb-3'}`}>
               <div className={`${isMobile ? 'p-2' : 'p-4'} rounded-full ${isDark ? 'bg-[#2a2a2a]' : 'bg-white'} shadow-lg`}>
                 <Crown className={`${isDark ? 'text-blue-400' : 'text-blue-600'}`} size={isMobile ? 20 : 32} />
               </div>
@@ -114,11 +158,11 @@ const ProUpgrade = () => {
                 <h1 className={`${isMobile ? 'text-3xl' : 'text-5xl md:text-6xl'} font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-800'} mb-1`}>
                   Upgrade to Pro
                 </h1>
-                <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                  Unlock advanced features for your fitness journey
-                </p>
               </div>
             </div>
+            <p className={`${isMobile ? 'text-base' : 'text-xl'} font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Unlock advanced features for your fitness journey
+            </p>
           </div>
         </div>
 
@@ -288,10 +332,7 @@ const ProUpgrade = () => {
         <div className={`text-center ${isMobile ? 'mb-8' : 'mb-12'}`}>
           <Button 
             className={`${isMobile ? 'text-lg py-4 px-8' : 'text-xl py-6 px-12'} font-bold rounded-full ${isDark ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-lg hover:scale-105 transition-all duration-300`}
-            onClick={() => {
-              console.log('Starting upgrade process for plan:', selectedPlan);
-              // Add your upgrade logic here
-            }}
+            onClick={handleUpgradeClick}
           >
             Upgrade Now
           </Button>

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Lexend as FontSans } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +14,7 @@ import { LogOut, Settings, Menu, User, History as HistoryIcon, BarChart2, Bot, U
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 import { auth } from '@/lib/firebase/exports';
 import BottomNavigationBar from '@/components/layout/BottomNavigationBar';
 import TopNavigationBar from '@/components/layout/TopNavigationBar';
@@ -32,12 +33,12 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const { user, userId } = useAuth();
+  const { isDark } = useTheme(); // Use theme from ThemeContext instead of local state
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [optimisticPath, setOptimisticPath] = useState<string | null>(null);
   const [isNavbarMinimized, setIsNavbarMinimized] = useState(false); // Desktop navbar minimize state
-  const [isDark, setIsDark] = useState(false); // Track current theme state
 
   useEffect(() => {
     setIsClient(true);
@@ -55,26 +56,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('orientationchange', checkMobile);
     };
-  }, []);
-
-  // Detect theme from HTML class (consistent with overview page)
-  useEffect(() => {
-    const updateDark = () => {
-      const isDarkTheme = document.documentElement.classList.contains('dark');
-      setIsDark(isDarkTheme);
-      console.log(`[Layout] Theme updated to: ${isDarkTheme ? 'dark' : 'light'}`);
-    };
-
-    updateDark(); // Initial check
-    
-    // Watch for theme changes
-    const observer = new MutationObserver(updateDark);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
   }, []);
 
   const showHeaderFooter = !pathname?.startsWith('/authorize') && !!user;
@@ -340,6 +321,42 @@ export default function RootLayout({
         "min-h-screen bg-background antialiased",
         fontSans.variable
       )}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`
+            (function() {
+              try {
+                const cachedTheme = localStorage.getItem('bago-cached-theme');
+                const isSystemDefault = localStorage.getItem('bago-system-default') === 'true';
+                
+                let theme = 'light';
+                
+                if (isSystemDefault) {
+                  // Always check current system preference for system default
+                  theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  // Update cache with current system theme
+                  localStorage.setItem('bago-cached-theme', theme);
+                } else if (cachedTheme && (cachedTheme === 'light' || cachedTheme === 'dark')) {
+                  // Use cached theme for manual selection
+                  theme = cachedTheme;
+                }
+                
+                // Apply theme immediately to prevent flash
+                document.documentElement.classList.remove('light', 'dark');
+                document.documentElement.classList.add(theme);
+                localStorage.setItem('lightTheme', (theme === 'light').toString());
+                
+                // Mark that theme has been initialized
+                window.__THEME_INITIALIZED__ = true;
+                
+                console.log('[Theme Init] Applied theme:', theme, 'isSystemDefault:', isSystemDefault);
+              } catch (error) {
+                console.warn('[Theme Init] Error:', error);
+                document.documentElement.classList.add('light');
+                window.__THEME_INITIALIZED__ = true;
+              }
+            })();
+          `}
+        </Script>
         <AuthProvider>
           <ThemeProvider>
             <MainLayout>{children}</MainLayout>

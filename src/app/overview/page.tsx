@@ -20,6 +20,7 @@ import SleepGoals from '@/components/dashboard/SleepGoals';
 import { FitnessTipData } from '@/app/dashboard/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import AnimatedWrapper from '@/components/ui/animated-wrapper';
+import { formatPoints } from '@/lib/utils/pointsFormatter';
 
 const fitnessTips: FitnessTipData[] = [
   { id: 1, type: 'do', text: 'Stay hydrated! Aim for 8 glasses of water throughout the day.' },
@@ -439,7 +440,7 @@ export default function OverviewPage() {
                                             isDark ? 'text-gray-400' : 'text-gray-600'
                                         }`}>Total Points</p>
                                         <p className={`text-xl md:text-2xl font-bold ${isDark ? 'text-[#8b5cf6]' : 'text-purple-600'}`}>
-                                            {pointsData?.totalPoints || 0}
+                                            {formatPoints(pointsData?.totalPoints || 0)}
                                         </p>
                                     </div>
                                 </div>
