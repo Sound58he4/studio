@@ -6,12 +6,12 @@ import { useAuth } from './AuthContext';
 import { getUserProfile } from '@/services/firestore';
 
 interface AppSettings {
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   accentColor: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'cyan';
   fontSize: 'small' | 'medium' | 'large';
   compactMode: boolean;
   animations: boolean;
-  progressViewPermission: 'friends_only' | 'request_only' | 'private';
+  progressViewPermission: 'private' | 'request_only' | 'public';
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -28,6 +28,8 @@ interface ThemeContextType {
   isDark: boolean;
   isLoading: boolean;
   refreshSettings: () => Promise<void>;
+  updateSettings: (newSettings: AppSettings) => void; // Add this function
+  actualTheme: 'light' | 'dark'; // The actual theme being used (resolved from system if needed)
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -36,6 +38,34 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const { userId, loading: authLoading } = useAuth();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
+  const [systemTheme, setSystemTheme] = useState<'light' | 'dark'>('light');
+
+  // Function to get actual theme (resolving system preference if needed)
+  const getActualTheme = (themeSettings: 'light' | 'dark' | 'system'): 'light' | 'dark' => {
+    if (themeSettings === 'system') {
+      return systemTheme;
+    }
+    return themeSettings;
+  };
+
+  // Listen to system theme changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      setSystemTheme(e.matches ? 'dark' : 'light');
+    };
+
+    // Set initial system theme
+    setSystemTheme(mediaQuery.matches ? 'dark' : 'light');
+    
+    // Listen for changes
+    mediaQuery.addEventListener('change', handleChange);
+    
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   const loadSettings = async () => {
     if (!userId) {
@@ -51,7 +81,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         const loadedSettings: AppSettings = {
           ...DEFAULT_SETTINGS,
           ...profile.settings,
-          theme: profile.settings.theme === 'system' ? 'light' : (profile.settings.theme as 'light' | 'dark')
+          // Keep the theme as-is from database (including 'system')
+          theme: profile.settings.theme || DEFAULT_SETTINGS.theme,
+          // Ensure progressViewPermission is a valid value
+          progressViewPermission: (profile.settings.progressViewPermission && ['private', 'request_only', 'public'].includes(profile.settings.progressViewPermission)) 
+            ? profile.settings.progressViewPermission as 'private' | 'request_only' | 'public'
+            : DEFAULT_SETTINGS.progressViewPermission
         };
         setSettings(loadedSettings);
         console.log("[ThemeContext] Loaded settings:", loadedSettings);
@@ -76,11 +111,22 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined' || isLoading) return;
     
+    const actualTheme = getActualTheme(settings.theme);
     const root = window.document.documentElement;
     const body = document.body;
     
     root.classList.remove('light', 'dark');
-    root.classList.add(settings.theme);
+    root.classList.add(actualTheme);
+    
+    // Update localStorage for compatibility with other components
+    localStorage.setItem('lightTheme', (actualTheme === 'light').toString());
+    
+    // Dispatch storage event to notify other components
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'lightTheme',
+      newValue: (actualTheme === 'light').toString(),
+      oldValue: localStorage.getItem('lightTheme')
+    }));
     
     root.classList.remove('accent-blue', 'accent-purple', 'accent-green', 'accent-orange', 'accent-red', 'accent-cyan');
     root.classList.add(`accent-${settings.accentColor}`);
@@ -104,18 +150,28 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--primary', `${color.hue} ${color.sat} ${color.light}`);
     root.style.setProperty('--accent', `${color.hue} ${color.sat} ${color.light}`);
     
-  }, [settings, isLoading]);
+  }, [settings, isLoading, systemTheme]);
 
   const refreshSettings = async () => {
     await loadSettings();
   };
 
+  // Function to update settings immediately (for real-time updates from Settings page)
+  const updateSettings = (newSettings: AppSettings) => {
+    console.log("[ThemeContext] Updating settings immediately:", newSettings);
+    setSettings(newSettings);
+  };
+
+  const actualTheme = getActualTheme(settings.theme);
+
   return (
     <ThemeContext.Provider value={{
       settings,
-      isDark: settings.theme === 'dark',
+      isDark: actualTheme === 'dark',
       isLoading: authLoading || isLoading,
-      refreshSettings
+      refreshSettings,
+      updateSettings,
+      actualTheme
     }}>
       {children}
     </ThemeContext.Provider>

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Moon, Sun, Save, Settings as SettingsIcon, Loader2, Eye, EyeOff, UserSearch, Users, CheckCircle, XCircle, Send, Clock, UserCheck, UserX, AlertCircle, Trash2, Palette, UserMinus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import {
     getUserProfile, saveUserProfile, searchUsers, sendViewRequest, getIncomingViewRequests,
     acceptViewRequest, declineViewRequest, getFriends, removeFriend
@@ -29,7 +30,7 @@ import { parseISO } from 'date-fns';
 import type { StoredUserProfile, ProgressViewPermission, SearchResultUser, ViewRequest, UserFriend } from '@/app/dashboard/types';
 
 interface AppSettings {
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   accentColor: 'blue' | 'purple' | 'green' | 'orange' | 'red' | 'cyan';
   fontSize: 'small' | 'medium' | 'large';
   compactMode: boolean;
@@ -50,10 +51,10 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { user, userId, loading: authLoading } = useAuth();
+  const { settings: themeSettings, isDark, refreshSettings: refreshThemeSettings, updateSettings: updateThemeSettings } = useTheme();
   const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
-  const [settingsLoaded, setSettingsLoaded] = useState(false); // Track if user settings have been loaded
   const [isSaving, setIsSaving] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,9 +64,7 @@ export default function SettingsPage() {
   const [friends, setFriends] = useState<UserFriend[]>([]);
   const [isLoadingFriends, setIsLoadingFriends] = useState(false);
   const [firestoreError, setFirestoreError] = useState<string | null>(null);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
-  const [confirmDeleteText, setConfirmDeleteText] = useState("");
-
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);  const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
   // Function to fetch friends
   const fetchFriends = useCallback(async () => {
@@ -121,20 +120,13 @@ export default function SettingsPage() {
           const profile = await getUserProfile(userId);
           setUserProfile(profile);
           if (profile) {
-             const rawSettings = { ...DEFAULT_SETTINGS, ...(profile.settings || {}) };
-             const loadedSettings: AppSettings = {
-                 ...rawSettings,
-                 theme: rawSettings.theme === 'system' ? 'light' : (rawSettings.theme as 'light' | 'dark')
-             };
-             setSettings(loadedSettings);
-             setSettingsLoaded(true); // Mark that user settings have been loaded
-              console.log("[Settings Page] Loaded settings:", loadedSettings);
-              fetchIncomingRequests();
-              fetchFriends();
+             setUserProfile(profile);
+             console.log("[Settings Page] Profile loaded successfully");
+             fetchIncomingRequests();
+             fetchFriends();
           } else {
               console.log("[Settings Page] No profile found, using defaults and creating profile.");
               setSettings(DEFAULT_SETTINGS);
-              setSettingsLoaded(true); // Mark that settings have been determined (using defaults)
           }
       } catch (error: any) {
           console.error("[Settings Page] Error loading profile/settings:", error);
@@ -144,7 +136,6 @@ export default function SettingsPage() {
             toast({ variant: "destructive", title: "Load Error", description: "Could not load settings." });
           }
           setSettings(DEFAULT_SETTINGS);
-          setSettingsLoaded(true); // Even on error, mark settings as determined
       } finally {
           setIsLoading(false);
       }
@@ -161,53 +152,25 @@ export default function SettingsPage() {
     loadProfileAndSettings();
   }, [authLoading, userId, router, toast, loadProfileAndSettings]);
 
-  // Apply theme and other appearance settings immediately
+  // Sync local state with ThemeContext settings
   useEffect(() => {
-    if (typeof window === 'undefined' || isLoading) return;
-    console.log("[Settings Page] Applying appearance settings:", settings);
-    const root = window.document.documentElement;
-    const body = document.body;
-    
-    root.classList.remove('light', 'dark');
-    root.classList.add(settings.theme);
-    
-    // Sync with localStorage for compatibility with other components
-    localStorage.setItem('lightTheme', (settings.theme === 'light').toString());
-    
-    // Dispatch storage event to notify other components
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'lightTheme',
-      newValue: (settings.theme === 'light').toString(),
-      oldValue: localStorage.getItem('lightTheme')
-    }));
-    
-    root.classList.remove('accent-blue', 'accent-purple', 'accent-green', 'accent-orange', 'accent-red', 'accent-cyan');
-    root.classList.add(`accent-${settings.accentColor}`);
-    
-    body.classList.remove('text-small', 'text-medium', 'text-large');
-    body.classList.add(`text-${settings.fontSize}`);
-    
-    body.classList.toggle('compact-mode', settings.compactMode);
-    body.classList.toggle('reduced-motion', !settings.animations);
-    
-    const accentColors = {
-      blue: { hue: '220', sat: '70%', light: '55%' },
-      purple: { hue: '260', sat: '70%', light: '65%' },
-      green: { hue: '142', sat: '70%', light: '45%' },
-      orange: { hue: '25', sat: '85%', light: '60%' },
-      red: { hue: '0', sat: '70%', light: '55%' },
-      cyan: { hue: '190', sat: '70%', light: '50%' }
+    const localSettings: AppSettings = {
+      theme: themeSettings.theme,
+      accentColor: themeSettings.accentColor,
+      fontSize: themeSettings.fontSize,
+      compactMode: themeSettings.compactMode,
+      animations: themeSettings.animations,
+      progressViewPermission: themeSettings.progressViewPermission
     };
-    
-    const color = accentColors[settings.accentColor];
-    root.style.setProperty('--primary', `${color.hue} ${color.sat} ${color.light}`);
-    root.style.setProperty('--accent', `${color.hue} ${color.sat} ${color.light}`);
-    
-  }, [settings, isLoading]);
+    setSettings(localSettings);
+  }, [themeSettings]);
 
   const handleSettingChange = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-  }, []);
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    // Immediately update the ThemeContext for real-time theme changes
+    updateThemeSettings(newSettings);
+  }, [settings, updateThemeSettings]);
 
   // Save settings to Firestore
   const handleSaveSettings = async () => {
@@ -359,8 +322,6 @@ export default function SettingsPage() {
      };
 
    if (authLoading || isLoading) {
-     // During loading, only show dark theme if user settings have been loaded and dark theme is selected
-     const isDark = settingsLoaded && settings.theme === 'dark';
      return (
        <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center ${
          isDark 
@@ -425,8 +386,7 @@ export default function SettingsPage() {
 
     // Display Firestore error prominently
     if (firestoreError) {
-        // Only show dark theme if user settings have been loaded and dark theme is selected
-        const isDark = settingsLoaded && settings.theme === 'dark';
+        const isDark = settings.theme === 'dark';
         return (
             <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center p-4 ${
               isDark 
@@ -485,8 +445,6 @@ export default function SettingsPage() {
         );
     }
 
-  const isDark = settings.theme === 'dark';
-
   return (
     <div className={`min-h-screen pb-20 md:pb-0 animate-fade-in transition-all duration-500 ${
       isDark 
@@ -536,7 +494,8 @@ export default function SettingsPage() {
               <span className={isDark ? 'text-white' : 'text-gray-800'}>Appearance</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-2">
+          <CardContent className="pt-2 space-y-3">
+            {/* System Theme Option */}
             <div className={`rounded-2xl p-4 shadow-lg transition-all duration-300 ${
               isDark 
                 ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
@@ -547,24 +506,53 @@ export default function SettingsPage() {
                   <div className={`font-medium text-sm md:text-base mb-1 flex items-center gap-1.5 ${
                     isDark ? 'text-white' : 'text-gray-800'
                   }`}>
-                    {settings.theme === 'light' ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}
-                    {settings.theme === 'light' ? 'Light Theme' : 'Dark Theme'}
+                    <SettingsIcon className="h-4 w-4"/>
+                    System Default
                   </div>
                   <p className={`text-xs md:text-sm ${
                     isDark ? 'text-gray-400' : 'text-gray-600'
                   }`}>
-                    {settings.theme === 'light' 
-                      ? "Bright and clean interface for daytime use"
-                      : "Easy on the eyes for low-light environments"
-                    }
+                    Automatically matches your system theme preference
                   </p>
                 </div>
                 <Switch 
-                  checked={settings.theme === 'dark'} 
-                  onCheckedChange={(checked) => handleSettingChange('theme', checked ? 'dark' : 'light')}
+                  checked={settings.theme === 'system'} 
+                  onCheckedChange={(checked) => handleSettingChange('theme', checked ? 'system' : 'light')}
                 />
               </div>
             </div>
+
+            {/* Manual Theme Selection - Only show if not using system theme */}
+            {settings.theme !== 'system' && (
+              <div className={`rounded-2xl p-4 shadow-lg transition-all duration-300 ${
+                isDark 
+                  ? 'bg-[#1a1a1a] border border-[#3a3a3a]' 
+                  : 'backdrop-blur-sm bg-white/40'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0 mr-3">
+                    <div className={`font-medium text-sm md:text-base mb-1 flex items-center gap-1.5 ${
+                      isDark ? 'text-white' : 'text-gray-800'
+                    }`}>
+                      {settings.theme === 'light' ? <Sun className="h-4 w-4"/> : <Moon className="h-4 w-4"/>}
+                      {settings.theme === 'light' ? 'Light Theme' : 'Dark Theme'}
+                    </div>
+                    <p className={`text-xs md:text-sm ${
+                      isDark ? 'text-gray-400' : 'text-gray-600'
+                    }`}>
+                      {settings.theme === 'light' 
+                        ? "Bright and clean interface for daytime use"
+                        : "Easy on the eyes for low-light environments"
+                      }
+                    </p>
+                  </div>
+                  <Switch 
+                    checked={settings.theme === 'dark'} 
+                    onCheckedChange={(checked) => handleSettingChange('theme', checked ? 'dark' : 'light')}
+                  />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

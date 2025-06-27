@@ -14,8 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { auth, db } from '@/lib/firebase/exports';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase/exports';
 import BottomNavigationBar from '@/components/layout/BottomNavigationBar';
 import TopNavigationBar from '@/components/layout/TopNavigationBar';
 import { RoutePreloader } from '@/lib/route-preloader';
@@ -32,7 +31,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
-  const { user, userId } = useAuth();  const [themeApplied, setThemeApplied] = useState(false);
+  const { user, userId } = useAuth();
   const [isClient, setIsClient] = useState(false);
   const [isMobile, setIsMobile] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -77,60 +76,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
     return () => observer.disconnect();
   }, []);
-  useEffect(() => {
-    const applyThemeFromFirestore = async () => {
-      if (!isClient || !userId) {
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add('light'); // Default to light theme
-        setThemeApplied(true);
-        if (!userId) console.log("[Layout] User not logged in, applying default light theme.");
-        return;
-      }
-
-      try {
-        console.log("[Layout] Fetching settings for user:", userId);
-        const userDocRef = doc(db, 'users', userId);
-        const userDocSnap = await getDoc(userDocRef);
-
-        let theme = 'light';
-        if (userDocSnap.exists() && userDocSnap.data()?.settings?.theme) {
-          const rawTheme = userDocSnap.data()?.settings.theme;
-          // Convert legacy 'system' theme to 'light' for compatibility
-          theme = rawTheme === 'system' ? 'light' : rawTheme;
-          console.log("[Layout] Found theme in Firestore:", theme);
-        } else {
-          console.log("[Layout] User document or settings.theme not found, using default theme 'light'.");
-          if (userDocSnap.exists()) {
-            if (!userDocSnap.data()?.settings?.theme) {
-                 await updateDoc(userDocRef, { 
-                   settings: { 
-                     theme: 'light' 
-                   } 
-                 });
-                 console.log("[Layout] Settings field updated with default theme 'light'.");
-            }
-          } else {
-            console.warn("[Layout] User document does not exist. Cannot save theme settings.");
-          }
-        }
-
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(theme);
-        console.log(`[Layout] Applied theme from Firestore: ${theme}`);
-        setThemeApplied(true);
-      } catch (error) {
-        console.error("[Layout] Error fetching/applying theme from Firestore:", error);
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add('light'); // Default to light theme on error
-        setThemeApplied(true);
-      }
-    };
-
-    applyThemeFromFirestore();
-  }, [userId, isClient]);
 
   const showHeaderFooter = !pathname?.startsWith('/authorize') && !!user;
   const applyMainPadding = showHeaderFooter && !['/friends', '/ai-assistant'].includes(pathname || '');
@@ -139,24 +84,20 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     console.log("[Layout] handleLogout called.");
-    const currentUserId = userId;    try {
+    const currentUserId = userId;
+    try {
       await auth.signOut();
       console.log("[Layout] Firebase sign-out successful.");
       document.cookie = 'isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       document.cookie = 'userDisplayName=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
-      console.log("[Layout] Cleared authentication cookies.");      if (isClient) {
+      console.log("[Layout] Cleared authentication cookies.");
+      if (isClient) {
         if (currentUserId) {
             localStorage.removeItem(`${LOCAL_STORAGE_PROFILE_KEY_PREFIX}${currentUserId}`);
             console.log(`[Layout] Cleared cached profile for user: ${currentUserId}`);
         } else {
             console.warn("[Layout] Could not clear cached profile on logout: userId was null before operation.");
         }
-
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        root.classList.add(systemTheme);
-        console.log(`[Layout] Reset theme to system default: ${systemTheme}`);
       }
 
       toast({ title: "Logged Out" });
@@ -248,8 +189,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         "min-h-screen flex flex-col transition-colors duration-500",
         isDark 
           ? "bg-[#1a1a1a]" 
-          : "bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200",
-        !themeApplied ? 'opacity-0' : 'opacity-100'
+          : "bg-gradient-to-br from-clay-100 via-clayBlue to-clay-200"
       )}
     >      {/* Top Navigation - Desktop Only */}
       {shouldShowTopNav && (
