@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase/exports';
 import {
   doc, getDoc, setDoc, updateDoc, deleteField
 } from 'firebase/firestore';
-import type { WeeklyWorkoutPlan, CompletedWorkoutEntry, CompletedWorkouts } from '@/app/dashboard/types';
+import type { WeeklyWorkoutPlan, CompletedWorkoutEntry, CompletedWorkouts, PDFWorkoutReference } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils'; // Corrected import path
 
 /**
@@ -39,15 +39,44 @@ export async function saveWorkoutPlan(userId: string, plan: WeeklyWorkoutPlan): 
     try {
         const planDocRef = doc(db, 'users', userId, 'workoutPlan', 'current');
         const sanitizedPlan: WeeklyWorkoutPlan = { ...plan };
-        (Object.keys(sanitizedPlan) as Array<keyof WeeklyWorkoutPlan>).forEach(day => {
-            sanitizedPlan[day] = (sanitizedPlan[day] || []).map(ex => ({
-                ...ex,
-                sets: ex.sets ?? null, reps: ex.reps ?? null, notes: ex.notes ?? "",
-                youtubeLink: ex.youtubeLink ?? null, weight: ex.weight ?? null, rpe: ex.rpe ?? null,
-                tempo: ex.tempo ?? "", tags: Array.isArray(ex.tags) ? ex.tags : [],
-                equipment: Array.isArray(ex.equipment) ? ex.equipment : [],
-            }));
+        
+        // Sanitize exercise data for each day
+        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+        daysOfWeek.forEach(day => {
+            if (Array.isArray(sanitizedPlan[day])) {
+                sanitizedPlan[day] = sanitizedPlan[day].map(ex => ({
+                    ...ex,
+                    sets: ex.sets ?? null, 
+                    reps: ex.reps ?? null, 
+                    notes: ex.notes ?? "",
+                    youtubeLink: ex.youtubeLink ?? null, 
+                    weight: ex.weight ?? null, 
+                    rpe: ex.rpe ?? null,
+                    tempo: ex.tempo ?? "", 
+                    tags: Array.isArray(ex.tags) ? ex.tags : [],
+                    equipment: Array.isArray(ex.equipment) ? ex.equipment : [],
+                }));
+            }
         });
+
+        // Sanitize PDF workouts if they exist
+        if (sanitizedPlan.pdfWorkouts) {
+            const sanitizedPdfWorkouts = { ...sanitizedPlan.pdfWorkouts };
+            daysOfWeek.forEach(day => {
+                if (Array.isArray(sanitizedPdfWorkouts[day])) {
+                    sanitizedPdfWorkouts[day] = sanitizedPdfWorkouts[day].map(pdf => ({
+                        id: pdf.id,
+                        name: pdf.name || "",
+                        category: pdf.category || "",
+                        day: pdf.day || 1,
+                        filePath: pdf.filePath || "",
+                        description: pdf.description || ""
+                    }));
+                }
+            });
+            sanitizedPlan.pdfWorkouts = sanitizedPdfWorkouts;
+        }
+
         await setDoc(planDocRef, sanitizedPlan);
         console.log(`[Workout Service] Workout plan saved successfully for user: ${userId}`);
     } catch (error) {

@@ -1,5 +1,4 @@
 // src/services/firestore/logService.ts
-'use server';
 
 import { db } from '@/lib/firebase/exports';
 import {
@@ -70,7 +69,11 @@ export const addFoodLog = async (userId: string, logData: FirestoreFoodLogData):
       transaction.set(newLogRef, dataToStore);
       
       // Check if this is today's log to update user profile
-      const logTimestamp = logData.timestamp instanceof Date ? logData.timestamp : parseISO(logData.timestamp);
+      const logTimestamp = logData.timestamp instanceof Date 
+        ? logData.timestamp 
+        : logData.timestamp instanceof Timestamp 
+          ? logData.timestamp.toDate()
+          : parseISO(logData.timestamp);
       const isLogForToday = dateFnsIsToday(logTimestamp);
       
       if (isLogForToday) {

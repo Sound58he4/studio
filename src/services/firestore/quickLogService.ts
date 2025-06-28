@@ -1,10 +1,9 @@
 // src/services/firestore/quickLogService.ts
-'use server';
 
 import { db } from '@/lib/firebase/exports';
 import {
-  collection, query, getDocs, addDoc, deleteDoc, updateDoc,
-  orderBy, Timestamp, doc, serverTimestamp
+  collection, getDocs, addDoc, deleteDoc, updateDoc,
+  Timestamp, doc, serverTimestamp
 } from 'firebase/firestore';
 import type { StoredQuickLogItem, FirestoreQuickLogData } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils';
@@ -34,8 +33,8 @@ export async function getQuickLogItems(userId: string): Promise<StoredQuickLogIt
   console.log(`[QuickLog Service] Fetching ${QUICK_LOG_ITEMS_COLLECTION} for user: ${userId}`);
   try {
     const quickLogRef = collection(db, 'users', userId, QUICK_LOG_ITEMS_COLLECTION);
-    const q = query(quickLogRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    // Remove orderBy to avoid composite index requirement - we'll sort on the client side
+    const querySnapshot = await getDocs(quickLogRef);
     const items = querySnapshot.docs.map(docSnap => {
         const data = docSnap.data() as FirestoreQuickLogData;
         return {
@@ -44,15 +43,15 @@ export async function getQuickLogItems(userId: string): Promise<StoredQuickLogIt
             createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
         } as StoredQuickLogItem;
     });
-    console.log(`[QuickLog Service] Fetched ${items.length} items from ${QUICK_LOG_ITEMS_COLLECTION}.`);
-    return items;
+    
+    // Sort items by createdAt on the client side (most recent first)
+    const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    
+    console.log(`[QuickLog Service] Fetched ${sortedItems.length} items from ${QUICK_LOG_ITEMS_COLLECTION}.`);
+    return sortedItems;
   } catch (error: any) {
-    if (error.code === 'failed-precondition' && error.message.includes('query requires an index')) {
-        const indexUrl = `https://console.firebase.google.com/v1/r/project/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}/firestore/indexes?create_composite=Clxwcm9qZWN0cy9udXRyaXRyYW5zZm9ybS1haS9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMv${QUICK_LOG_ITEMS_COLLECTION}/pbmRleGVzL18QARIPCgtjcmVhdGVkQXQQAhIMCghfX25hbWVfXxAB`;
-        const errorMessage = `Firestore index required for ${QUICK_LOG_ITEMS_COLLECTION} query (createdAt desc). Create it here: ${indexUrl}`;
-        console.error(errorMessage);
-        throw createFirestoreServiceError(errorMessage, "index-required");
-     }
+    // Simplified error handling since we removed the problematic query
+    console.error(`[QuickLog Service] Error fetching items from ${QUICK_LOG_ITEMS_COLLECTION}:`, error);
     console.error(`[QuickLog Service] Error fetching items from ${QUICK_LOG_ITEMS_COLLECTION}:`, error);
     throw createFirestoreServiceError("Failed to fetch quick log items.", "fetch-failed");
   }

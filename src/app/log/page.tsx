@@ -23,8 +23,9 @@ import { cn } from "@/lib/utils";
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
 import { useAuth } from '@/context/AuthContext'; 
-import { addFoodLog } from '@/services/firestore'; 
-import type { FirestoreFoodLogData } from '@/app/dashboard/types';
+import { addFoodLog, getUserProfile } from '@/services/firestore'; 
+import type { FirestoreFoodLogData, StoredUserProfile, FitnessGoal } from '@/app/dashboard/types';
+import { mealHealthAssessment, MealHealthAssessmentInput, MealHealthAssessmentOutput } from '@/ai/flows/meal-health-assessment';
 
 interface ProcessedFoodResult extends Nutrition {
   id: string;
@@ -33,6 +34,44 @@ interface ProcessedFoodResult extends Nutrition {
   source: 'image' | 'voice' | 'manual';
   confidence?: number;
 }
+
+// Simple Meal Health Status Component
+const MealHealthStatus = ({ mealHealthData, isDark }: { mealHealthData: MealHealthAssessmentOutput, isDark: boolean }) => (
+  <div className="flex items-center justify-center space-x-1">
+    {(['HEALTHY', 'MODERATE', 'UNHEALTHY'] as const).map((status) => (
+      <div key={status} className="flex flex-col items-center">
+        <div className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+          mealHealthData.simpleStatus === status
+            ? status === 'HEALTHY'
+              ? isDark
+                ? 'bg-green-600 text-white shadow-lg shadow-green-500/20'
+                : 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+              : status === 'MODERATE'
+                ? isDark
+                  ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-500/20'
+                  : 'bg-yellow-500 text-white shadow-lg shadow-yellow-500/20'
+                : isDark
+                  ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
+                  : 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+            : isDark
+              ? 'bg-gray-700 text-gray-400 border border-gray-600'
+              : 'bg-gray-100 text-gray-500 border border-gray-300'
+        }`}>
+          {status}
+        </div>
+        {mealHealthData.simpleStatus === status && (
+          <div className={`w-full h-1 rounded-full mt-2 animate-pulse ${
+            status === 'HEALTHY'
+              ? 'bg-green-500 shadow-lg shadow-green-500/30'
+              : status === 'MODERATE'
+                ? 'bg-yellow-500 shadow-lg shadow-yellow-500/30'
+                : 'bg-red-500 shadow-lg shadow-red-500/30'
+          }`} />
+        )}
+      </div>
+    ))}
+  </div>
+);
 
 export default function LogFoodPage() {
   const { toast } = useToast();
@@ -61,6 +100,11 @@ export default function LogFoodPage() {
   const [recordingTime, setRecordingTime] = useState(0);  
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [isVoiceSupported, setIsVoiceSupported] = useState<boolean | null>(null);
+
+  // Meal health assessment state
+  const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
+  const [mealHealthData, setMealHealthData] = useState<MealHealthAssessmentOutput | null>(null);
+  const [isAssessingHealth, setIsAssessingHealth] = useState(false);
 
   // Detect theme from HTML class (consistent with Overview page)
   useEffect(() => {
@@ -123,6 +167,77 @@ export default function LogFoodPage() {
     const hasMediaRecorder = typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined';
     setIsVoiceSupported(hasMediaDevices && hasMediaRecorder);
   }, []);
+
+  // Load user profile for meal health assessment
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!userId) return;
+      
+      try {
+        const profile = await getUserProfile(userId);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+      }
+    };
+
+    loadUserProfile();
+  }, [userId]);
+
+  // Function to assess meal health
+  const assessMealHealth = async (results: ProcessedFoodResult[]) => {
+    if (!userProfile?.fitnessGoal || results.length === 0) {
+      setMealHealthData(null);
+      return;
+    }
+
+    // Calculate total nutrition from all pending results
+    const totalNutrition = results.reduce(
+      (total, item) => ({
+        calories: total.calories + item.calories,
+        protein: total.protein + item.protein,
+        carbohydrates: total.carbohydrates + item.carbohydrates,
+        fat: total.fat + item.fat,
+      }),
+      { calories: 0, protein: 0, carbohydrates: 0, fat: 0 }
+    );
+
+    // Create meal description from identified food names
+    const mealDescription = results.map(item => item.identifiedFoodName).join(', ');
+
+    try {
+      setIsAssessingHealth(true);
+      
+      const assessmentInput: MealHealthAssessmentInput = {
+        mealDescription,
+        mealNutrition: totalNutrition,
+        userGoal: userProfile.fitnessGoal,
+        userProfile: {
+          targetCalories: userProfile.targetCalories ?? undefined,
+          targetProtein: userProfile.targetProtein ?? undefined,
+          targetCarbs: userProfile.targetCarbs ?? undefined,
+          targetFat: userProfile.targetFat ?? undefined,
+        }
+      };
+
+      const assessment = await mealHealthAssessment(assessmentInput);
+      setMealHealthData(assessment);
+    } catch (error) {
+      console.error('Failed to assess meal health:', error);
+      setMealHealthData(null);
+    } finally {
+      setIsAssessingHealth(false);
+    }
+  };
+
+  // Assess meal health when pending results change
+  useEffect(() => {
+    if (pendingResults.length > 0 && userProfile?.fitnessGoal) {
+      assessMealHealth(pendingResults);
+    } else {
+      setMealHealthData(null);
+    }
+  }, [pendingResults, userProfile]);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1095,6 +1210,38 @@ export default function LogFoodPage() {
                   </motion.div>
                 )}
 
+                {/* Meal Health Assessment Section */}
+                {pendingResults.length > 0 && userProfile?.fitnessGoal && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-4 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
+                      <CardContent className="p-4 md:p-6">
+                        {isAssessingHealth ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                              <Loader2 className={`w-6 h-6 animate-spin mx-auto mb-2 ${
+                                isDark ? 'text-purple-400' : 'text-purple-600'
+                              }`} />
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Analyzing meal health for your goals...</p>
+                            </div>
+                          </div>
+                        ) : mealHealthData ? (
+                          <MealHealthStatus mealHealthData={mealHealthData} isDark={isDark} />
+                        ) : null}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
                 {/* AI Suggestions Section */}
                 <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-lg ${
                   isDark 
@@ -1541,6 +1688,38 @@ export default function LogFoodPage() {
                     </Card>
                   </motion.div>
                 )}
+
+                {/* Meal Health Assessment Section for Image */}
+                {pendingResults.length > 0 && userProfile?.fitnessGoal && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-4 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
+                      <CardContent className="p-4 md:p-6">
+                        {isAssessingHealth ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                              <Loader2 className={`w-6 h-6 animate-spin mx-auto mb-2 ${
+                                isDark ? 'text-purple-400' : 'text-purple-600'
+                              }`} />
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Analyzing meal health for your goals...</p>
+                            </div>
+                          </div>
+                        ) : mealHealthData ? (
+                          <MealHealthStatus mealHealthData={mealHealthData} isDark={isDark} />
+                        ) : null}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
               </div>
             )}
 
@@ -1945,6 +2124,38 @@ export default function LogFoodPage() {
                           <span>Confirm & Log {pendingResults.length} Item{pendingResults.length > 1 ? 's' : ''}</span>
                           <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
                         </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )}
+
+                {/* Meal Health Assessment Section for Voice */}
+                {pendingResults.length > 0 && userProfile?.fitnessGoal && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.4 }}
+                  >
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-4 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
+                      <CardContent className="p-4 md:p-6">
+                        {isAssessingHealth ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="text-center">
+                              <Loader2 className={`w-6 h-6 animate-spin mx-auto mb-2 ${
+                                isDark ? 'text-purple-400' : 'text-purple-600'
+                              }`} />
+                              <p className={`text-sm ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Analyzing meal health for your goals...</p>
+                            </div>
+                          </div>
+                        ) : mealHealthData ? (
+                          <MealHealthStatus mealHealthData={mealHealthData} isDark={isDark} />
+                        ) : null}
                       </CardContent>
                     </Card>
                   </motion.div>

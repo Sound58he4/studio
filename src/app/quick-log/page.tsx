@@ -94,11 +94,14 @@ export default function QuickLogPage() {
     setIsSyncing(true);
     const storageKey = getLocalStorageKey();
     try {
+      console.log("[QuickLog] Syncing items with server...");
       const fetchedItems = await getQuickLogItems(userId);
+      console.log(`[QuickLog] Fetched ${fetchedItems.length} items from server:`, fetchedItems.map(item => ({ id: item.id, name: item.foodName })));
       setItems(fetchedItems);
       if (storageKey) localStorage.setItem(storageKey, JSON.stringify(fetchedItems));
-      console.log("[QuickLog Page] Synced quick log items with server and updated localStorage.");
+      console.log("[QuickLog] Synced quick log items with server and updated localStorage.");
     } catch (error: any) {
+      console.error("[QuickLog] Sync error:", error);
       toast({ variant: "destructive", title: "Sync Error", description: `Could not sync quick log items: ${error.message}` });
     } finally {
       setIsSyncing(false);
@@ -267,14 +270,23 @@ export default function QuickLogPage() {
     if (!userId || !isClient) return;
     const storageKey = getLocalStorageKey();
     try {
+      // Delete from Firestore first
       await deleteQuickLogItem(userId, itemId);
+      console.log(`[QuickLog] Successfully deleted item ${itemId} from Firestore`);
+      
+      // Update local state and localStorage
       setItems(prevItems => {
         const updated = prevItems.filter(item => item.id !== itemId);
-        if (storageKey) localStorage.setItem(storageKey, JSON.stringify(updated));
+        if (storageKey) {
+          localStorage.setItem(storageKey, JSON.stringify(updated));
+          console.log(`[QuickLog] Updated localStorage after deletion`);
+        }
         return updated;
       });
+      
       if (isClient) toast({ title: "Quick Item Deleted" });
     } catch (error: any) {
+      console.error(`[QuickLog] Error deleting item ${itemId}:`, error);
       if (isClient) toast({ variant: "destructive", title: "Error", description: `Failed to delete quick item: ${error.message}` });
     }
   };

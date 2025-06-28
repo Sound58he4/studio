@@ -249,6 +249,17 @@ export interface ExerciseDetail {
     equipment?: string[]; // e.g., ["Barbell", "Bench"]
 }
 
+// PDF Workout for workout plans
+export interface PDFWorkoutReference {
+    id: string;
+    name: string;
+    category: string;
+    day: number;
+    filePath: string;
+    description?: string;
+    exercises?: ExerciseDetail[]; // Add exercises field to store the actual workout content
+}
+
 export interface WeeklyWorkoutPlan {
     Monday: ExerciseDetail[];
     Tuesday: ExerciseDetail[];
@@ -257,9 +268,20 @@ export interface WeeklyWorkoutPlan {
     Friday: ExerciseDetail[];
     Saturday: ExerciseDetail[];
     Sunday: ExerciseDetail[];
-    [key: string]: ExerciseDetail[]; // Index signature
+    // PDF workouts for each day
+    pdfWorkouts?: {
+        Monday: PDFWorkoutReference[];
+        Tuesday: PDFWorkoutReference[];
+        Wednesday: PDFWorkoutReference[];
+        Thursday: PDFWorkoutReference[];
+        Friday: PDFWorkoutReference[];
+        Saturday: PDFWorkoutReference[];
+        Sunday: PDFWorkoutReference[];
+    };
+    [key: string]: ExerciseDetail[] | WeeklyWorkoutPlan['pdfWorkouts']; // Index signature
 }
 
+// Chat Message interface for real-time chat
 export interface ChatMessage {
     id: string;
     senderId: string;
