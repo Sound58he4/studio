@@ -6,9 +6,16 @@ import {
   doc, getDoc, collection, query, where, getDocs, orderBy, setDoc
 } from 'firebase/firestore';
 import type {
-  StoredUserProfile, StoredExerciseLogEntry
+  StoredUserProfile, StoredExerciseLogEntry, StoredFoodLogEntry
 } from '@/app/dashboard/types';
 import { createFirestoreServiceError } from './utils';
+import { 
+  calculateTodayProgress, 
+  calculateCurrentPoints, 
+  processPointsForNewDay,
+  type DailyNutritionTargets 
+} from '@/lib/utils/pointsCalculator';
+import { startOfDay, endOfDay } from 'date-fns';
 
 interface PointsData {
   todayPoints: number;
@@ -43,7 +50,8 @@ export async function getOverviewData(
     const [
       profileSnap,
       exerciseLogsSnap,
-      pointsSnap
+      pointsSnap,
+      todayFoodLogsSnap
     ] = await Promise.all([
       // 1. User Profile
       getDoc(doc(db, 'users', userId)),
@@ -56,7 +64,15 @@ export async function getOverviewData(
         orderBy('timestamp', 'desc')
       )),
         // 3. Points Data (force fresh fetch, bypass cache)
-      getDoc(doc(db, 'users', userId, 'points', 'current'))
+      getDoc(doc(db, 'users', userId, 'points', 'current')),
+
+      // 4. Today's Food Logs for fresh points calculation
+      getDocs(query(
+        collection(db, 'users', userId, 'foodLog'),
+        where('timestamp', '>=', startOfDay(new Date()).toISOString()),
+        where('timestamp', '<=', endOfDay(new Date()).toISOString()),
+        orderBy('timestamp', 'desc')
+      ))
     ]);
 
     // Process User Profile
@@ -129,25 +145,92 @@ export async function getOverviewData(
         notes: data.notes,
       } as StoredExerciseLogEntry;
     });
-    console.log(`[Overview Service] Loaded ${exerciseLogs.length} exercise logs`);    // Process Points Data - Simply read from Firestore without recalculating
+    console.log(`[Overview Service] Loaded ${exerciseLogs.length} exercise logs`);
+
+    // Process Today's Food Logs
+    const todayFoodLogs: StoredFoodLogEntry[] = todayFoodLogsSnap.docs.map(docSnap => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        userId: data.userId,
+        foodName: data.foodName,
+        servingSize: data.servingSize,
+        servingUnit: data.servingUnit,
+        calories: data.calories,
+        protein: data.protein,
+        carbohydrates: data.carbohydrates,
+        fat: data.fat,
+        fiber: data.fiber,
+        sugar: data.sugar,
+        sodium: data.sodium,
+        timestamp: data.timestamp,
+        mealType: data.mealType,
+        logDate: data.logDate,
+        entryType: data.entryType,
+        // Missing required fields
+        foodItem: data.foodItem || null,
+        logMethod: data.logMethod || 'manual',
+        // Other fields with defaults
+        cholesterol: data.cholesterol || 0,
+        potassium: data.potassium || 0,
+        vitaminA: data.vitaminA || 0,
+        vitaminC: data.vitaminC || 0,
+        calcium: data.calcium || 0,
+        iron: data.iron || 0,
+        saturatedFat: data.saturatedFat || 0,
+        monounsaturatedFat: data.monounsaturatedFat || 0,
+        polyunsaturatedFat: data.polyunsaturatedFat || 0,
+        transFat: data.transFat || 0,
+        glycemicIndex: data.glycemicIndex || null,
+        // Additional fields
+        imageUrl: data.imageUrl || null,
+        brand: data.brand || null,
+        category: data.category || null,
+        barcode: data.barcode || null,
+        notes: data.notes || null,
+        isCustom: data.isCustom || false,
+        isVerified: data.isVerified || false,
+      } as StoredFoodLogEntry;
+    });
+    console.log(`[Overview Service] Loaded ${todayFoodLogs.length} today's food logs`);
+
+    // Calculate fresh points using the same logic as Points page
     let pointsData: PointsData;
-    if (pointsSnap.exists()) {
-      const rawPointsData = pointsSnap.data();
-      pointsData = {
-        todayPoints: rawPointsData.todayPoints || 0,
-        totalPoints: rawPointsData.totalPoints || 0,
-        lastUpdated: rawPointsData.lastUpdated || new Date().toISOString()
+    const existingPointsData = pointsSnap.exists() ? pointsSnap.data() as PointsData : null;
+    
+    // Process points for new day if needed
+    const processedPointsData = processPointsForNewDay(existingPointsData);
+    
+    if (userProfile) {
+      // Calculate today's nutrition progress
+      const todayProgress = calculateTodayProgress(todayFoodLogs);
+      
+      // Use profile's daily targets
+      const targets: DailyNutritionTargets = {
+        calories: userProfile.targetCalories || 2000,
+        protein: userProfile.targetProtein || 150,
+        carbohydrates: userProfile.targetCarbs || 250,
+        fat: userProfile.targetFat || 65,
       };
-      console.log(`[Overview Service] Points loaded: ${pointsData.todayPoints} today, ${pointsData.totalPoints} total, last updated: ${pointsData.lastUpdated}`);
+      
+      // Calculate current points (fresh calculation)
+      const currentTodayPoints = calculateCurrentPoints(
+        todayProgress, 
+        targets, 
+        todayFoodLogs, 
+        processedPointsData.perfectDayBonusClaimed || false
+      );
+      
+      pointsData = {
+        ...processedPointsData,
+        todayPoints: currentTodayPoints
+      };
+      
+      console.log(`[Overview Service] Calculated fresh points: ${pointsData.todayPoints} today, ${pointsData.totalPoints} total`);
     } else {
-      console.log(`[Overview Service] No points document found for user: ${userId} - using default values`);
-      // Use default points data structure without saving to Firestore
-      // Let the Points page handle the actual points calculation and saving
-      pointsData = {
-        todayPoints: 0,
-        totalPoints: 0,
-        lastUpdated: new Date().toISOString()
-      };
+      // No profile, use processed data as-is
+      pointsData = processedPointsData;
+      console.log(`[Overview Service] No profile found, using default points: ${pointsData.todayPoints} today, ${pointsData.totalPoints} total`);
     }
 
     console.log(`[Overview Service] Batch fetch completed successfully for user: ${userId}`);

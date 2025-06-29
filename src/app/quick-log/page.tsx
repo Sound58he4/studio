@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Trash2, Edit3, ListChecks, Loader2, XCircle, Save, Flame, Dumbbell, Zap, Leaf, CheckCircle, History, BrainCircuit, AlertTriangle, Edit, BookmarkPlus, Plus, Clock, Sparkles, Hash, TrendingUp, Battery, Droplets } from "lucide-react";
+import { PlusCircle, Trash2, Edit3, ListChecks, Loader2, XCircle, Save, Flame, Dumbbell, Zap, Leaf, CheckCircle, History, BrainCircuit, AlertTriangle, Edit, BookmarkPlus, Plus, Clock, Sparkles, Hash, TrendingUp, Battery, Droplets, Crown, Lock } from "lucide-react";
 import { useAuth } from '@/context/AuthContext';
 import {
   getQuickLogItems, addQuickLogItem, deleteQuickLogItem, updateQuickLogItem,
@@ -24,6 +24,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isToday, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { useRouter } from 'next/navigation';
 
 type FormState = Omit<FirestoreQuickLogData, 'createdAt' | 'timestamp' | 'logMethod' | 'originalDescription'> & {
     id?: string;
@@ -42,6 +44,8 @@ const LOCAL_STORAGE_QUICKLOG_KEY_PREFIX = 'bago-quicklog-items-';
 const LOCAL_STORAGE_DAILY_FOOD_LOGS_PREFIX = 'bago-daily-food-logs-';
 
 export default function QuickLogPage() {
+  const router = useRouter();
+  
   // Detect dark mode via HTML class (from settings page)
   const [isDark, setIsDark] = useState<boolean>(false);
   useEffect(() => {
@@ -54,10 +58,16 @@ export default function QuickLogPage() {
 
   const { toast } = useToast();
   const { userId, loading: authLoading } = useAuth();
+  
+  // Pro access state
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
+  
   const [items, setItems] = useState<StoredQuickLogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [showForm, setShowForm] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -77,6 +87,36 @@ export default function QuickLogPage() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => { setIsClient(true); }, []);
+
+  // Check Pro access
+  const checkProAccess = useCallback(async () => {
+    if (!userId) {
+      setIsCheckingProAccess(false);
+      return;
+    }
+    
+    try {
+      setIsCheckingProAccess(true);
+      const hasAccess = await hasProAccess(userId);
+      setUserHasProAccess(hasAccess);
+      console.log("[Quick Log Page] Pro access check:", hasAccess);
+    } catch (error) {
+      console.error("[Quick Log Page] Error checking Pro access:", error);
+      setUserHasProAccess(false); // Default to no access on error
+    } finally {
+      setIsCheckingProAccess(false);
+    }
+  }, [userId]);
+
+  // Check pro access when user is available
+  useEffect(() => {
+    if (authLoading) return;
+    if (!userId) { 
+      router.replace('/authorize'); 
+      return; 
+    }
+    checkProAccess();
+  }, [authLoading, userId, router, checkProAccess]);
 
   const getLocalStorageKey = useCallback(() => {
     if (!userId) return null;
@@ -269,12 +309,12 @@ export default function QuickLogPage() {
   const handleDelete = async (itemId: string) => {
     if (!userId || !isClient) return;
     const storageKey = getLocalStorageKey();
+    setDeletingItemId(itemId);
+    
     try {
-      // Delete from Firestore first
       await deleteQuickLogItem(userId, itemId);
       console.log(`[QuickLog] Successfully deleted item ${itemId} from Firestore`);
       
-      // Update local state and localStorage
       setItems(prevItems => {
         const updated = prevItems.filter(item => item.id !== itemId);
         if (storageKey) {
@@ -284,10 +324,15 @@ export default function QuickLogPage() {
         return updated;
       });
       
-      if (isClient) toast({ title: "Quick Item Deleted" });
+      if (isClient) toast({ 
+        title: "Item Deleted", 
+        description: `"${items.find(i => i.id === itemId)?.foodName || 'Item'}" removed`
+      });
     } catch (error: any) {
       console.error(`[QuickLog] Error deleting item ${itemId}:`, error);
       if (isClient) toast({ variant: "destructive", title: "Error", description: `Failed to delete quick item: ${error.message}` });
+    } finally {
+      setDeletingItemId(null);
     }
   };
 
@@ -406,7 +451,6 @@ export default function QuickLogPage() {
     }
   };
 
-
   if (authLoading && !isClient) {
     return (
       <div className="min-h-screen pb-20 md:pb-0 bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 flex justify-center items-center">
@@ -421,6 +465,109 @@ export default function QuickLogPage() {
       </div>
     );
   }
+  
+  // Check if user has pro access
+  if (isCheckingProAccess) {
+    return (
+      <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#1a1a1a]' 
+          : 'bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100'
+      }`}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center"
+        >
+          <div className={`inline-flex items-center gap-3 px-6 py-4 rounded-2xl backdrop-blur-sm ${
+            isDark 
+              ? 'bg-[#2a2a2a] text-white' 
+              : 'bg-white/60 text-gray-800'
+          }`}>
+            <Loader2 className="h-6 w-6 animate-spin text-purple-600"/>
+            <span className="text-lg font-medium">Checking access...</span>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Show upgrade prompt if user doesn't have pro access
+  if (!userHasProAccess) {
+    return (
+      <div className={`min-h-screen pb-20 md:pb-0 flex justify-center items-center transition-all duration-500 ${
+        isDark 
+          ? 'bg-[#1a1a1a]' 
+          : 'bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100'
+      }`}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-md mx-4"
+        >
+          <Card className={`text-center p-8 rounded-3xl backdrop-blur-sm border-0 shadow-lg ${
+            isDark 
+              ? 'bg-[#2a2a2a] border border-[#3a3a3a]' 
+              : 'bg-white/80 shadow-xl'
+          }`}>
+            <div className="mb-6">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 ${
+                  isDark 
+                    ? 'bg-gradient-to-br from-purple-600/80 to-blue-600/80' 
+                    : 'bg-gradient-to-br from-purple-500 to-blue-500'
+                }`}
+              >
+                <Crown className="h-10 w-10 text-white" />
+              </motion.div>
+              <h2 className={`text-2xl font-bold mb-2 ${
+                isDark ? 'text-white' : 'text-gray-800'
+              }`}>Quick Log is Pro Only</h2>
+              <p className={`text-base mb-6 ${
+                isDark ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                Upgrade to Pro to access Quick Log and save your favorite foods for instant logging.
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                asChild
+                size="lg" 
+                className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                <Link href="/pro-upgrade">
+                  <Crown className="h-5 w-5 mr-2" />
+                  Upgrade to Pro
+                </Link>
+              </Button>
+              
+              <Button 
+                asChild
+                variant="outline" 
+                size="lg" 
+                className={`w-full rounded-2xl transition-all duration-300 ${
+                  isDark 
+                    ? 'border-[#3a3a3a] bg-[#1a1a1a] text-white hover:bg-[#2a2a2a]' 
+                    : 'border-gray-300 bg-white/60 text-gray-700 hover:bg-white/80'
+                }`}
+              >
+                <Link href="/dashboard">
+                  <TrendingUp className="h-5 w-5 mr-2" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <motion.div 
       className={`min-h-screen pb-20 md:pb-0 transition-all duration-500 ${
@@ -723,7 +870,7 @@ export default function QuickLogPage() {
                     <div className="max-h-80 overflow-y-auto">
                       {isLoadingHistory ? (
                         <div className="space-y-3">
-                          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-2xl" />)}
+                          {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-3xl" />)}
                         </div>                      ) : historyError ? (
                         <p className={`text-center py-6 font-medium ${
                           isDark ? 'text-red-400' : 'text-red-600'
@@ -886,17 +1033,29 @@ export default function QuickLogPage() {
                     <motion.div
                       key={item.id}
                       initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}                      className={cn(
+                      animate={{ 
+                        opacity: deletingItemId === item.id ? 0.6 : 1, 
+                        x: 0
+                      }}
+                      exit={{ opacity: 0, x: -20, scale: 0.95 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className={cn(
                         `backdrop-blur-sm border-0 shadow-lg rounded-3xl transition-all duration-300 hover:scale-[1.01] ${
                           isDark 
                             ? 'bg-[#2a2a2a] border border-[#3a3a3a] hover:shadow-[#8b5cf6]/20' 
                             : 'bg-white/60 shadow-lg'
                         }`,
-                        loggedTodayMap[item.id] && (isDark ? "bg-green-900/50 border-green-700/50" : "bg-green-100/60 border-green-200")
+                        loggedTodayMap[item.id] && (isDark ? "bg-green-900/50 border-green-700/50" : "bg-green-100/60 border-green-200"),
+                        deletingItemId === item.id && "pointer-events-none"
                       )}
                     >
-                      <div className="p-5 md:p-6">
+                      <div className="p-5 md:p-6 relative">
+                        {/* Simple Delete Loading */}
+                        {deletingItemId === item.id && (
+                          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm rounded-3xl flex items-center justify-center z-10">
+                            <Loader2 className="w-6 h-6 animate-spin text-red-500" />
+                          </div>
+                        )}
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                           <div className="flex-1">                            <div className="flex items-start lg:items-center justify-between mb-3">
                               <h3 className={`text-lg md:text-xl font-bold flex-1 mr-3 ${
@@ -982,24 +1141,33 @@ export default function QuickLogPage() {
                                   <Button 
                                     size="sm" 
                                     variant="ghost"
-                                    className={`backdrop-blur-sm border-0 shadow-lg transition-all duration-200 hover:scale-110 h-10 w-10 rounded-2xl ${
+                                    className={`h-8 w-8 rounded-xl hover:bg-red-50 hover:text-red-600 ${
                                       isDark 
-                                        ? 'bg-[#3a3a3a] text-gray-400 hover:text-red-400 hover:bg-red-900/50 border border-[#8b5cf6]/20' 
-                                        : 'bg-white/60 text-gray-600 hover:text-red-500 hover:bg-red-50'
+                                        ? 'text-gray-400 hover:bg-red-900/30 hover:text-red-400' 
+                                        : 'text-gray-500'
                                     }`}
                                     title="Delete Item"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent>
+                                <AlertDialogContent className={`max-w-sm rounded-2xl ${
+                                  isDark ? 'bg-[#2a2a2a] text-white' : 'bg-white'
+                                }`}>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Quick Item?</AlertDialogTitle>
-                                    <AlertDialogDescription>Delete "{item.foodName}" from your quick log presets?</AlertDialogDescription>
+                                    <AlertDialogTitle>Delete Item?</AlertDialogTitle>
+                                    <AlertDialogDescription className={isDark ? 'text-gray-400' : undefined}>
+                                      Remove "{item.foodName}" from quick log?
+                                    </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(item.id)} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                                    <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => handleDelete(item.id)}
+                                      className="bg-red-600 hover:bg-red-700 rounded-xl"
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>

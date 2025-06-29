@@ -9,11 +9,15 @@ import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
+import { useRazorpay } from '@/hooks/use-razorpay';
+import { useAuth } from '@/context/AuthContext';
+import { hasProAccess } from '@/services/firestore/subscriptionService';
 
 const ProUpgrade = () => {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user, userId, loading: authLoading } = useAuth();
   const [lightTheme, setLightTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('lightTheme') === 'true';
@@ -23,6 +27,77 @@ const ProUpgrade = () => {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [couponValidation, setCouponValidation] = useState<{
+    valid: boolean;
+    message?: string;
+    pricing?: {
+      original_amount: number;
+      discount_amount: number;
+      final_amount: number;
+      savings: number;
+    };
+    is_free?: boolean;
+  } | null>(null);
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  
+  // Pro access state
+  const [userHasProAccess, setUserHasProAccess] = useState(false);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
+
+  // Initialize Razorpay - only if user is authenticated
+  const { initiatePayment, validateCoupon, loading: paymentLoading } = useRazorpay({
+    key: "rzp_live_DfdBeaZBeu6Ups",
+    phoneVerification: {
+      enabled: true,
+      required: true
+    },
+    name: 'Bago Fitness Pro',
+    description: 'Pro Subscription - Advanced Fitness Features',
+    userId: userId || '', // Pass the authenticated user's ID
+
+    theme: {
+      color: '#3b82f6',
+    },
+  });
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to upgrade to Pro.",
+        duration: 5000,
+      });
+      router.push('/authorize'); // or wherever your login page is
+      return;
+    }
+  }, [authLoading, user, router, toast]);
+
+  // Check Pro access when user is available
+  useEffect(() => {
+    const checkProAccess = async () => {
+      if (!userId) {
+        setIsCheckingProAccess(false);
+        return;
+      }
+      
+      try {
+        setIsCheckingProAccess(true);
+        const hasAccess = await hasProAccess(userId);
+        setUserHasProAccess(hasAccess);
+        console.log("[Pro Upgrade Page] Pro access check:", hasAccess);
+      } catch (error) {
+        console.error("[Pro Upgrade Page] Error checking Pro access:", error);
+        setUserHasProAccess(false); // Default to no access on error
+      } finally {
+        setIsCheckingProAccess(false);
+      }
+    };
+
+    if (!authLoading && userId) {
+      checkProAccess();
+    }
+  }, [authLoading, userId]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -50,21 +125,83 @@ const ProUpgrade = () => {
 
   const isDark = !lightTheme;
 
-  const applyCoupon = () => {
-    const validCoupons = ['Bagom30', 'Bagoy50'];
-    if (validCoupons.includes(couponCode)) {
-      setAppliedCoupon(couponCode);
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Invalid Coupon",
+        description: "Please enter a valid coupon code.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    setValidatingCoupon(true);
+    setCouponValidation(null);
+
+    const originalAmount = plans.find(p => p.id === selectedPlan)?.originalPrice || 0;
+    
+    try {
+      const result = await validateCoupon(couponCode, selectedPlan, originalAmount);
+      
+      if (result.valid) {
+        setAppliedCoupon(couponCode);
+        setCouponValidation(result);
+        toast({
+          title: "🎉 Coupon Applied!",
+          description: result.message || "Your coupon has been successfully applied.",
+          duration: 6000,
+        });
+      } else {
+        setCouponValidation(result);
+        toast({
+          title: "❌ Invalid Coupon",
+          description: result.message || "The coupon code you entered is not valid.",
+          duration: 5000,
+        });
+      }
+    } catch (error) {
+      console.error('Coupon validation error:', error);
+      toast({
+        title: "❌ Validation Error",
+        description: "Failed to validate coupon. Please try again.",
+        duration: 4000,
+      });
+    } finally {
+      setValidatingCoupon(false);
     }
   };
 
+  const removeCoupon = () => {
+    setAppliedCoupon('');
+    setCouponCode('');
+    setCouponValidation(null);
+    toast({
+      title: "Coupon Removed",
+      description: "The coupon has been removed from your order.",
+      duration: 3000,
+    });
+  };
+
   const getDiscountedPrice = (originalPrice: number, plan: 'monthly' | 'yearly') => {
-    if (appliedCoupon === 'Bagom30' && plan === 'monthly') {
-      return Math.round(originalPrice * 0.25);
-    }
-    if (appliedCoupon === 'Bagoy50' && plan === 'yearly') {
-      return Math.round(originalPrice * 0.25);
+    if (couponValidation?.valid && couponValidation.pricing) {
+      return couponValidation.pricing.final_amount;
     }
     return originalPrice;
+  };
+
+  const getSavings = (originalPrice: number) => {
+    if (couponValidation?.valid && couponValidation.pricing) {
+      return couponValidation.pricing.savings;
+    }
+    return 0;
+  };
+
+  const getDiscountPercent = () => {
+    if (couponValidation?.valid && couponValidation.pricing) {
+      const { original_amount, discount_amount } = couponValidation.pricing;
+      return Math.round((discount_amount / original_amount) * 100);
+    }
+    return 0;
   };
 
   const proFeatures = [{
@@ -109,29 +246,68 @@ const ProUpgrade = () => {
     popular: false
   }];
 
-  const handleUpgradeClick = () => {
+  const handleUpgradeClick = async () => {
     console.log('Starting upgrade process for plan:', selectedPlan);
     
-    // Show confirmation toast with sender information
+    const selectedPlanData = plans.find(p => p.id === selectedPlan);
+    if (!selectedPlanData) {
+      toast({
+        title: "❌ Error",
+        description: "Please select a valid plan.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    const finalAmount = getDiscountedPrice(selectedPlanData.originalPrice, selectedPlan as 'monthly' | 'yearly');
+    
+    // Show initiation toast
     toast({
-      title: "🚀 Upgrade Initiated",
-      description: `Your ${selectedPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan upgrade is processing. Sender: Bago Fitness Pro`,
-      duration: 6000,
+      title: "🚀 Processing Payment...",
+      description: `Initiating ${selectedPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan upgrade.`,
+      duration: 4000,
     });
     
-    // Add your upgrade logic here
-    // For now, we'll simulate the upgrade process
-    setTimeout(() => {
-      toast({
-        title: "✅ Upgrade Successful!",
-        description: "Welcome to Pro! Your advanced features are now unlocked.",
-        duration: 8000,
+    try {
+      const result = await initiatePayment({
+        amount: selectedPlanData.originalPrice, // Send original amount, server will apply coupon
+        plan: selectedPlan as 'monthly' | 'yearly',
+        couponCode: appliedCoupon || undefined,
       });
-    }, 3000);
+
+      console.log('Payment result:', result);
+      
+      if (result && 'success' in result && result.success) {
+        // Handle successful payment/upgrade
+        setTimeout(() => {
+          toast({
+            title: "🎉 Welcome to Pro!",
+            description: `Your ${selectedPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} subscription is now active!`,
+            duration: 10000,
+          });
+          
+          // Redirect to dashboard or pro features page
+          // router.push('/dashboard?upgraded=true');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      // Error handling is already done in the hook
+    }
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${isDark ? 'bg-[#1a1a1a]' : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'} relative overflow-hidden ${isMobile ? 'pb-20' : ''}`}>
+    <>
+      {/* Show loading spinner while checking authentication or Pro access */}
+      {(authLoading || isCheckingProAccess) && (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      )}
+
+      {/* Show pro upgrade page only if authenticated and access checked */}
+      {!authLoading && !isCheckingProAccess && user && (
+        <div className={`min-h-screen transition-all duration-500 ${isDark ? 'bg-[#1a1a1a]' : 'bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200'} relative overflow-hidden ${isMobile ? 'pb-20' : ''}`}>
       
       <div className={`container mx-auto px-4 py-6 ${isMobile ? 'py-4' : 'py-8'} relative z-10`}>
         {/* Header - Mobile Optimized */}
@@ -222,8 +398,23 @@ const ProUpgrade = () => {
             {plans.map(plan => (
               <Card 
                 key={plan.id} 
-                className={`relative overflow-hidden transition-all duration-500 hover:shadow-lg border-2 cursor-pointer rounded-3xl ${selectedPlan === plan.id ? isDark ? 'bg-[#2a2a2a] border-blue-500 shadow-blue-500/20 shadow-lg scale-105' : 'bg-white border-blue-400 shadow-blue-400/20 shadow-lg scale-105' : isDark ? 'bg-[#2a2a2a] border-[#3a3a3a] hover:border-blue-500/50' : 'bg-white border-gray-200 hover:border-blue-400/50'}`} 
-                onClick={() => setSelectedPlan(plan.id as 'monthly' | 'yearly')}
+                className={`relative overflow-hidden transition-all duration-500 hover:shadow-lg border-2 ${
+                  userHasProAccess && plan.id === 'monthly' 
+                    ? 'cursor-not-allowed opacity-75' 
+                    : 'cursor-pointer'
+                } rounded-3xl ${selectedPlan === plan.id ? isDark ? 'bg-[#2a2a2a] border-blue-500 shadow-blue-500/20 shadow-lg scale-105' : 'bg-white border-blue-400 shadow-blue-400/20 shadow-lg scale-105' : isDark ? 'bg-[#2a2a2a] border-[#3a3a3a] hover:border-blue-500/50' : 'bg-white border-gray-200 hover:border-blue-400/50'}`} 
+                onClick={() => {
+                  // Prevent selection if user already has Monthly Warrior and this is the monthly plan
+                  if (userHasProAccess && plan.id === 'monthly') {
+                    toast({
+                      title: "Already Subscribed",
+                      description: "You already have an active Monthly Warrior subscription!",
+                      duration: 3000,
+                    });
+                    return;
+                  }
+                  setSelectedPlan(plan.id as 'monthly' | 'yearly');
+                }}
               >
                 
                 {/* Badge */}
@@ -250,39 +441,73 @@ const ProUpgrade = () => {
                 </CardHeader>
 
                 <CardContent className={`space-y-6 ${isMobile ? 'space-y-4' : 'space-y-8'}`}>
-                  {/* Pricing */}
-                  <div className="text-center">
-                    <div className={`flex items-baseline justify-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-                      <span className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                        ₹{getDiscountedPrice(plan.originalPrice, plan.id as 'monthly' | 'yearly')}
-                      </span>
-                      <span className={`${isMobile ? 'text-base' : 'text-lg'} font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                        /{plan.period}
-                      </span>
-                    </div>
-                    {appliedCoupon && (plan.id === 'monthly' && appliedCoupon === 'Bagom75' || plan.id === 'yearly' && appliedCoupon === 'Bagoy75') && (
-                      <div className={`flex items-center justify-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
-                        <span className={`${isMobile ? 'text-base' : 'text-lg'} line-through ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                          ₹{plan.originalPrice}
+                  {/* Pro Status Indicator for Monthly Warrior */}
+                  {userHasProAccess && plan.id === 'monthly' && (
+                    <div className={`text-center ${isMobile ? 'p-4' : 'p-6'} rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/30`}>
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <Crown className="text-yellow-500" size={isMobile ? 20 : 24} />
+                        <span className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-yellow-500`}>
+                          You are already a Monthly Warrior!
                         </span>
-                        <Badge className="bg-green-100 text-green-800 text-sm font-bold">75% OFF</Badge>
                       </div>
-                    )}
-                    {plan.id === 'yearly' && (
-                      <p className={`${isMobile ? 'text-sm' : 'text-base'} font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                        Save ₹33.33 vs monthly!
+                      <p className={`${isMobile ? 'text-sm' : 'text-base'} text-yellow-600/80`}>
+                        Your Pro subscription is active
                       </p>
-                    )}
-                  </div>
-
-                  {/* Selection Indicator */}
-                  {selectedPlan === plan.id && (
-                    <div className={`flex items-center justify-center gap-2 ${isMobile ? 'p-3' : 'p-4'} rounded-xl ${isDark ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
-                      <Check size={isMobile ? 16 : 20} className={`${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
-                      <span className={`${isMobile ? 'text-sm' : 'text-base'} font-bold ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
-                        SELECTED PLAN
-                      </span>
                     </div>
+                  )}
+                  
+                  {/* Regular pricing section - hidden for active Monthly Warrior */}
+                  {!(userHasProAccess && plan.id === 'monthly') && (
+                    <>
+                      {/* Pricing */}
+                      <div className="text-center">
+                        <div className={`flex items-baseline justify-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                          <span className={`${isMobile ? 'text-3xl' : 'text-4xl'} font-bold ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            ₹{getDiscountedPrice(plan.originalPrice, plan.id as 'monthly' | 'yearly')}
+                          </span>
+                          <span className={`${isMobile ? 'text-base' : 'text-lg'} font-medium ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            /{plan.period}
+                          </span>
+                        </div>
+                        
+                        {/* Show original price and discount if coupon is applied */}
+                        {appliedCoupon && couponValidation?.valid && getSavings(plan.originalPrice) > 0 && (
+                          <div className={`flex items-center justify-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
+                            <span className={`${isMobile ? 'text-base' : 'text-lg'} line-through ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                              ₹{plan.originalPrice}
+                            </span>
+                            <Badge className={`${couponValidation.is_free ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'} text-sm font-bold`}>
+                              {getDiscountPercent()}% OFF
+                            </Badge>
+                          </div>
+                        )}
+
+                        {/* Free plan indicator */}
+                        {couponValidation?.is_free && (
+                          <div className={`${isMobile ? 'p-3 mb-3' : 'p-4 mb-4'} rounded-xl ${isDark ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
+                            <p className={`${isMobile ? 'text-sm' : 'text-base'} font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                              🎉 COMPLETELY FREE!
+                            </p>
+                          </div>
+                        )}
+
+                        {plan.id === 'yearly' && !couponValidation?.valid && (
+                          <p className={`${isMobile ? 'text-sm' : 'text-base'} font-medium ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                            Save ₹33.33 vs monthly!
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Selection Indicator */}
+                      {selectedPlan === plan.id && (
+                        <div className={`flex items-center justify-center gap-2 ${isMobile ? 'p-3' : 'p-4'} rounded-xl ${isDark ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
+                          <Check size={isMobile ? 16 : 20} className={`${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                          <span className={`${isMobile ? 'text-sm' : 'text-base'} font-bold ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
+                            SELECTED PLAN
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -290,7 +515,9 @@ const ProUpgrade = () => {
           </div>
         </div>
 
-        {/* Coupon Input Section - Simplified */}
+
+
+        {/* Coupon Input Section - Enhanced */}
         <div className={`rounded-3xl ${isMobile ? 'p-6 mb-8' : 'p-10 mb-16'} border ${isDark ? 'bg-[#2a2a2a] border-[#3a3a3a]' : 'bg-white border-gray-200'}`}>
           <div className={`text-center ${isMobile ? 'mb-6' : 'mb-8'}`}>
             <div className={`flex items-center justify-center gap-2 ${isMobile ? 'mb-3' : 'mb-4'}`}>
@@ -300,45 +527,123 @@ const ProUpgrade = () => {
               </span>
             </div>
             <p className={`${isMobile ? 'text-sm' : 'text-base'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Apply your discount code below!
+              Apply your discount code below! Try "bago100" for a special surprise! 
             </p>
           </div>
 
           <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-4'} max-w-lg mx-auto`}>
             <Input 
-              placeholder="Enter your coupon code" 
+              placeholder="Enter your coupon code (e.g., bago100)" 
               value={couponCode} 
-              onChange={(e) => setCouponCode(e.target.value)} 
+              onChange={(e) => setCouponCode(e.target.value)}
+              disabled={validatingCoupon || paymentLoading}
               className={`${isMobile ? 'flex-1 h-12 text-base' : 'flex-1 h-14 text-lg'} ${isDark ? 'bg-[#1a1a1a] border-[#3a3a3a] text-white' : 'bg-white border-gray-300'}`} 
             />
             <Button 
-              onClick={applyCoupon} 
-              className={`${isMobile ? 'h-12 px-6 text-base w-full' : 'h-14 px-8 text-lg'} font-bold ${isDark ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'} text-white hover:scale-105 transition-all duration-300`}
+              onClick={applyCoupon}
+              disabled={validatingCoupon || paymentLoading || !couponCode.trim()}
+              className={`${isMobile ? 'h-12 px-6 text-base w-full' : 'h-14 px-8 text-lg'} font-bold ${isDark ? 'bg-green-600 hover:bg-green-700' : 'bg-green-600 hover:bg-green-700'} text-white hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              APPLY
+              {validatingCoupon ? 'VALIDATING...' : 'APPLY'}
             </Button>
           </div>
           
-          {appliedCoupon && (
+          {/* Coupon Status */}
+          {couponValidation && (
             <div className={`text-center ${isMobile ? 'mt-4' : 'mt-6'}`}>
-              <Badge className={`bg-green-100 text-green-800 ${isMobile ? 'text-base px-3 py-2' : 'text-lg px-4 py-2'}`}>
-                Coupon "{appliedCoupon}" activated!
-              </Badge>
+              {couponValidation.valid ? (
+                <div className="space-y-3">
+                  <Badge className={`${couponValidation.is_free ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} ${isMobile ? 'text-base px-3 py-2' : 'text-lg px-4 py-2'}`}>
+                    ✅ Coupon "{appliedCoupon}" activated!
+                  </Badge>
+                  {couponValidation.pricing && (
+                    <div className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl ${isDark ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
+                      <p className={`${isMobile ? 'text-sm' : 'text-base'} font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>
+                        {couponValidation.message}
+                      </p>
+                      {couponValidation.pricing.savings > 0 && (
+                        <p className={`${isMobile ? 'text-sm' : 'text-base'} font-bold ${isDark ? 'text-green-300' : 'text-green-800'} mt-2`}>
+                          You saved ₹{couponValidation.pricing.savings}!
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  <Button
+                    onClick={removeCoupon}
+                    variant="outline"
+                    size="sm"
+                    className={`${isDark ? 'border-red-500 text-red-400 hover:bg-red-500/20' : 'border-red-300 text-red-700 hover:bg-red-50'}`}
+                  >
+                    Remove Coupon
+                  </Button>
+                </div>
+              ) : (
+                <div className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl ${isDark ? 'bg-red-500/20 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
+                  <Badge className={`bg-red-100 text-red-800 ${isMobile ? 'text-base px-3 py-2' : 'text-lg px-4 py-2'}`}>
+                    ❌ Invalid Coupon
+                  </Badge>
+                  <p className={`${isMobile ? 'text-sm' : 'text-base'} ${isDark ? 'text-red-400' : 'text-red-700'} mt-2`}>
+                    {couponValidation.message}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Helpful hints */}
+          {!appliedCoupon && (
+            <div className={`text-center ${isMobile ? 'mt-4' : 'mt-6'}`}>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
+                💡 Hint: Try "Bagom30" for monthly, "Bagoy50" for yearly, or "bago99" for 99% off!
+              </p>
             </div>
           )}
         </div>
 
-        {/* Upgrade CTA - Simplified */}
+        {/* Upgrade CTA - Enhanced */}
         <div className={`text-center ${isMobile ? 'mb-8' : 'mb-12'}`}>
-          <Button 
-            className={`${isMobile ? 'text-lg py-4 px-8' : 'text-xl py-6 px-12'} font-bold rounded-full ${isDark ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-lg hover:scale-105 transition-all duration-300`}
-            onClick={handleUpgradeClick}
-          >
-            Upgrade Now
-          </Button>
+          {userHasProAccess && selectedPlan === 'monthly' ? (
+            <div className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/30 max-w-md mx-auto`}>
+              <Crown className="mx-auto text-yellow-500 mb-3" size={isMobile ? 32 : 40} />
+              <h3 className={`${isMobile ? 'text-lg' : 'text-xl'} font-bold text-yellow-500 mb-2`}>
+                You're Already a Monthly Warrior!
+              </h3>
+              <p className={`${isMobile ? 'text-sm' : 'text-base'} text-yellow-600/80`}>
+                Your Pro subscription is active. Consider upgrading to Annual Champion for better value!
+              </p>
+            </div>
+          ) : (
+            <Button 
+              className={`${isMobile ? 'text-lg py-4 px-8' : 'text-xl py-6 px-12'} font-bold rounded-full ${isDark ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+              onClick={handleUpgradeClick}
+              disabled={paymentLoading || validatingCoupon}
+            >
+              {paymentLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {couponValidation?.is_free ? 'Activate Free Subscription' : 'Upgrade Now'}
+                </>
+              )}
+            </Button>
+          )}
           <p className={`${isMobile ? 'text-sm mt-3' : 'text-base mt-4'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            Join thousands of users already achieving their fitness goals!
+            {couponValidation?.is_free 
+              ? 'Your subscription will be activated instantly - no payment required!'
+              : 'Join thousands of users already achieving their fitness goals!'
+            }
           </p>
+          
+          {/* Payment Security Info */}
+          <div className={`flex items-center justify-center gap-2 ${isMobile ? 'mt-3' : 'mt-4'}`}>
+            <div className={`w-4 h-4 rounded-full ${isDark ? 'bg-green-400' : 'bg-green-500'}`}></div>
+            <span className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              Secured by Razorpay - Your payment is safe & secure
+            </span>
+          </div>
         </div>
 
         {/* Guarantee Section - Simplified */}
@@ -355,7 +660,9 @@ const ProUpgrade = () => {
           </p>
         </div>
       </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 };
 

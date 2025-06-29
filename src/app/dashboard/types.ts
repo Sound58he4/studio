@@ -36,6 +36,20 @@ export interface AppSettings {
   progressViewPermission?: ProgressViewPermission;
 }
 
+export interface ProPaymentRecord {
+  orderId: string;
+  paymentId?: string; // Only for paid transactions
+  amount: number; // Original amount before discount
+  finalAmount: number; // Amount actually charged
+  couponCode?: string;
+  discountPercent?: number;
+  subscriptionType: 'monthly' | 'yearly';
+  paymentMethod: 'free' | 'razorpay';
+  status: 'success' | 'failed' | 'pending';
+  timestamp: Timestamp | string;
+  expiryDate: Timestamp | string; // When this subscription period expires
+}
+
 export interface StoredUserProfile {
   email?: string | null;
   displayName?: string | null;
@@ -78,6 +92,13 @@ export interface StoredUserProfile {
   todayFat?: number;
   todayEntryCount?: number;
   todayLastUpdated?: Timestamp | string | null; // Firestore Timestamp on server, ISO string on client/cache
+
+  // Pro subscription fields
+  isPro?: boolean;
+  proExpiryDate?: Timestamp | string | null; // When the pro subscription expires
+  proSubscriptionType?: 'monthly' | 'yearly' | null; // Type of subscription
+  proSubscriptionStartDate?: Timestamp | string | null; // When pro subscription started
+  proPaymentHistory?: ProPaymentRecord[]; // History of payments
 }
 
 export interface DailyNutritionSummary {

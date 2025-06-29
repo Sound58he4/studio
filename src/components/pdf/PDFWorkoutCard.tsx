@@ -213,21 +213,7 @@ const PDFWorkoutCard: React.FC<PDFWorkoutCardProps> = ({
                         </div>                        {/* Action Buttons */}
                         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                             {/* Show expand button for workouts with structured data */}
-                            {workoutDetails && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsExpanded(!isExpanded)}
-                                    className="h-6 w-6 sm:h-8 sm:w-8 p-0 hover:bg-white/20"
-                                    title={isExpanded ? "Collapse details" : "View workout details"}
-                                >
-                                    {isExpanded ? (
-                                        <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    ) : (
-                                        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    )}
-                                </Button>
-                            )}
+                           
                             
                             <Button
                                 variant="ghost"

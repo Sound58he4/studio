@@ -52,6 +52,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/context/AuthContext';
 import { getUserProfile, saveUserProfile, isDisplayNameTaken } from '@/services/firestore';
+import { hasProAccess } from '@/services/firestore/subscriptionService';
 import { calculateDailyTargets, CalculateTargetsInput } from '@/ai/flows/dashboard-update';
 import type { StoredUserProfile, Gender, FitnessGoal, ActivityLevel, DietaryStyle, CommonAllergy, TranslatePreference } from '@/app/dashboard/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -175,6 +176,8 @@ export default function ProfilePage() {
     title: '',
     message: ''
   });
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
 
   // Dark theme state and detection
   const [isClient, setIsClient] = useState(false);
@@ -269,13 +272,34 @@ export default function ProfilePage() {
     } finally { setIsLoading(false); }
   }, [userId, form, toast, hasFetchedProfile]);
 
+  const checkProAccess = useCallback(async () => {
+    if (!userId) {
+      setIsCheckingProAccess(false);
+      return;
+    }
+    
+    try {
+      setIsCheckingProAccess(true);
+      const hasAccess = await hasProAccess(userId);
+      setUserHasProAccess(hasAccess);
+      console.log("[Profile Page] Pro access check:", hasAccess);
+    } catch (error) {
+      console.error("[Profile Page] Error checking Pro access:", error);
+      setUserHasProAccess(false); // Default to no access on error
+    } finally {
+      setIsCheckingProAccess(false);
+    }
+  }, [userId]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!userId) { router.replace('/authorize'); return; }
     if (!hasFetchedProfile) {
         loadProfile();
     }
-  }, [authLoading, userId, router, loadProfile, hasFetchedProfile]);
+    // Check Pro access when userId is available
+    checkProAccess();
+  }, [authLoading, userId, router, loadProfile, hasFetchedProfile, checkProAccess]);
 
   useEffect(() => {
     if (useAiTargets) {
@@ -1313,9 +1337,14 @@ export default function ProfilePage() {
 
                           {/* Manual Targets Option */}
                           <motion.div
-                            whileTap={{ scale: 0.98 }}
+                            whileTap={{ scale: userHasProAccess ? 0.98 : 1 }}
                             className={cn(
-                              "relative p-4 border-0 rounded-2xl cursor-pointer transition-all duration-300 backdrop-blur-sm",
+                              "relative p-4 border-0 rounded-2xl transition-all duration-300 backdrop-blur-sm",
+                              !userHasProAccess 
+                                ? "opacity-60 cursor-not-allowed"
+                                : !field.value 
+                                  ? "cursor-pointer"
+                                  : "cursor-pointer",
                               !field.value 
                                 ? isDark
                                   ? "bg-[#2a2a2a] shadow-lg ring-2 ring-orange-500/50 border border-orange-500/30" 
@@ -1324,49 +1353,91 @@ export default function ProfilePage() {
                                   ? "bg-[#252525] hover:bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#4a4a4a]"
                                   : "bg-white/40 hover:bg-white/60 hover:shadow-clay shadow-clayInset"
                             )}
-                            onClick={() => field.onChange(false)}
+                            onClick={() => {
+                              if (!userHasProAccess) {
+                                toast({
+                                  title: "Upgrade to Pro",
+                                  description: "Manual Target (Advanced) is available for Pro members only.",
+                                  variant: "default",
+                                });
+                                return;
+                              }
+                              field.onChange(false);
+                            }}
                           >
                             <div className="flex items-start gap-3">
                               <div className={cn(
                                 "w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors",
-                                !field.value 
-                                  ? isDark 
-                                    ? "border-orange-400 bg-orange-400" 
-                                    : "border-orange-500 bg-orange-500"
-                                  : isDark 
-                                    ? "border-gray-500" 
-                                    : "border-gray-400"
+                                !userHasProAccess
+                                  ? "border-gray-400 bg-gray-200"
+                                  : !field.value 
+                                    ? isDark 
+                                      ? "border-orange-400 bg-orange-400" 
+                                      : "border-orange-500 bg-orange-500"
+                                    : isDark 
+                                      ? "border-gray-500" 
+                                      : "border-gray-400"
                               )}>
-                                {!field.value && <div className="w-2 h-2 bg-white rounded-full" />}
+                                {!field.value && userHasProAccess && <div className="w-2 h-2 bg-white rounded-full" />}
                               </div>
                               <div className="flex-1 space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Settings className="h-4 w-4 text-orange-500" />
-                                  <ShadCnFormLabel className={`text-sm sm:text-base font-semibold cursor-pointer ${
-                                    isDark ? 'text-white' : 'text-gray-800'
-                                  }`}>
-                                    Manual Targets (Advanced)
-                                  </ShadCnFormLabel>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Settings className={cn(
+                                      "h-4 w-4",
+                                      userHasProAccess ? "text-orange-500" : "text-gray-400"
+                                    )} />
+                                    <ShadCnFormLabel className={cn(
+                                      "text-sm sm:text-base font-semibold cursor-pointer",
+                                      userHasProAccess 
+                                        ? isDark ? 'text-white' : 'text-gray-800'
+                                        : 'text-gray-500'
+                                    )}>
+                                      Manual Targets (Advanced)
+                                    </ShadCnFormLabel>
+                                  </div>
+                                  {!userHasProAccess && (
+                                    <span className={cn(
+                                      "px-2 py-1 text-xs rounded-full font-medium",
+                                      isDark 
+                                        ? 'bg-gradient-to-r from-purple-900/80 to-blue-900/80 text-purple-200 border border-purple-700/50' 
+                                        : 'bg-gradient-to-r from-purple-100 to-blue-100 text-purple-800 border border-purple-200'
+                                    )}>
+                                      <Star className="h-3 w-3 inline mr-1" />
+                                      Pro
+                                    </span>
+                                  )}
                                 </div>
-                                <FormDescription className={`text-xs sm:text-sm leading-relaxed ${
-                                  isDark ? 'text-gray-400' : 'text-gray-600'
-                                }`}>
-                                  Set your own daily nutrition targets if you have specific requirements from a nutritionist, 
-                                  dietitian, or personal experience. You'll need to enter calories, protein, carbs, and fat manually.
+                                <FormDescription className={cn(
+                                  "text-xs sm:text-sm leading-relaxed",
+                                  userHasProAccess 
+                                    ? isDark ? 'text-gray-400' : 'text-gray-600'
+                                    : 'text-gray-500'
+                                )}>
+                                  {userHasProAccess 
+                                    ? "Set your own daily nutrition targets if you have specific requirements from a nutritionist, dietitian, or personal experience. You'll need to enter calories, protein, carbs, and fat manually."
+                                    : "Unlock manual nutrition targets with Pro. Set custom calories, protein, carbs, and fat based on your specific requirements."
+                                  }
                                 </FormDescription>
                                 <div className="flex flex-wrap gap-1 mt-2">
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    isDark 
-                                      ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50' 
-                                      : 'bg-orange-100 text-orange-800'
-                                  }`}>
+                                  <span className={cn(
+                                    "px-2 py-1 text-xs rounded-full",
+                                    userHasProAccess
+                                      ? isDark 
+                                        ? 'bg-orange-900/50 text-orange-300 border border-orange-700/50' 
+                                        : 'bg-orange-100 text-orange-800'
+                                      : 'bg-gray-200 text-gray-500'
+                                  )}>
                                     ⚙️ Full control
                                   </span>
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    isDark 
-                                      ? 'bg-gray-800/50 text-gray-300 border border-gray-600/50' 
-                                      : 'bg-gray-100 text-gray-800'
-                                  }`}>
+                                  <span className={cn(
+                                    "px-2 py-1 text-xs rounded-full",
+                                    userHasProAccess
+                                      ? isDark 
+                                        ? 'bg-gray-800/50 text-gray-300 border border-gray-600/50' 
+                                        : 'bg-gray-100 text-gray-800'
+                                      : 'bg-gray-200 text-gray-500'
+                                  )}>
                                     📊 Custom values
                                   </span>
                                 </div>
@@ -1377,7 +1448,7 @@ export default function ProfilePage() {
                       )} />
 
                       <AnimatePresence mode="wait">
-                        {!useAiTargets && (
+                        {!useAiTargets && userHasProAccess && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
@@ -1505,7 +1576,78 @@ export default function ProfilePage() {
                                 You can always switch back to AI targets later.
                               </p>
                             </div>
-                          </motion.div>                        )}
+                          </motion.div>
+                        )}
+                        {!useAiTargets && !userHasProAccess && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className={cn(
+                              "space-y-4 mt-4 p-6 border-0 rounded-2xl backdrop-blur-sm",
+                              isDark 
+                                ? "bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-700/30" 
+                                : "bg-gradient-to-br from-purple-50/80 to-blue-50/80 shadow-clayInset"
+                            )}
+                          >
+                            <div className="text-center space-y-3">
+                              <div className={cn(
+                                "mx-auto w-12 h-12 rounded-full flex items-center justify-center",
+                                isDark 
+                                  ? "bg-gradient-to-br from-purple-600 to-blue-600" 
+                                  : "bg-gradient-to-br from-purple-500 to-blue-500"
+                              )}>
+                                <Star className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="space-y-2">
+                                <h3 className={cn(
+                                  "text-lg font-semibold",
+                                  isDark ? "text-white" : "text-gray-900"
+                                )}>
+                                  Upgrade to Pro
+                                </h3>
+                                <p className={cn(
+                                  "text-sm leading-relaxed",
+                                  isDark ? "text-purple-200" : "text-purple-700"
+                                )}>
+                                  Manual nutrition targets are available for Pro members. 
+                                  Set custom calories, protein, carbs, and fat based on your specific requirements.
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                <span className={cn(
+                                  "px-3 py-1 text-xs rounded-full font-medium",
+                                  isDark 
+                                    ? 'bg-purple-800/50 text-purple-200 border border-purple-600/50' 
+                                    : 'bg-purple-100 text-purple-800 border border-purple-200'
+                                )}>
+                                  ⚙️ Full Control
+                                </span>
+                                <span className={cn(
+                                  "px-3 py-1 text-xs rounded-full font-medium",
+                                  isDark 
+                                    ? 'bg-blue-800/50 text-blue-200 border border-blue-600/50' 
+                                    : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                )}>
+                                  📊 Custom Values
+                                </span>
+                              </div>
+                              <Button
+                                type="button"
+                                onClick={() => router.push('/subscription')}
+                                className={cn(
+                                  "mt-4 px-6 py-2 rounded-2xl font-medium transition-all duration-300",
+                                  "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700",
+                                  "text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                )}
+                              >
+                                <Zap className="h-4 w-4 mr-2" />
+                                Upgrade Now
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
                       </AnimatePresence>
                       </div>
                     </div>

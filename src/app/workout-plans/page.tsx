@@ -5,11 +5,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Sparkles, ClipboardList, PlusCircle, Trash2, CalendarDays, Save, Edit, AlertCircle, Wand2, Info, Youtube, Check, X, FileText, RefreshCw, ArrowLeft, ChevronLeft, ChevronRight, Calendar, Dumbbell } from 'lucide-react';
+import { Loader2, Sparkles, ClipboardList, PlusCircle, Trash2, CalendarDays, Save, Edit, AlertCircle, Wand2, Info, Youtube, Check, X, FileText, RefreshCw, ArrowLeft, ChevronLeft, ChevronRight, Calendar, Dumbbell, Crown } from 'lucide-react';
 import { getDay, format } from 'date-fns';
 import { getUserProfile, getWorkoutPlan, saveWorkoutPlan } from '@/services/firestore'; // Removed unused imports
 import { generateWorkoutPlan, WeeklyWorkoutPlan as AIWeeklyWorkoutPlan, ExerciseDetail as AIExerciseDetail } from '@/ai/flows/generate-workout-plan';
@@ -20,6 +21,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { buttonVariants } from "@/components/ui/button";
 import AddEditExerciseForm from './AddEditExerciseForm'; // Import the new form component
 import PDFWorkoutIntegration from '@/components/pdf/PDFWorkoutIntegration';
+import MultiDayPDFWorkoutSelector, { PDFWorkoutAssignment } from '@/components/pdf/MultiDayPDFWorkoutSelector';
 import PDFWorkoutCard from '@/components/pdf/PDFWorkoutCard';
 import { PDFWorkout } from '@/components/pdf/PDFWorkoutViewer';
 import { 
@@ -32,6 +34,7 @@ import {
 import { convertLightWorkoutToExercises } from '@/data/workouts/light-workout-plan';
 import { convertMaxWorkoutToExercises } from '@/data/workouts/max-workout-plan';
 import { convertXtremeWorkoutToExercises } from '@/data/workouts/xtreme-workout-plan';
+import { hasProAccess } from '@/services/firestore/subscriptionService';
 
 // --- Types ---
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
@@ -116,6 +119,10 @@ export default function WorkoutPlansPage() {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [originalPlan, setOriginalPlan] = useState<Record<DayOfWeek, EditableExercise[]> | null>(null);
     const [isDark, setIsDark] = useState(false);
+    
+    // Pro access state
+    const [userHasProAccess, setUserHasProAccess] = useState(false);
+    const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
 
     // Detect theme from HTML class (consistent with Settings page)
     useEffect(() => {
@@ -144,6 +151,32 @@ export default function WorkoutPlansPage() {
     useEffect(() => {
        setActiveDay(todayDayName); // Set active day initially
     }, [todayDayName]);
+
+    // Check Pro access when user is available
+    const checkProAccess = useCallback(async () => {
+        if (!userId) {
+            setIsCheckingProAccess(false);
+            return;
+        }
+        
+        try {
+            setIsCheckingProAccess(true);
+            const hasAccess = await hasProAccess(userId);
+            setUserHasProAccess(hasAccess);
+            console.log("[Workout Plans Page] Pro access check:", hasAccess);
+        } catch (error) {
+            console.error("[Workout Plans Page] Error checking Pro access:", error);
+            setUserHasProAccess(false); // Default to no access on error
+        } finally {
+            setIsCheckingProAccess(false);
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (authLoading) return;
+        if (!userId) return;
+        checkProAccess();
+    }, [authLoading, userId, checkProAccess]);
 
 
     // --- Data Fetching ---
@@ -380,7 +413,7 @@ export default function WorkoutPlansPage() {
                         exercises = convertMaxWorkoutToExercises(workout);
                         break;
                     case 'XTREME':
-                        exercises = convertXtremeWorkoutToExercises(workout);
+                        exercises = convertXtremeWorkoutToExercises(workout as any);
                         break;
                     default:
                         exercises = convertWorkoutToExercises(workout);
@@ -412,6 +445,85 @@ export default function WorkoutPlansPage() {
             ...prev,
             [day]: prev[day].filter(item => item.id !== pdfId)
         }));
+    };
+
+    // Multi-day PDF Workout Handler with Pro access check
+    const handleAddMultiDayPDFWorkouts = (assignments: PDFWorkoutAssignment[]) => {
+        // Check if user has Pro access
+        if (!userHasProAccess) {
+            toast({
+                title: "🔒 Pro Feature",
+                description: "PDF workout plans are available for Pro users only. Upgrade to unlock this feature!",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        assignments.forEach(({ day, pdfWorkout, replaceExisting }) => {
+            // Add PDF to the PDF workouts state (for display)
+            const newPDFItem: PDFWorkoutItem = {
+                type: 'pdf',
+                id: `${day}-pdf-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                pdfWorkout
+            };
+            setPdfWorkouts(prev => ({
+                ...prev,
+                [day]: [...prev[day], newPDFItem]
+            }));
+
+            if (replaceExisting) {
+                const workoutType = normalizeCategory(pdfWorkout.category);
+                if (!workoutType) {
+                    toast({ 
+                        title: 'Unknown PDF Workout Type', 
+                        description: `Could not recognize workout type: ${pdfWorkout.category}`, 
+                        variant: 'destructive' 
+                    });
+                    return;
+                }
+                
+                const workout = getWorkoutByTypeAndDay(workoutType, pdfWorkout.day);
+                if (workout) {
+                    let exercises;
+                    switch (workoutType) {
+                        case 'POWER':
+                            exercises = convertPowerWorkoutToExercises(workout);
+                            break;
+                        case 'LIGHT':
+                            exercises = convertLightWorkoutToExercises(workout);
+                            break;
+                        case 'MAX':
+                            exercises = convertMaxWorkoutToExercises(workout);
+                            break;
+                        case 'XTREME':
+                            exercises = convertXtremeWorkoutToExercises(workout as any);
+                            break;
+                        default:
+                            exercises = convertWorkoutToExercises(workout);
+                    }
+                    const newEditableExercises: EditableExercise[] = exercises.map(ex => ({
+                        ...ex,
+                        id: generateUniqueId(day),
+                        isNew: true
+                    }));
+                    setEditablePlan(prev => ({
+                        ...prev,
+                        [day]: newEditableExercises
+                    }));
+                    if (editingExerciseState?.day === day) {
+                        setEditingExerciseState(null);
+                    }
+                }
+            }
+        });
+
+        // Show success toast
+        const daysList = assignments.map(a => a.day).join(', ');
+        const pdfName = assignments[0]?.pdfWorkout.name;
+        toast({
+            title: 'PDF Workouts Assigned',
+            description: `${pdfName} has been assigned to: ${daysList}`,
+        });
     };
 
 
@@ -468,7 +580,7 @@ export default function WorkoutPlansPage() {
     };
 
     // --- Render Logic ---
-    if (authLoading || isLoadingPlan) {
+    if (authLoading || isLoadingPlan || isCheckingProAccess) {
         return (
             <div className={`min-h-screen transition-all duration-500 ${
                 isDark 
@@ -919,18 +1031,51 @@ export default function WorkoutPlansPage() {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        <PDFWorkoutIntegration
-                                                            day={activeDay}
-                                                            onAddPDFWorkout={(day, pdfWorkout, replaceExisting) => 
-                                                                handleAddPDFWorkout(day, pdfWorkout, replaceExisting)
-                                                            }
-                                                        />
+                                                        {userHasProAccess ? (
+                                                            <MultiDayPDFWorkoutSelector
+                                                                onAddPDFWorkouts={handleAddMultiDayPDFWorkouts}
+                                                            />
+                                                        ) : (
+                                                            <div className={`text-center p-6 rounded-2xl ${
+                                                                isDark 
+                                                                    ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-500/20' 
+                                                                    : 'bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200'
+                                                            }`}>
+                                                                <Crown className={`w-12 h-12 mx-auto mb-3 ${
+                                                                    isDark ? 'text-purple-400' : 'text-purple-600'
+                                                                }`} />
+                                                                <p className={`text-sm font-semibold mb-2 ${
+                                                                    isDark ? 'text-purple-300' : 'text-purple-800'
+                                                                }`}>
+                                                                    Pro Feature
+                                                                </p>
+                                                                <p className={`text-xs mb-4 ${
+                                                                    isDark ? 'text-purple-400/70' : 'text-purple-600/70'
+                                                                }`}>
+                                                                    Upgrade to Pro to access PDF workout plans
+                                                                </p>
+                                                                <Button 
+                                                                    asChild
+                                                                    size="sm" 
+                                                                    className={`text-xs px-4 py-2 rounded-xl ${
+                                                                        isDark 
+                                                                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' 
+                                                                            : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600'
+                                                                    } text-white`}
+                                                                >
+                                                                    <Link href="/pro-upgrade">
+                                                                        <Crown className="w-3 h-3 mr-1" />
+                                                                        Upgrade to Pro
+                                                                    </Link>
+                                                                </Button>
+                                                            </div>
+                                                        )}
                                                     </CardContent>
                                                 </Card>
                                             </motion.div>
 
-                                            {/* PDF Workouts Display */}
-                                            {pdfWorkouts[activeDay]?.length > 0 && (
+                                            {/* PDF Workouts Display - Pro Only */}
+                                            {userHasProAccess && pdfWorkouts[activeDay]?.length > 0 && (
                                                 <div className="mb-6">
                                                     <h3 className="font-semibold mb-3 text-sm text-gray-600 uppercase tracking-wide">PDF Workouts</h3>
                                                     <div className="space-y-3">

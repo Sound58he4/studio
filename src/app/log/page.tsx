@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton"; 
-import { Camera, Mic, Type, Loader2, CheckCircle, AlertCircle, Upload, Trash2, Send, PlusCircle, ListRestart, Utensils, Pause, Play, Sparkles, BrainCircuit, Info, Scale, FileText, ChefHat, Brain, Target, Zap, ImageIcon, Volume2, Waves } from "lucide-react"; 
+import { Camera, Mic, Type, Loader2, CheckCircle, AlertCircle, Upload, Trash2, Send, PlusCircle, ListRestart, Utensils, Pause, Play, Sparkles, BrainCircuit, Info, Scale, FileText, ChefHat, Brain, Target, Zap, ImageIcon, Volume2, Waves, Crown } from "lucide-react"; 
 import { useToast } from "@/hooks/use-toast";
 import { foodImageRecognition, FoodImageRecognitionInput, FoodImageRecognitionOutput } from '@/ai/flows/food-image-recognition';
 import { voiceFoodLogging, VoiceFoodLoggingInput, VoiceFoodLoggingOutput } from '@/ai/flows/voice-food-logging';
@@ -24,6 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
 import { useAuth } from '@/context/AuthContext'; 
 import { addFoodLog, getUserProfile } from '@/services/firestore'; 
+import { hasProAccess } from '@/services/firestore/subscriptionService';
 import type { FirestoreFoodLogData, StoredUserProfile, FitnessGoal } from '@/app/dashboard/types';
 import { mealHealthAssessment, MealHealthAssessmentInput, MealHealthAssessmentOutput } from '@/ai/flows/meal-health-assessment';
 
@@ -37,10 +38,10 @@ interface ProcessedFoodResult extends Nutrition {
 
 // Simple Meal Health Status Component
 const MealHealthStatus = ({ mealHealthData, isDark }: { mealHealthData: MealHealthAssessmentOutput, isDark: boolean }) => (
-  <div className="flex items-center justify-center space-x-1">
+  <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
     {(['HEALTHY', 'MODERATE', 'UNHEALTHY'] as const).map((status) => (
-      <div key={status} className="flex flex-col items-center">
-        <div className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+      <div key={status} className="flex flex-col items-center min-w-0">
+        <div className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 text-center whitespace-nowrap ${
           mealHealthData.simpleStatus === status
             ? status === 'HEALTHY'
               ? isDark
@@ -105,6 +106,10 @@ export default function LogFoodPage() {
   const [userProfile, setUserProfile] = useState<StoredUserProfile | null>(null);
   const [mealHealthData, setMealHealthData] = useState<MealHealthAssessmentOutput | null>(null);
   const [isAssessingHealth, setIsAssessingHealth] = useState(false);
+
+  // Pro access state
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
 
   // Detect theme from HTML class (consistent with Overview page)
   useEffect(() => {
@@ -183,6 +188,33 @@ export default function LogFoodPage() {
 
     loadUserProfile();
   }, [userId]);
+
+  // Check Pro access
+  const checkProAccess = useCallback(async () => {
+    if (!userId) {
+      setIsCheckingProAccess(false);
+      return;
+    }
+    
+    try {
+      setIsCheckingProAccess(true);
+      const hasAccess = await hasProAccess(userId);
+      setUserHasProAccess(hasAccess);
+      console.log("[Log Food Page] Pro access check:", hasAccess);
+    } catch (error) {
+      console.error("[Log Food Page] Error checking Pro access:", error);
+      setUserHasProAccess(false); // Default to no access on error
+    } finally {
+      setIsCheckingProAccess(false);
+    }
+  }, [userId]);
+
+  // Check pro access when user is available
+  useEffect(() => {
+    if (authLoading) return;
+    if (!userId) return;
+    checkProAccess();
+  }, [authLoading, userId, checkProAccess]);
 
   // Function to assess meal health
   const assessMealHealth = async (results: ProcessedFoodResult[]) => {
@@ -333,6 +365,16 @@ export default function LogFoodPage() {
           setIsLoading(false); 
       }
   };   const startRecording = async () => {
+    // Check Pro access first
+    if (!userHasProAccess) {
+      toast({
+        title: "Upgrade to Pro",
+        description: "Voice recording is a Pro feature. Upgrade to access this functionality.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
         // Check if MediaDevices API is supported
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -873,7 +915,12 @@ export default function LogFoodPage() {
                       : 'text-gray-600 hover:text-gray-800 hover:bg-white/30'
                 }`}
               >
-                <Mic className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                <div className="flex items-center space-x-1">
+                  <Mic className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                  {!userHasProAccess && (
+                    <Crown className="w-3 h-3 md:w-4 md:h-4 text-yellow-500" />
+                  )}
+                </div>
                 <span className="text-xs sm:text-sm md:text-base font-semibold">Voice</span>
               </button>
             </div>
@@ -1453,36 +1500,62 @@ export default function LogFoodPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                   >
-                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-6 md:mt-8 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
                       <CardContent className="p-4 md:p-6">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
                           <div className="flex items-center space-x-3 md:space-x-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center ${
+                              isDark 
+                                ? 'bg-green-600' 
+                                : 'bg-green-500'
+                            }`}>
                               <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                             </div>
                             <div>
-                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                              <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                                isDark ? 'text-white' : 'text-gray-800'
+                              }`}>
                                 AI Analysis Complete ({pendingResults.length} items)
                               </h3>
-                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                              <p className={`text-sm md:text-base ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Review and confirm before logging</p>
                             </div>
                           </div>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={clearAllPending}
-                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                            className={`backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-200 ${
+                              isDark 
+                                ? 'bg-[#3a3a3a]/80 hover:bg-red-900/20 border-red-400/30' 
+                                : 'bg-white/80'
+                            }`}
                           >
                             <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                             <span>Clear All</span>
                           </Button>
                         </div>
-                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                        <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong ${
+                          isDark 
+                            ? 'bg-green-900/30 border-green-500/30' 
+                            : 'bg-green-100/60'
+                        }`}>
                           <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                            <Brain className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
-                            <span className="font-bold text-sm md:text-base text-green-700">Smart Nutrition Analysis</span>
+                            <Brain className={`w-4 h-4 md:w-5 md:h-5 ${
+                              isDark ? 'text-green-400' : 'text-green-600'
+                            }`} />
+                            <span className={`font-bold text-sm md:text-base ${
+                              isDark ? 'text-green-300' : 'text-green-700'
+                            }`}>Smart Nutrition Analysis</span>
                           </div>
-                          <p className="leading-relaxed text-xs sm:text-sm md:text-base text-green-600">
+                          <p className={`leading-relaxed text-xs sm:text-sm md:text-base ${
+                            isDark ? 'text-green-400' : 'text-green-600'
+                          }`}>
                             Our AI has analyzed your meal photo and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
                           </p>
                         </div>
@@ -1743,6 +1816,58 @@ export default function LogFoodPage() {
                   }`}>
                   <div className="flex flex-col items-center space-y-6 md:space-y-8">
                     
+                    {/* Pro Access Check */}
+                    {!userHasProAccess && (
+                      <div className={`w-full mb-4 p-6 rounded-3xl border shadow-lg ${
+                        isDark 
+                          ? 'bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-600/30' 
+                          : 'bg-gradient-to-br from-purple-100/80 to-blue-100/80 border-purple-200'
+                      }`}>
+                        <div className="flex flex-col items-center text-center space-y-4">
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                            isDark 
+                              ? 'bg-gradient-to-br from-purple-600/80 to-blue-600/80' 
+                              : 'bg-gradient-to-br from-purple-500 to-blue-500'
+                          }`}>
+                            <Crown className="w-8 h-8 text-white" />
+                          </div>
+                          <div>
+                            <h4 className={`text-lg font-bold mb-2 ${
+                              isDark ? 'text-white' : 'text-gray-800'
+                            }`}>Voice Recording is Pro Only</h4>
+                            <p className={`text-sm leading-relaxed mb-4 ${
+                              isDark ? 'text-gray-300' : 'text-gray-600'
+                            }`}>
+                              Upgrade to Pro to access voice recording functionality and log your meals by simply speaking.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                              <button
+                                onClick={() => window.location.href = '/pro-upgrade'}
+                                className={`px-6 py-3 rounded-2xl font-semibold text-white shadow-lg transition-all duration-300 transform hover:scale-105 ${
+                                  isDark 
+                                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' 
+                                    : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600'
+                                }`}
+                              >
+                                <Crown className="w-4 h-4 inline mr-2" />
+                                Upgrade to Pro
+                              </button>
+                              <button
+                                onClick={() => setActiveTab('manual')}
+                                className={`px-6 py-3 rounded-2xl font-semibold transition-all duration-300 ${
+                                  isDark 
+                                    ? 'bg-[#3a3a3a] text-gray-300 hover:bg-[#4a4a4a] hover:text-white' 
+                                    : 'bg-white/60 text-gray-700 hover:bg-white/80 hover:text-gray-800'
+                                }`}
+                              >
+                                Use Text Instead
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     {/* Voice Support Check */}
                     {isVoiceSupported === false && (
                       <div className={`w-full mb-4 p-4 rounded-2xl border shadow-sm ${
@@ -1768,65 +1893,72 @@ export default function LogFoodPage() {
                       </div>
                     )}
                     
-                    {/* Voice Interface */}
-                    <div className="relative">
-                      <button
-                        onClick={isRecording ? stopRecording : startRecording}
-                        className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clayStrong ${
-                          isVoiceSupported === false 
-                            ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                            : isRecording
-                            ? 'bg-red-400 hover:bg-red-500 scale-110'
-                            : isDark
-                            ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] hover:scale-105'
-                            : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
-                        }`}
-                        disabled={isLoading || isVoiceSupported === false}
-                      >
-                        {isRecording ? (
-                          <div className="flex items-center space-x-1">
-                            <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
-                            <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
-                          </div>
-                        ) : (
-                          <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
-                        )}
-                      </button>
-                    </div>{/* Timer Display */}
-                    <div className={`px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong ${
-                      isDark ? 'bg-[#3a3a3a]' : 'bg-gray-700'
-                    }`}>
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
-                        <span className="text-2xl md:text-3xl font-mono font-bold text-white">
-                          {formatTime(recordingTime)}
-                        </span>
+                    {/* Voice Interface - Only show if user has Pro access */}
+                    {userHasProAccess && (
+                      <div className="relative">
+                        <button
+                          onClick={isRecording ? stopRecording : startRecording}
+                          className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300 shadow-clayStrong ${
+                            isVoiceSupported === false 
+                              ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                              : isRecording
+                              ? 'bg-red-400 hover:bg-red-500 scale-110'
+                              : isDark
+                              ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] hover:scale-105'
+                              : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:scale-105'
+                          }`}
+                          disabled={isLoading || isVoiceSupported === false}
+                        >
+                          {isRecording ? (
+                            <div className="flex items-center space-x-1">
+                              <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
+                              <div className="w-3 h-3 md:w-4 md:h-4 bg-white rounded-sm"></div>
+                            </div>
+                          ) : (
+                            <Mic className="w-8 h-8 md:w-10 md:h-10 text-white" />
+                          )}
+                        </button>
                       </div>
-                    </div>                    {/* Status */}
-                    <div className="text-center space-y-3 md:space-y-4">                      <h4 className={`text-lg md:text-xl font-bold ${
-                        isDark ? 'text-white' : 'text-gray-800'
+                    )}{/* Timer Display */}
+                    {userHasProAccess && (
+                      <div className={`px-6 py-3 md:px-8 md:py-4 rounded-xl shadow-clayStrong ${
+                        isDark ? 'bg-[#3a3a3a]' : 'bg-gray-700'
                       }`}>
-                        {isVoiceSupported === false 
-                          ? 'Voice Recording Unavailable'
-                          : isRecording 
-                          ? 'Recording...' 
-                          : 'Tap to record'
-                        }
-                      </h4>
-                      <p className={`leading-relaxed text-sm md:text-base max-w-md ${
-                        isDark ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        {isVoiceSupported === false
-                          ? 'Your browser doesn\'t support voice recording. Please use the Text or Photo upload options above.'
-                          : isRecording 
-                          ? 'Speak clearly about your meal. Tap again when finished.' 
-                          : 'Tap the microphone to start recording your meal description'
-                        }
-                      </p>
-                    </div>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-400' : 'bg-gray-400'}`}></div>
+                          <span className="text-2xl md:text-3xl font-mono font-bold text-white">
+                            {formatTime(recordingTime)}
+                          </span>
+                        </div>
+                      </div>
+                    )}                    {/* Status */}
+                    {userHasProAccess && (
+                      <div className="text-center space-y-3 md:space-y-4">
+                        <h4 className={`text-lg md:text-xl font-bold ${
+                          isDark ? 'text-white' : 'text-gray-800'
+                        }`}>
+                          {isVoiceSupported === false 
+                            ? 'Voice Recording Unavailable'
+                            : isRecording 
+                            ? 'Recording...' 
+                            : 'Tap to record'
+                          }
+                        </h4>
+                        <p className={`leading-relaxed text-sm md:text-base max-w-md ${
+                          isDark ? 'text-gray-400' : 'text-gray-600'
+                        }`}>
+                          {isVoiceSupported === false
+                            ? 'Your browser doesn\'t support voice recording. Please use the Text or Photo upload options above.'
+                            : isRecording 
+                            ? 'Speak clearly about your meal. Tap again when finished.' 
+                            : 'Tap the microphone to start recording your meal description'
+                          }
+                        </p>
+                      </div>
+                    )}
 
                     {/* Audio Preview */}
-                    {audioPreviewUrl && !isRecording && (
+                    {userHasProAccess && audioPreviewUrl && !isRecording && (
                       <div className={`w-full mt-3 sm:mt-4 p-2 sm:p-3 rounded shadow-inner border z-10 animate-in fade-in duration-300 ${
                         isDark 
                           ? 'bg-[#3a3a3a] border-[#8b5cf6]/20' 
@@ -1856,35 +1988,37 @@ export default function LogFoodPage() {
                     )}
                   </div>
                 </div>                {/* Action Button */}
-                <Button
-                  onClick={handleVoiceSubmit}
-                  className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg ${
-                    isVoiceSupported === false
-                      ? 'bg-gray-400 cursor-not-allowed opacity-50'
-                      : isDark
-                      ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white'
-                      : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
-                  }`}
-                  disabled={!audioBlob || isLoading || isRecording || isVoiceSupported === false}
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : isVoiceSupported === false ? (
-                    <>
-                      <AlertCircle className="w-4 h-4 md:w-6 md:h-6" />
-                      <span>Voice Recording Not Available</span>
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="w-4 h-4 md:w-6 md:h-6" />
-                      <span>Process Voice Recording</span>
-                      <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
-                    </>
-                  )}
-                </Button>
+                {userHasProAccess && (
+                  <Button
+                    onClick={handleVoiceSubmit}
+                    className={`w-full h-12 sm:h-14 md:h-16 font-bold rounded-2xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-clayStrong flex items-center justify-center space-x-2 md:space-x-3 text-sm sm:text-base md:text-lg ${
+                      isVoiceSupported === false
+                        ? 'bg-gray-400 cursor-not-allowed opacity-50'
+                        : isDark
+                        ? 'bg-gradient-to-br from-[#8b5cf6] to-[#a855f7] hover:from-[#7c3aed] hover:to-[#9333ea] text-white'
+                        : 'bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white'
+                    }`}
+                    disabled={!audioBlob || isLoading || isRecording || isVoiceSupported === false}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 md:w-6 md:h-6 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : isVoiceSupported === false ? (
+                      <>
+                        <AlertCircle className="w-4 h-4 md:w-6 md:h-6" />
+                        <span>Voice Recording Not Available</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic className="w-4 h-4 md:w-6 md:h-6" />
+                        <span>Process Voice Recording</span>
+                        <Sparkles className="w-4 h-4 md:w-5 md:h-5" />
+                      </>
+                    )}
+                  </Button>
+                )}
 
                 {/* AI Analysis Section for Voice */}
                 {pendingResults.length > 0 && (
@@ -1893,37 +2027,62 @@ export default function LogFoodPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                   >
-                    <Card className="backdrop-blur-sm border-0 bg-clay-100/70 shadow-clayStrong rounded-3xl mt-6 md:mt-8">
+                    <Card className={`backdrop-blur-sm border-0 shadow-clayStrong rounded-3xl mt-6 md:mt-8 ${
+                      isDark 
+                        ? 'bg-[#2a2a2a] border-[#3a3a3a]' 
+                        : 'bg-clay-100/70'
+                    }`}>
                       <CardContent className="p-4 md:p-6">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-0 mb-6 md:mb-8">
                           <div className="flex items-center space-x-3 md:space-x-4">
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center bg-green-500">
+                            <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl shadow-clayInset flex items-center justify-center ${
+                              isDark 
+                                ? 'bg-green-600' 
+                                : 'bg-green-500'
+                            }`}>
                               <Sparkles className="w-6 h-6 md:w-7 md:h-7 text-white" />
                             </div>
                             <div>
-                              <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                              <h3 className={`text-lg sm:text-xl md:text-2xl font-bold ${
+                                isDark ? 'text-white' : 'text-gray-800'
+                              }`}>
                                 AI Analysis Complete ({pendingResults.length} items)
                               </h3>
-                              <p className="text-sm md:text-base text-gray-600">Review and confirm before logging</p>
+                              <p className={`text-sm md:text-base ${
+                                isDark ? 'text-gray-400' : 'text-gray-600'
+                              }`}>Review and confirm before logging</p>
                             </div>
                           </div>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={clearAllPending}
-                            className="backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto bg-white/80 text-red-600 hover:bg-red-50 border-red-200"
+                            className={`backdrop-blur-sm border flex items-center space-x-2 transition-all duration-200 shadow-clayStrong rounded-xl px-4 md:px-6 font-semibold text-xs md:text-sm w-full sm:w-auto text-red-600 hover:bg-red-50 border-red-200 ${
+                              isDark 
+                                ? 'bg-[#3a3a3a]/80 hover:bg-red-900/20 border-red-400/30' 
+                                : 'bg-white/80'
+                            }`}
                           >
                             <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                             <span>Clear All</span>
                           </Button>
                         </div>
-                        <div className="backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong bg-green-100/60">
+                        <div className={`backdrop-blur-sm rounded-2xl p-4 md:p-6 border shadow-clayStrong ${
+                          isDark 
+                            ? 'bg-green-900/30 border-green-500/30' 
+                            : 'bg-green-100/60'
+                        }`}>
                           <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                            <Brain className={`w-4 h-4 md:w-5 md:h-5 text-green-600`}
-                            />
-                            <span className={`font-bold text-sm md:text-base text-green-700`}>Smart Nutrition Analysis</span>
+                            <Brain className={`w-4 h-4 md:w-5 md:h-5 ${
+                              isDark ? 'text-green-400' : 'text-green-600'
+                            }`} />
+                            <span className={`font-bold text-sm md:text-base ${
+                              isDark ? 'text-green-300' : 'text-green-700'
+                            }`}>Smart Nutrition Analysis</span>
                           </div>
-                          <p className={`leading-relaxed text-xs sm:text-sm md:text-base text-green-600`}>
+                          <p className={`leading-relaxed text-xs sm:text-sm md:text-base ${
+                            isDark ? 'text-green-400' : 'text-green-600'
+                          }`}>
                             Our AI has analyzed your voice recording and estimated the nutritional content. Review the results below and remove any incorrect items before confirming.
                           </p>
                         </div>
