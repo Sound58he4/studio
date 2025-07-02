@@ -12,6 +12,8 @@ This document explains the Razorpay payment integration implemented in the Bago 
 
 ### 2. **Supported Coupon Codes**
 - `Bagom30`: 30% off Monthly Plan
+- `Bagom10`: Monthly Plan for just ₹10 (95% off)
+- `Bagom2`: Monthly Plan for just ₹2 (99% off)
 - `Bagoy50`: 50% off Yearly Plan  
 - `bago100`/`BAGO100`/`Bago100`: 100% off (completely free) - works on both plans
 

@@ -80,14 +80,14 @@ const OfferPage = () => {
                         Monthly Plan
                       </CardTitle>
                       <CardDescription>
-                        Pay only ₹50 instead of ₹200 per month
+                        Pay only ₹10 instead of ₹200 per month
                       </CardDescription>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-muted-foreground line-through">₹200/month</div>
                     <div className="text-2xl font-bold text-primary">
-                      ₹50/month
+                      ₹10/month
                     </div>
                   </div>
                 </div>
@@ -106,7 +106,7 @@ const OfferPage = () => {
                         Coupon Code:
                       </span>
                       <Button 
-                        onClick={() => copyToClipboard('Bagom30')}
+                        onClick={() => copyToClipboard('Bagom10')}
                         variant="outline" 
                         size="sm"
                         className="h-8 px-3"
@@ -116,7 +116,7 @@ const OfferPage = () => {
                       </Button>
                     </div>
                     <div className="text-xl font-mono font-bold text-center py-2 text-foreground">
-                      Bagom30
+                      Bagom10
                     </div>
                   </div>
                   
@@ -155,6 +155,20 @@ const OfferPage = () => {
                       <CheckCircle className="h-4 w-4 text-primary mr-2" />
                       <span className="text-sm font-medium text-foreground">
                         Free trial available only for Monthly plan
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Discontinuation Notice */}
+                  <div className={`p-3 rounded-lg border ${
+                    isDark 
+                      ? 'bg-orange-500/10 border-orange-500/20' 
+                      : 'bg-orange-50 border-orange-200'
+                  }`}>
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 text-orange-500 mr-2" />
+                      <span className="text-sm font-medium text-orange-600">
+                        Limited Time: This monthly plan offer will be discontinued soon!
                       </span>
                     </div>
                   </div>

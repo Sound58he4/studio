@@ -527,13 +527,13 @@ const ProUpgrade = () => {
               </span>
             </div>
             <p className={`${isMobile ? 'text-sm' : 'text-base'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Apply your discount code below! Try "bago100" for a special surprise! 
+              Apply your discount code below! Try "Bagom10" for Monthly Warrior at just ₹10! 
             </p>
           </div>
 
           <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-4'} max-w-lg mx-auto`}>
             <Input 
-              placeholder="Enter your coupon code (e.g., bago100)" 
+              placeholder="Enter your coupon code (e.g., Bagom10, Bagom2)" 
               value={couponCode} 
               onChange={(e) => setCouponCode(e.target.value)}
               disabled={validatingCoupon || paymentLoading}

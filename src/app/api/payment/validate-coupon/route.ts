@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const COUPON_CONFIGS = {
   'Bagom30': { plan: 'monthly', discount: 30, description: '30% off Monthly Plan' },
   'Bagoy50': { plan: 'yearly', discount: 50, description: '50% off Yearly Plan' },
+  'Bagom10': { plan: 'monthly', finalAmount: 10, description: 'Monthly Warrior for just ₹10!' },
+  'Bagom2': { plan: 'monthly', finalAmount: 2, description: 'Monthly Warrior for just ₹2!' },
   'bago99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
   'BAGO99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
   'Bago99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
@@ -58,15 +60,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate discount
-    const discountAmount = (originalAmount * coupon.discount) / 100;
-    const finalAmount = Math.max(0, originalAmount - discountAmount);
+    // Calculate discount based on coupon type
+    let discountAmount: number;
+    let finalAmount: number;
+    let discountPercent: number;
+
+    if ('finalAmount' in coupon) {
+      // Fixed amount coupon (Bagom10, Bagom2)
+      finalAmount = coupon.finalAmount;
+      discountAmount = originalAmount - finalAmount;
+      discountPercent = Math.round((discountAmount / originalAmount) * 100);
+    } else {
+      // Percentage discount coupon
+      discountAmount = (originalAmount * coupon.discount) / 100;
+      finalAmount = Math.max(0, originalAmount - discountAmount);
+      discountPercent = coupon.discount;
+    }
 
     return NextResponse.json({
       valid: true,
       coupon: {
         code: couponCode,
-        discount: coupon.discount,
+        discount: discountPercent,
         description: coupon.description,
         applicable_plan: coupon.plan,
       },

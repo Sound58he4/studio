@@ -14,6 +14,8 @@ Successfully integrated Razorpay payments with Firestore database to handle pro 
 ```javascript
 const COUPON_CONFIGS = {
   'Bagom30': { plan: 'monthly', discount: 30 },
+  'Bagom10': { plan: 'monthly', finalAmount: 10 }, // Monthly Plan for ₹10
+  'Bagom2': { plan: 'monthly', finalAmount: 2 },   // Monthly Plan for ₹2
   'Bagoy50': { plan: 'yearly', discount: 50 },
   'bago99': { plan: 'both', discount: 99 }, // 99% discount - almost free
   'BAGO99': { plan: 'both', discount: 99 },
