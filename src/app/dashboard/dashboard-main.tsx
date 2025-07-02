@@ -12,6 +12,7 @@ import {
   getCompletedWorkoutsForDate, saveCompletedWorkout, deleteCompletedWorkout, 
   getDailyNutritionSummaries
 } from '@/services/firestore';
+import { hasProAccess } from '@/services/firestore/subscriptionService';
 import { createFirestoreServiceError } from '@/services/firestore/utils';
 import { db } from '@/lib/firebase/exports';
 import {
@@ -80,6 +81,18 @@ const LOCAL_STORAGE_KEYS = {
 };
 
 // Optimized Dashboard Service Functions - integrated directly into dashboard
+
+// Utility function to get current date in user's timezone (using browser timezone)
+const getCurrentDateInUserTimezone = (): Date => {
+  // For now, use browser's timezone. In the future, could use userProfile.timezone if stored
+  return new Date();
+};
+
+// Utility function to format date in user's timezone
+const formatDateInUserTimezone = (date: Date, formatStr: string = 'yyyy-MM-dd'): string => {
+  return format(date, formatStr);
+};
+
 const getUserProfileData = async (userId: string): Promise<StoredUserProfile | null> => {
   try {
     const userProfileRef = doc(db, 'users', userId);
@@ -135,15 +148,59 @@ const getExerciseLogsForDay = async (userId: string, date: Date): Promise<Stored
 
 const getDailyNutritionSummaryData = async (userId: string, dateStr: string): Promise<DailyNutritionSummary | null> => {
   try {
-    const summarySnap = await getDoc(doc(db, 'users', userId, 'dailyNutritionSummaries', dateStr));
+    const summaryDocRef = doc(db, 'users', userId, 'dailyNutritionSummaries', dateStr);
+    const summarySnap = await getDoc(summaryDocRef);
     
     if (summarySnap.exists()) {
-      return summarySnap.data() as DailyNutritionSummary;
+      const data = summarySnap.data() as DailyNutritionSummary;
+      console.log(`[Dashboard] Found existing daily nutrition summary for ${dateStr}:`, data);
+      return {
+        ...data,
+        id: dateStr // Ensure ID is set
+      };
     }
-    return null;
+    
+    // Create new document with initial zero values if it doesn't exist
+    console.log(`[Dashboard] Creating new daily nutrition summary document for ${dateStr}`);
+    const currentTimestamp = new Date().toISOString();
+    const initialSummary: DailyNutritionSummary = {
+      id: dateStr,
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbohydrates: 0,
+      totalFat: 0,
+      entryCount: 0,
+      lastUpdated: currentTimestamp
+    };
+    
+    try {
+      // Set the document with serverTimestamp for Firestore
+      await setDoc(summaryDocRef, {
+        ...initialSummary,
+        lastUpdated: serverTimestamp()
+      });
+      console.log(`[Dashboard] Successfully created daily nutrition summary document for ${dateStr}`);
+    } catch (createError: any) {
+      console.warn(`[Dashboard] Failed to create document for ${dateStr}, but returning zero values:`, createError);
+      // Continue to return initial summary even if document creation fails
+    }
+    
+    // Return the initial summary with ISO string timestamp for client usage
+    return initialSummary;
   } catch (error: any) {
-    console.error("[Dashboard] Error fetching daily nutrition summary:", error);
-    return null;
+    console.error("[Dashboard] Error fetching/creating daily nutrition summary:", error);
+    // Return zero values as fallback instead of null
+    const fallbackSummary: DailyNutritionSummary = {
+      id: dateStr,
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbohydrates: 0,
+      totalFat: 0,
+      entryCount: 0,
+      lastUpdated: new Date().toISOString()
+    };
+    console.log(`[Dashboard] Returning fallback zero values for ${dateStr}`);
+    return fallbackSummary;
   }
 };
 
@@ -179,20 +236,18 @@ const getWeeklyNutritionSummariesData = async (userId: string, date: Date): Prom
       current.setDate(current.getDate() + 1);
     }
 
-    // Batch get all daily summaries for the week
-    const summariesSnaps = await Promise.all(weekDates.map(dateStr => 
-      getDoc(doc(db, 'users', userId, 'dailyNutritionSummaries', dateStr))
+    // Get or create all daily summaries for the week using the updated function
+    const summaries = await Promise.all(weekDates.map(dateStr => 
+      getDailyNutritionSummaryData(userId, dateStr)
     ));
 
-    const summaries = summariesSnaps
-      .map((snap, index) => snap.exists() ? { 
-        ...snap.data() as DailyNutritionSummary, 
-        id: weekDates[index],
-        date: weekDates[index] 
-      } : null)
-      .filter(Boolean) as DailyNutritionSummary[];
-
-    return summaries;
+    // Filter out null results and add date field
+    return summaries
+      .filter((summary): summary is DailyNutritionSummary => summary !== null)
+      .map(summary => ({
+        ...summary,
+        date: summary.id
+      }));
   } catch (error: any) {
     console.error("[Dashboard] Error fetching weekly nutrition summaries:", error);
     return [];
@@ -365,10 +420,21 @@ export function DashboardMainPage() {
     const { toast } = useToast();
     const { userId, loading: authLoading } = useAuth();
     
+    // Pro access state
+    const [userHasProAccess, setUserHasProAccess] = useState(false);
+    const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
+    
     // Upgrade to PRO handler
     const handleUpgradeToPro = () => {
         router.push('/pro-upgrade');
     };
+    
+    // Handle warrior status click - navigate to pro upgrade for plan changes
+    const handleWarriorStatusClick = () => {
+        router.push('/pro-upgrade');
+    };
+    
+
     
     // Performance monitoring
     const performanceRef = usePerformanceMonitor('Dashboard');
@@ -392,7 +458,7 @@ export function DashboardMainPage() {
 
     const [periodTotals, setPeriodTotals] = useState<PeriodTotals>({ calories: 0, protein: 0, carbohydrates: 0, fat: 0, caloriesBurned: 0 });
     const [activePeriodTab, setActivePeriodTab] = useState<'daily' | 'weekly' | 'ai-targets'>('daily');
-    const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date())); 
+    const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(getCurrentDateInUserTimezone())); 
 
     const [isLoadingInitialData, setIsLoadingInitialData] = useState(true);
     const [isCalculatingAiTargets, setIsCalculatingAiTargets] = useState(false);
@@ -413,10 +479,35 @@ export function DashboardMainPage() {
 
     useEffect(() => { setIsClient(true); }, []);
 
+    // Check Pro access when user is available
+    useEffect(() => {
+        const checkProAccess = async () => {
+            if (!userId) {
+                setIsCheckingProAccess(false);
+                return;
+            }
+            
+            try {
+                setIsCheckingProAccess(true);
+                const hasAccess = await hasProAccess(userId);
+                setUserHasProAccess(hasAccess);
+            } catch (error) {
+                console.error("[Dashboard] Error checking Pro access:", error);
+                setUserHasProAccess(false); // Default to no access on error
+            } finally {
+                setIsCheckingProAccess(false);
+            }
+        };
+
+        if (!authLoading && userId) {
+            checkProAccess();
+        }
+    }, [authLoading, userId]);
+
     // Get day name for display
     const getDayName = () => {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return days[new Date().getDay()];
+        return days[getCurrentDateInUserTimezone().getDay()];
     };
 
     const getDateRange = useCallback((type: 'daily' | 'weekly', date: Date): { start: Date; end: Date } => {
@@ -698,38 +789,48 @@ export function DashboardMainPage() {
     }, [authLoading, userId, hasLoadedInitialData, loadInitialDashboardData, isClient, handleAccessDeniedNavigation]);
 
     useEffect(() => {
-      if (!hasLoadedInitialData || isLoadingInitialData || !isClient || !userProfile) return;      console.log(`[Dashboard] Active tab or date changed to: ${activePeriodTab}. User profile available.`);
+      if (!hasLoadedInitialData || isLoadingInitialData || !isClient || !userId) return;
+      console.log(`[Dashboard] Active tab or date changed to: ${activePeriodTab}. Processing data.`);
+      
       if (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') {
-          const todayDateKey = format(new Date(), 'yyyy-MM-dd');
+              // Fetch today's daily nutrition summary directly from Firestore
+          const fetchTodaysSummary = async () => {
+              try {
+                  const todayDate = getCurrentDateInUserTimezone();
+                  const todayDateKey = formatDateInUserTimezone(todayDate);
+                  const todaysSummary = await getDailyNutritionSummaryData(userId, todayDateKey);
+                  
+                  if (todaysSummary) {
+                      console.log(`[Dashboard] Retrieved today's summary for ${todayDateKey}:`, todaysSummary);
+                      processLogsAndUpdateState('daily', [todaysSummary], dailyExerciseLogsState);
+                  } else {
+                      // Fallback to zero values if no summary returned
+                      const fallbackSummary = {
+                          id: todayDateKey, totalCalories: 0, totalProtein: 0,
+                          totalCarbohydrates: 0, totalFat: 0,
+                          entryCount: 0, lastUpdated: todayDate.toISOString()
+                      };
+                      processLogsAndUpdateState('daily', [fallbackSummary], dailyExerciseLogsState);
+                  }
+              } catch (error) {
+                  console.error("[Dashboard] Error fetching today's summary:", error);
+                  // Fallback to zero values if Firestore fails
+                  const todayDate = getCurrentDateInUserTimezone();
+                  const todayDateKey = formatDateInUserTimezone(todayDate);
+                  const fallbackSummary = {
+                      id: todayDateKey, totalCalories: 0, totalProtein: 0,
+                      totalCarbohydrates: 0, totalFat: 0,
+                      entryCount: 0, lastUpdated: todayDate.toISOString()
+                  };
+                  processLogsAndUpdateState('daily', [fallbackSummary], dailyExerciseLogsState);
+              }
+          };
           
-          // Check if today's data is actually from today and has entries
-          const isTodayDataValid = userProfile && 
-              userProfile.todayLastUpdated && 
-              userProfile.todayEntryCount && 
-              userProfile.todayEntryCount > 0 &&
-              (() => {
-                  // Handle both string and Timestamp types
-                  const lastUpdatedDate = userProfile.todayLastUpdated instanceof Timestamp 
-                      ? userProfile.todayLastUpdated.toDate() 
-                      : new Date(userProfile.todayLastUpdated);
-                  return format(lastUpdatedDate, 'yyyy-MM-dd') === todayDateKey;
-              })();
-          
-          const todaysSummary = isTodayDataValid ? {
-              id: todayDateKey, totalCalories: userProfile.todayCalories ?? 0, totalProtein: userProfile.todayProtein ?? 0,
-              totalCarbohydrates: userProfile.todayCarbohydrates ?? 0, totalFat: userProfile.todayFat ?? 0,
-              entryCount: userProfile.todayEntryCount ?? 0, lastUpdated: userProfile.todayLastUpdated ?? new Date().toISOString()
-          } : null;
-          
-          if(todaysSummary) {
-              processLogsAndUpdateState('daily', [todaysSummary], dailyExerciseLogsState);
-          } else {
-              processLogsAndUpdateState('daily', [], dailyExerciseLogsState);
-          }
+          fetchTodaysSummary();
       } else if (activePeriodTab === 'weekly') {
         fetchWeeklyLogsAndProcess();
       }
-    }, [activePeriodTab, selectedDate, userProfile, dailyExerciseLogsState, hasLoadedInitialData, isLoadingInitialData, isClient, processLogsAndUpdateState, fetchWeeklyLogsAndProcess]);
+    }, [activePeriodTab, selectedDate, userId, dailyExerciseLogsState, hasLoadedInitialData, isLoadingInitialData, isClient, processLogsAndUpdateState, fetchWeeklyLogsAndProcess]);
     
     const getRandomMotivationalTip = useCallback(() => {
       const tips = [
@@ -756,12 +857,12 @@ export function DashboardMainPage() {
     }, []);
 
     const fetchCalorieSuggestion = useCallback(async () => {
-      if (!userId || !userProfile || !dailyTargets || (activePeriodTab !== 'daily' && activePeriodTab !== 'ai-targets') || isFetchingSuggestionRef.current) return;
+      if (!userId || !dailyTargets || (activePeriodTab !== 'daily' && activePeriodTab !== 'ai-targets') || isFetchingSuggestionRef.current) return;
       
       isFetchingSuggestionRef.current = true; setIsLoadingSuggestion(true); setUiError(null); 
       
-      // Use hardcoded suggestion logic instead of AI
-      const currentCaloriesConsumed = userProfile.todayCalories ?? 0;
+      // Use periodTotals which now always comes from Firestore dailyNutritionSummaries
+      const currentCaloriesConsumed = periodTotals.calories;
       const currentCaloriesBurned = periodTotals.caloriesBurned;
       const targetCalories = dailyTargets.targetCalories;
       const netCaloriesConsumed = currentCaloriesConsumed - currentCaloriesBurned;
@@ -802,27 +903,18 @@ export function DashboardMainPage() {
       setCalorieAdjustmentSuggestion(suggestion);
       setIsLoadingSuggestion(false); 
       isFetchingSuggestionRef.current = false;
-    }, [userId, userProfile, dailyTargets, periodTotals.caloriesBurned, activePeriodTab, getRandomMotivationalTip]); 
+    }, [userId, dailyTargets, periodTotals, activePeriodTab, getRandomMotivationalTip]); 
 
     useEffect(() => {
-      if (hasLoadedInitialData && !isLoadingInitialData && isClient && (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') && userProfile && dailyTargets) {
-          // Recalculate periodTotals for daily based on userProfile.today... to ensure suggestion uses most current data
-          const currentDailyBurn = dailyExerciseLogsState.reduce((sum, log) => sum + (Number(log.estimatedCaloriesBurned) || 0), 0);
-          const updatedPeriodTotalsForSuggestion = {
-              calories: userProfile.todayCalories ?? 0,
-              protein: userProfile.todayProtein ?? 0,
-              carbohydrates: userProfile.todayCarbohydrates ?? 0,
-              fat: userProfile.todayFat ?? 0,
-              caloriesBurned: currentDailyBurn
-          };
-          // Directly use updated values for suggestion fetch
+      if (hasLoadedInitialData && !isLoadingInitialData && isClient && (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') && dailyTargets) {
+          // Fetch suggestion based on periodTotals which now always comes from Firestore
           if (!isFetchingSuggestionRef.current) {
               fetchCalorieSuggestion();
           }
       } else {
           setCalorieAdjustmentSuggestion(null);
       }
-    }, [userProfile, dailyTargets, dailyExerciseLogsState, activePeriodTab, fetchCalorieSuggestion, hasLoadedInitialData, isLoadingInitialData, isClient]); // Depend on userProfile.today... for suggestion
+    }, [periodTotals, dailyTargets, activePeriodTab, fetchCalorieSuggestion, hasLoadedInitialData, isLoadingInitialData, isClient]);
 
     const handleRecalculateAiTargets = useCallback(() => {
       if (!userProfile) { toast({ title: "Profile Error", description: "Profile not loaded.", variant: "destructive" }); return; }
@@ -845,9 +937,11 @@ export function DashboardMainPage() {
         console.log("[ Page] Refreshing page after navigation...");
         window.location.reload();
       }, 100);}
+        return;
       }
       setIsGeneratingPlan(true); setUiError(null);
-      const todayDateKey = format(new Date(), 'yyyy-MM-dd');
+      const todayDate = getCurrentDateInUserTimezone();
+      const todayDateKey = formatDateInUserTimezone(todayDate);
       const workoutPlanCacheKey = `${LOCAL_STORAGE_KEYS.WORKOUT_PLAN_PREFIX}${userId}`;
       try {
         // Map user profile fitness goal to AI flow fitness goal
@@ -886,8 +980,8 @@ export function DashboardMainPage() {
       else if (["stretch", "yoga"].some(type => exNameLower.includes(type))) inferredType = "flexibility";
 
 
-      const logTimestamp = new Date();
-      const todayDateKey = format(logTimestamp, 'yyyy-MM-dd');
+      const logTimestamp = getCurrentDateInUserTimezone();
+      const todayDateKey = formatDateInUserTimezone(logTimestamp);
       const dailyExerciseLogsCacheKey = `${LOCAL_STORAGE_KEYS.DAILY_EXERCISE_LOGS_PREFIX}${userId}-${todayDateKey}`;
       const completedWorkoutsCacheKey = `${LOCAL_STORAGE_KEYS.COMPLETED_WORKOUTS_PREFIX}${userId}-${todayDateKey}`;
 
@@ -911,13 +1005,37 @@ export function DashboardMainPage() {
           setDailyExerciseLogsState(prev => { 
               const updatedLogs = [...prev, newStoredLog].sort((a,b) => parseISO(b.timestamp).getTime() - parseISO(a.timestamp).getTime());              if(isClient) localStorage.setItem(dailyExerciseLogsCacheKey, JSON.stringify(updatedLogs));
               // Trigger re-processing for daily tab if it's active
-              if((activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') && userProfile) {
-                   const todaysSummary = {
-                      id: todayDateKey, totalCalories: userProfile.todayCalories ?? 0, totalProtein: userProfile.todayProtein ?? 0,
-                      totalCarbohydrates: userProfile.todayCarbohydrates ?? 0, totalFat: userProfile.todayFat ?? 0,
-                      entryCount: userProfile.todayEntryCount ?? 0, lastUpdated: userProfile.todayLastUpdated ?? new Date().toISOString()
+              if((activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') && userId) {
+                  // Fetch fresh daily nutrition summary from Firestore instead of using profile cache
+                  const refreshDailyData = async () => {
+                      try {
+                          const todayDateKey = formatDateInUserTimezone(getCurrentDateInUserTimezone());
+                          const todaysSummary = await getDailyNutritionSummaryData(userId, todayDateKey);
+                          if (todaysSummary) {
+                              processLogsAndUpdateState('daily', [todaysSummary], updatedLogs);
+                          } else {
+                              // Fallback to zero values
+                              const fallbackSummary = {
+                                  id: todayDateKey, totalCalories: 0, totalProtein: 0,
+                                  totalCarbohydrates: 0, totalFat: 0,
+                                  entryCount: 0, lastUpdated: getCurrentDateInUserTimezone().toISOString()
+                              };
+                              processLogsAndUpdateState('daily', [fallbackSummary], updatedLogs);
+                          }
+                      } catch (error) {
+                          console.error("[Dashboard] Error refreshing daily data after workout log:", error);
+                          // Fallback to zero values
+                          const todayDate = getCurrentDateInUserTimezone();
+                          const todayDateKey = formatDateInUserTimezone(todayDate);
+                          const fallbackSummary = {
+                              id: todayDateKey, totalCalories: 0, totalProtein: 0,
+                              totalCarbohydrates: 0, totalFat: 0,
+                              entryCount: 0, lastUpdated: todayDate.toISOString()
+                          };
+                          processLogsAndUpdateState('daily', [fallbackSummary], updatedLogs);
+                      }
                   };
-                  processLogsAndUpdateState('daily', [todaysSummary], updatedLogs);
+                  refreshDailyData();
               }
               return updatedLogs; 
           });
@@ -987,14 +1105,15 @@ export function DashboardMainPage() {
     const handleToggleWorkoutComplete = useCallback(async (exerciseName: string, currentStatus: boolean) => {
       if (!userId || !userProfile) { return; }
       
-      const todayDateKey = format(new Date(), 'yyyy-MM-dd');
+      const todayDate = getCurrentDateInUserTimezone();
+      const todayDateKey = formatDateInUserTimezone(todayDate);
       const exerciseDetail = weeklyWorkoutPlan ? weeklyWorkoutPlan[todayDayName as keyof WeeklyWorkoutPlan]?.find((ex: ExerciseDetail) => ex.exercise === exerciseName) : null;
       const completedEntry = completedWorkouts ? completedWorkouts[exerciseName] : null;
       const completedWorkoutsCacheKey = `${LOCAL_STORAGE_KEYS.COMPLETED_WORKOUTS_PREFIX}${userId}-${todayDateKey}`;
       const dailyExerciseLogsCacheKey = `${LOCAL_STORAGE_KEYS.DAILY_EXERCISE_LOGS_PREFIX}${userId}-${todayDateKey}`;
 
       if (!currentStatus) { 
-        const optimisticEntry: CompletedWorkoutEntry = { completed: true, timestamp: new Date().toISOString(), logId: null, loggedCalories: null, isEstimated: null };
+        const optimisticEntry: CompletedWorkoutEntry = { completed: true, timestamp: todayDate.toISOString(), logId: null, loggedCalories: null, isEstimated: null };
         setCompletedWorkouts(prev => { const updated = { ...prev, [exerciseName]: optimisticEntry }; if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); return updated; });
         
         if (exerciseDetail && exerciseName.toLowerCase() !== 'rest') {
@@ -1060,30 +1179,15 @@ export function DashboardMainPage() {
       }
     }, [userId, userProfile, toast, weeklyWorkoutPlan, todayDayName, completedWorkouts, isClient, selectedDate, getDateRange, estimateAndLogCalories, handleLogCompletedWorkout, createFirestoreServiceError, fetchWeeklyLogsAndProcess, processLogsAndUpdateState, activePeriodTab]);
 
-    const todayDateKeyForVisibility = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
+    const todayDateKeyForVisibility = useMemo(() => formatDateInUserTimezone(getCurrentDateInUserTimezone()), []);
 
     useEffect(() => {
       const handleVisibilityChange = async () => {
         if (document.visibilityState === 'visible' && userId && isClient && hasLoadedInitialData) {
-          console.log("[Dashboard] Tab became visible, refreshing profile and potentially daily data from cache/server.");
+          console.log("[Dashboard] Tab became visible, refreshing profile and daily data from server.");
           try {
-            let freshProfile = await getUserProfile(userId); 
-            const profileTodayLastUpdated = freshProfile.todayLastUpdated ? 
-              ((typeof freshProfile.todayLastUpdated === 'string') ? parseISO(freshProfile.todayLastUpdated) : (freshProfile.todayLastUpdated as Timestamp).toDate())
-              : null;
-
-            if (!profileTodayLastUpdated || !isSameDay(profileTodayLastUpdated, new Date())) {
-                console.log("[Dashboard] Profile's todayLastUpdated is stale on visibility change, refreshing today's summary...");
-                const dailySummaries = await getDailyNutritionSummaries(userId, startOfDay(new Date()), endOfDay(new Date()));
-                const todaysSummaryDoc = dailySummaries.find(s => s.id === todayDateKeyForVisibility);
-                const updatedTodayData: Partial<StoredUserProfile> = {
-                    todayCalories: todaysSummaryDoc?.totalCalories ?? 0, todayProtein: todaysSummaryDoc?.totalProtein ?? 0,
-                    todayCarbohydrates: todaysSummaryDoc?.totalCarbohydrates ?? 0, todayFat: todaysSummaryDoc?.totalFat ?? 0,
-                    todayEntryCount: todaysSummaryDoc?.entryCount ?? 0,
-                };
-                await saveUserProfile(userId, updatedTodayData);
-                freshProfile = { ...freshProfile, ...updatedTodayData, todayLastUpdated: new Date().toISOString() };
-            }
+            // Refresh user profile (without nutrition cache data)
+            const freshProfile = await getUserProfile(userId); 
             setUserProfile(freshProfile);
 
             // Refresh daily exercise logs from localStorage or server
@@ -1092,18 +1196,26 @@ export function DashboardMainPage() {
             const cachedEx = localStorage.getItem(dailyExerciseLogsCacheKey);
             if (cachedEx) try {newDailyExercise = JSON.parse(cachedEx)} catch(e) {localStorage.removeItem(dailyExerciseLogsCacheKey)}
             
-            if (newDailyExercise.length === 0 || !isSameDay(parseISO(newDailyExercise[0]?.timestamp || '1970-01-01'), new Date())) { // Basic check if cache might be old
-              newDailyExercise = await getExerciseLogs(userId, startOfDay(new Date()), endOfDay(new Date()));
+            if (newDailyExercise.length === 0 || !isSameDay(parseISO(newDailyExercise[0]?.timestamp || '1970-01-01'), getCurrentDateInUserTimezone())) { // Basic check if cache might be old
+              newDailyExercise = await getExerciseLogs(userId, startOfDay(getCurrentDateInUserTimezone()), endOfDay(getCurrentDateInUserTimezone()));
               localStorage.setItem(dailyExerciseLogsCacheKey, JSON.stringify(newDailyExercise));
             }
             setDailyExerciseLogsState(newDailyExercise);
+
+            // If on daily/ai-targets tab, refresh daily nutrition data from Firestore
+            if (activePeriodTab === 'daily' || activePeriodTab === 'ai-targets') {
+                const todaysSummary = await getDailyNutritionSummaryData(userId, todayDateKeyForVisibility);
+                if (todaysSummary) {
+                    processLogsAndUpdateState('daily', [todaysSummary], newDailyExercise);
+                }
+            }
 
           } catch (error) { console.error("[Dashboard] Error refreshing data on visibility change:", error); }
         }
       };
       document.addEventListener('visibilitychange', handleVisibilityChange);
       return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, [userId, isClient, hasLoadedInitialData, todayDateKeyForVisibility]);
+    }, [userId, isClient, hasLoadedInitialData, todayDateKeyForVisibility, activePeriodTab, processLogsAndUpdateState]);
 
     const canRegenerateWorkoutPlan = useMemo(() => {
       if (isGeneratingPlan || !weeklyWorkoutPlan || Object.keys(weeklyWorkoutPlan).length === 0) return true;
@@ -1249,16 +1361,38 @@ export function DashboardMainPage() {
                                         <div className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{new Date().toLocaleDateString()}</div>
                                     </div>
                                     
-                                    {/* Upgrade to PRO Button - Positioned to the right of date with more spacing */}
-                                    <Button 
-                                        variant="outline" 
-                                        size="sm" 
-                                        className={`border transition-all duration-300 hover:scale-105 text-xs px-3 py-1.5 ml-2 ${isDark ? 'border-orange-500/50 bg-[#1a1a1a] hover:bg-orange-500/10 text-orange-400 hover:text-orange-300' : 'border-orange-300 bg-white/50 backdrop-blur-sm hover:bg-orange-50 text-orange-600 hover:text-orange-700'}`} 
-                                        onClick={handleUpgradeToPro}
-                                    >
-                                        <Crown size={12} className="mr-1.5" />
-                                        Upgrade to PRO
-                                    </Button>
+                                    {/* Pro Status / Upgrade Button */}
+                                    <div className="flex items-center gap-2">
+                                        {isCheckingProAccess ? (
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className={`border transition-all duration-300 text-xs px-3 py-1.5 opacity-50 ${isDark ? 'border-gray-500/50 bg-[#1a1a1a] text-gray-400' : 'border-gray-300 bg-white/50 text-gray-600'}`}
+                                                disabled
+                                            >
+                                                <Crown size={12} className="mr-1.5 animate-pulse" />
+                                                Checking...
+                                            </Button>
+                                        ) : (
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className={`border transition-all duration-300 hover:scale-105 text-xs px-3 py-1.5 cursor-pointer ${
+                                                    userHasProAccess 
+                                                        ? isDark 
+                                                            ? 'border-green-500/50 bg-green-500/10 text-green-400 hover:bg-green-500/20 hover:text-green-300' 
+                                                            : 'border-green-400 bg-green-50 text-green-600 hover:bg-green-100 hover:text-green-700'
+                                                        : isDark 
+                                                            ? 'border-orange-500/50 bg-[#1a1a1a] hover:bg-orange-500/10 text-orange-400 hover:text-orange-300' 
+                                                            : 'border-orange-300 bg-white/50 backdrop-blur-sm hover:bg-orange-50 text-orange-600 hover:text-orange-700'
+                                                }`} 
+                                                onClick={userHasProAccess ? handleWarriorStatusClick : handleUpgradeToPro}
+                                            >
+                                                <Crown size={12} className="mr-1.5" />
+                                                {userHasProAccess ? "You're a Warrior" : "Upgrade to PRO"}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

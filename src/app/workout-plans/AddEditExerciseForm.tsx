@@ -165,15 +165,25 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                         }`}>Exercise Details</h3>
                     </div>
                     
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-blue-100/50">
-                        <Label htmlFor="exerciseName" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
+                    <div className={`backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border ${
+                        isDark 
+                            ? 'bg-[#333333]/60 border-[#4a4a4a]/50' 
+                            : 'bg-white/60 border-blue-100/50'
+                    }`}>
+                        <Label htmlFor="exerciseName" className={`text-sm font-semibold mb-2 sm:mb-3 block ${
+                            isDark ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                             Exercise Name *
                         </Label>
                         <Input 
                             id="exerciseName" 
                             value={exercise.exercise} 
                             onChange={e => handleChange('exercise', e.target.value)} 
-                            className="w-full h-10 sm:h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-gray-800 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm sm:text-base" 
+                            className={`w-full h-10 sm:h-12 backdrop-blur-sm rounded-lg sm:rounded-xl shadow-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm sm:text-base ${
+                                isDark 
+                                    ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30 text-white placeholder-gray-400' 
+                                    : 'bg-white/80 border-blue-200/30 text-gray-800 placeholder-gray-500'
+                            }`}
                             placeholder="Start typing exercise name (e.g., Bench Press, Squats)" 
                         />
                     </div>
@@ -188,72 +198,114 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
                             <span className="text-white font-bold text-sm sm:text-lg">2</span>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Volume & Intensity</h3>
+                        <h3 className={`text-lg sm:text-xl font-semibold ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Volume & Intensity</h3>
                     </div>
 
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-green-100/50">
+                    <div className={`backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border ${
+                        isDark 
+                            ? 'bg-[#333333]/60 border-[#4a4a4a]/50' 
+                            : 'bg-white/60 border-green-100/50'
+                    }`}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                             {/* Sets */}
                             <div>
-                                <Label className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
+                                <Label className={`text-sm font-semibold mb-2 sm:mb-3 block ${
+                                    isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
                                     Sets
                                 </Label>
-                                <div className="flex items-center justify-center space-x-3 sm:space-x-4 bg-white/60 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg">
+                                <div className={`flex items-center justify-center space-x-3 sm:space-x-4 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-lg ${
+                                    isDark 
+                                        ? 'bg-[#2a2a2a]/60' 
+                                        : 'bg-white/60'
+                                }`}>
                                     <Button 
                                         type="button" 
                                         variant="outline" 
                                         size="icon" 
                                         onClick={() => handleChange('sets', Math.max(1, (exercise.sets || 1) - 1))} 
-                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
+                                        className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
+                                            isDark 
+                                                ? 'bg-[#333333]/80 border-[#4a4a4a]/30 hover:bg-[#404040]/80' 
+                                                : 'bg-white/80 border-blue-200/30 hover:bg-blue-50/80'
+                                        }`}
                                     >
-                                        <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                                        <Minus className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                            isDark ? 'text-gray-300' : 'text-gray-600'
+                                        }`} />
                                     </Button>
-                                    <span className="text-xl sm:text-2xl font-bold w-8 sm:w-12 text-center text-gray-800">{exercise.sets || 1}</span>
+                                    <span className={`text-xl sm:text-2xl font-bold w-8 sm:w-12 text-center ${
+                                        isDark ? 'text-white' : 'text-gray-800'
+                                    }`}>{exercise.sets || 1}</span>
                                     <Button 
                                         type="button" 
                                         variant="outline" 
                                         size="icon" 
                                         onClick={() => handleChange('sets', (exercise.sets || 1) + 1)} 
-                                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 transition-all duration-200"
+                                        className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 ${
+                                            isDark 
+                                                ? 'bg-[#333333]/80 border-[#4a4a4a]/30 hover:bg-[#404040]/80' 
+                                                : 'bg-white/80 border-blue-200/30 hover:bg-blue-50/80'
+                                        }`}
                                     >
-                                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                                        <Plus className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                                            isDark ? 'text-gray-300' : 'text-gray-600'
+                                        }`} />
                                     </Button>
                                 </div>
                             </div>                            {/* Repetitions / Duration */}
                             <div>
-                                <Label className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
+                                <Label className={`text-sm font-semibold mb-2 sm:mb-3 block ${
+                                    isDark ? 'text-gray-300' : 'text-gray-700'
+                                }`}>
                                     Repetitions / Duration
                                 </Label>
                                 <div className="space-y-3 sm:space-y-4">
                                     <div className="grid grid-cols-2 gap-2 sm:gap-3">
                                         <div>
-                                            <Label className="text-xs text-gray-600 font-medium">Reps</Label>
+                                            <Label className={`text-xs font-medium ${
+                                                isDark ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>Reps</Label>
                                             <Input 
                                                 value={trackingType === 'reps' ? (exercise.reps || '') : ''} 
                                                 onChange={e => {
                                                     handleChange('reps', e.target.value);
                                                     if (e.target.value) setTrackingType('reps');
                                                 }} 
-                                                className="h-9 sm:h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base" 
+                                                className={`h-9 sm:h-11 backdrop-blur-sm rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base ${
+                                                    isDark 
+                                                        ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30 text-white placeholder-gray-400' 
+                                                        : 'bg-white/80 border-blue-200/30 text-gray-800 placeholder-gray-500'
+                                                }`}
                                                 placeholder="8-12" 
                                             />
                                         </div>
                                         <div>
-                                            <Label className="text-xs text-gray-600 font-medium">Time</Label>
+                                            <Label className={`text-xs font-medium ${
+                                                isDark ? 'text-gray-400' : 'text-gray-600'
+                                            }`}>Time</Label>
                                             <Input 
                                                 value={trackingType === 'duration' ? (exercise.reps || '') : ''} 
                                                 onChange={e => {
                                                     handleChange('reps', e.target.value);
                                                     if (e.target.value) setTrackingType('duration');
                                                 }} 
-                                                className="h-9 sm:h-11 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base" 
+                                                className={`h-9 sm:h-11 backdrop-blur-sm rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base ${
+                                                    isDark 
+                                                        ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30 text-white placeholder-gray-400' 
+                                                        : 'bg-white/80 border-blue-200/30 text-gray-800 placeholder-gray-500'
+                                                }`}
                                                 placeholder="60s" 
                                             />
                                         </div>
                                     </div>
                                     
                                     <div>
-                                        <p className="text-xs text-gray-600 font-medium mb-2 sm:mb-3">Quick Select:</p>
+                                        <p className={`text-xs font-medium mb-2 sm:mb-3 ${
+                                            isDark ? 'text-gray-400' : 'text-gray-600'
+                                        }`}>Quick Select:</p>
                                         <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                             {trackingOptions.map(option => (
                                                 <Button 
@@ -262,7 +314,11 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                                                     variant="outline" 
                                                     size="sm" 
                                                     onClick={() => handleChange('reps', option)} 
-                                                    className="text-xs h-7 sm:h-9 px-2 sm:px-4 bg-white/80 border-blue-200/30 shadow-lg hover:shadow-xl hover:bg-blue-50/80 rounded-lg sm:rounded-xl transition-all duration-200"
+                                                    className={`text-xs h-7 sm:h-9 px-2 sm:px-4 shadow-lg hover:shadow-xl rounded-lg sm:rounded-xl transition-all duration-200 ${
+                                                        isDark 
+                                                            ? 'bg-[#333333]/80 border-[#4a4a4a]/30 text-gray-300 hover:bg-[#404040]/80' 
+                                                            : 'bg-white/80 border-blue-200/30 text-gray-700 hover:bg-blue-50/80'
+                                                    }`}
                                                 >
                                                     {option}
                                                 </Button>
@@ -284,39 +340,61 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                         <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
                             <span className="text-white font-bold text-sm sm:text-lg">3</span>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-semibold text-gray-800">Additional Information</h3>
+                        <h3 className={`text-lg sm:text-xl font-semibold ${
+                            isDark ? 'text-white' : 'text-gray-800'
+                        }`}>Additional Information</h3>
                     </div>
 
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border border-purple-100/50 space-y-4 sm:space-y-5">
+                    <div className={`backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg border space-y-4 sm:space-y-5 ${
+                        isDark 
+                            ? 'bg-[#333333]/60 border-[#4a4a4a]/50' 
+                            : 'bg-white/60 border-purple-100/50'
+                    }`}>
                         <div>
-                            <Label htmlFor="notes" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
+                            <Label htmlFor="notes" className={`text-sm font-semibold mb-2 sm:mb-3 block ${
+                                isDark ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                                 Notes & Form Cues
                             </Label>
                             <Textarea 
                                 id="notes" 
                                 value={exercise.notes || ''} 
                                 onChange={e => handleChange('notes', e.target.value)} 
-                                className="w-full min-h-[80px] sm:min-h-[100px] bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg resize-none text-gray-800 placeholder-gray-500 text-sm sm:text-base" 
+                                className={`w-full min-h-[80px] sm:min-h-[100px] backdrop-blur-sm rounded-lg sm:rounded-xl shadow-lg resize-none text-sm sm:text-base ${
+                                    isDark 
+                                        ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30 text-white placeholder-gray-400' 
+                                        : 'bg-white/80 border-blue-200/30 text-gray-800 placeholder-gray-500'
+                                }`}
                                 placeholder="Add any form cues, modifications, or special instructions..." 
                             />
                         </div>
 
                         <div>
-                            <Label htmlFor="tutorialLink" className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3 block">
+                            <Label htmlFor="tutorialLink" className={`text-sm font-semibold mb-2 sm:mb-3 block ${
+                                isDark ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                                 Tutorial Link (Optional)
                             </Label>
                             <Input 
                                 id="tutorialLink" 
                                 value={exercise.youtubeLink || ''} 
                                 onChange={e => handleChange('youtubeLink', e.target.value)} 
-                                className="w-full h-10 sm:h-12 bg-white/80 backdrop-blur-sm border-blue-200/30 rounded-lg sm:rounded-xl shadow-lg text-gray-800 placeholder-gray-500 text-sm sm:text-base" 
+                                className={`w-full h-10 sm:h-12 backdrop-blur-sm rounded-lg sm:rounded-xl shadow-lg text-sm sm:text-base ${
+                                    isDark 
+                                        ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30 text-white placeholder-gray-400' 
+                                        : 'bg-white/80 border-blue-200/30 text-gray-800 placeholder-gray-500'
+                                }`}
                                 placeholder="https://youtube.com/watch?v=..." 
                             />
                         </div>
                     </div>
                 </motion.div>                {/* Action Buttons */}
                 <motion.div 
-                    className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-blue-200/30 p-3 sm:p-6 rounded-b-2xl sm:rounded-b-3xl"
+                    className={`sticky bottom-0 backdrop-blur-xl border-t p-3 sm:p-6 rounded-b-2xl sm:rounded-b-3xl ${
+                        isDark 
+                            ? 'bg-[#2a2a2a]/80 border-[#4a4a4a]/30' 
+                            : 'bg-white/80 border-blue-200/30'
+                    }`}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.3 }}
@@ -325,7 +403,11 @@ const AddEditExerciseForm: React.FC<AddEditExerciseFormProps> = ({
                         <Button 
                             variant="outline" 
                             onClick={onCancel} 
-                            className="flex-1 h-12 sm:h-14 border-blue-200/30 bg-white/80 text-gray-700 hover:bg-blue-50/50 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base"
+                            className={`flex-1 h-12 sm:h-14 rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base ${
+                                isDark 
+                                    ? 'border-[#4a4a4a]/30 bg-[#333333]/80 text-gray-300 hover:bg-[#404040]/50' 
+                                    : 'border-blue-200/30 bg-white/80 text-gray-700 hover:bg-blue-50/50'
+                            }`}
                         >
                             <X className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                             <span className="truncate">Cancel</span>

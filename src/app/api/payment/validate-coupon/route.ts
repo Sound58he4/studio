@@ -2,16 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Define coupon configurations
 const COUPON_CONFIGS = {
-  'Bagom30': { plan: 'monthly', discount: 30, description: '30% off Monthly Plan' },
-  'Bagoy50': { plan: 'yearly', discount: 50, description: '50% off Yearly Plan' },
+  'Bagom30': { plan: 'monthly', discount: 30, description: '30% off Monthly Warrior' },
   'Bagom10': { plan: 'monthly', finalAmount: 10, description: 'Monthly Warrior for just ₹10!' },
   'Bagom2': { plan: 'monthly', finalAmount: 2, description: 'Monthly Warrior for just ₹2!' },
-  'bago99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
-  'BAGO99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
-  'Bago99': { plan: 'both', discount: 99, description: '99% off - Almost Free!' },
-  'bago100': { plan: 'both', discount: 100, description: '100% off - Completely Free!' },
-  'BAGO100': { plan: 'both', discount: 100, description: '100% off - Completely Free!' },
-  'Bago100': { plan: 'both', discount: 100, description: '100% off - Completely Free!' },
+  'bago100': { plan: 'monthly', discount: 100, description: '100% off Monthly Warrior - Completely Free!' },
+  'BAGO100': { plan: 'monthly', discount: 100, description: '100% off Monthly Warrior - Completely Free!' },
+  'Bago100': { plan: 'monthly', discount: 100, description: '100% off Monthly Warrior - Completely Free!' },
+  'Bagoy50': { plan: 'yearly', finalAmount: 500, description: 'Annual Champion for just ₹500!' },
 } as const;
 
 interface ValidateCouponRequest {
@@ -48,8 +45,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if coupon is applicable to the selected plan
-    if (coupon.plan !== 'both' && coupon.plan !== plan) {
-      const requiredPlan = coupon.plan === 'monthly' ? 'Monthly' : 'Yearly';
+    if (coupon.plan !== plan) {
+      const requiredPlan = coupon.plan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion';
       return NextResponse.json(
         { 
           valid: false, 

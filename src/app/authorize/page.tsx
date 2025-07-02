@@ -2,48 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from '@/lib/firebase/exports';
-import { motion, AnimatePresence } from 'framer-motion';
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Loader2, 
   Dumbbell, 
-  Activity, 
-  Target, 
-  TrendingUp, 
-  Zap,
   Shield,
-  Users,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff
+  Users
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import AnimatedWrapper, { FadeInWrapper, SlideUpWrapper } from "@/components/ui/animated-wrapper";
 
 export default function AuthorizePage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Remove the problematic isClient state and loading guard
   useEffect(() => {
@@ -150,109 +125,6 @@ export default function AuthorizePage() {
     }
   };
 
-  const handleEmailSignIn = async () => {
-    setIsLoadingEmail(true);
-    setError(null);
-    console.log("[Authorize Page] Attempting Email/Password sign in...");
-
-    // Client-side validation
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (!password.trim()) {
-      setError("Please enter your password.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (!auth) {
-      console.error("[Authorize Page] Firebase Auth instance is not available.");
-      setError("Authentication service is not configured correctly.");
-      setIsLoadingEmail(false);
-      toast({ variant: "destructive", title: "Configuration Error", description: "Authentication service failed to load." });
-      return;
-    }
-
-    try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      console.log("[Authorize Page] Email/Password sign in result obtained.");
-      await setLoginCookieAndRedirect(result.user);
-    } catch (err: any) {
-      console.error("[Authorize Page] Email/Password sign in error occurred.");
-      const friendlyError = getFirebaseAuthErrorMessage(err);
-      setError(friendlyError);
-      toast({ variant: "destructive", title: "Email Sign-In Failed", description: friendlyError });
-      setIsLoadingEmail(false); // Ensure loading state is reset on error
-    }
-  };
-
-  const handleEmailSignUp = async () => {
-    setIsLoadingEmail(true);
-    setError(null);
-    console.log("[Authorize Page] Attempting Email/Password sign up...");
-
-    // Client-side validation
-    if (!email.trim()) {
-      setError("Please enter your email address.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (!password.trim()) {
-      setError("Please enter a password.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (!confirmPassword.trim()) {
-      setError("Please confirm your password.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      setIsLoadingEmail(false);
-      return;
-    }
-
-    if (!auth) {
-      console.error("[Authorize Page] Firebase Auth instance is not available.");
-      setError("Authentication service is not configured correctly.");
-      setIsLoadingEmail(false);
-      toast({ variant: "destructive", title: "Configuration Error", description: "Authentication service failed to load." });
-      return;
-    }
-
-    try {
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      console.log("[Authorize Page] Email/Password sign up result obtained.");
-      await setLoginCookieAndRedirect(result.user);
-    } catch (err: any) {
-      console.error("[Authorize Page] Email/Password sign up error occurred.");
-      const friendlyError = getFirebaseAuthErrorMessage(err);
-      setError(friendlyError);
-      toast({ variant: "destructive", title: "Email Sign-Up Failed", description: friendlyError });
-      setIsLoadingEmail(false); // Ensure loading state is reset on error
-    }
-  };
-
-  const features = [
-    { icon: Activity, title: "Track Progress", description: "Monitor your fitness journey" },
-    { icon: Target, title: "Set Goals", description: "Achieve your fitness targets" },
-    { icon: TrendingUp, title: "Analytics", description: "Detailed workout insights" },
-    { icon: Zap, title: "AI Powered", description: "Smart recommendations" },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
       <div className="w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 min-h-screen">
@@ -272,32 +144,15 @@ export default function AuthorizePage() {
 
           {/* Glass Card Container */}
           <div className="bg-card/80 backdrop-blur-sm rounded-2xl sm:rounded-3xl shadow-lg border border-border/50 p-6 sm:p-8">
-            {/* Tab Buttons */}
-            <div className="flex mb-4 sm:mb-6 bg-muted/30 rounded-xl sm:rounded-2xl p-1 shadow-inner border border-border/30">
-              <button
-                type="button"
-                onClick={() => setIsSignUp(false)}
-                className={cn(
-                  "flex-1 py-2.5 sm:py-3 px-3 sm:px-4 text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl transition-all duration-200",
-                  !isSignUp
-                    ? "bg-card/80 backdrop-blur-sm text-blue-600 shadow-md border border-border/50"
-                    : "text-muted-foreground hover:bg-card/50 hover:backdrop-blur-sm"
-                )}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSignUp(true)}
-                className={cn(
-                  "flex-1 py-2.5 sm:py-3 px-3 sm:px-4 text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl transition-all duration-200",
-                  isSignUp
-                    ? "bg-card/80 backdrop-blur-sm text-blue-600 shadow-md border border-border/50"
-                    : "text-muted-foreground hover:bg-card/50 hover:backdrop-blur-sm"
-                )}
-              >
-                Sign Up
-              </button>
+            
+            {/* Welcome Text */}
+            <div className="text-center mb-6 sm:mb-8">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+                Welcome to Bago Fitness
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Sign in with your Google account to get started
+              </p>
             </div>
 
             {/* Error Display */}
@@ -306,129 +161,6 @@ export default function AuthorizePage() {
                 <p className="text-sm text-destructive font-medium">{error}</p>
               </div>
             )}
-
-            {/* Forms */}
-            {isSignUp ? (
-              <form onSubmit={handleEmailSignUp} className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
-                {/* Email Field */}
-                <div className="space-y-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    className="h-12 sm:h-14 px-4 sm:px-6 bg-muted/30 border-border/50 rounded-xl sm:rounded-2xl shadow-inner focus:shadow-md focus:ring-2 focus:ring-blue-500/20 text-foreground placeholder:text-muted-foreground text-sm sm:text-base"
-                  />
-                </div>
-                {/* Password Field */}
-                <div className="space-y-2 relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="h-12 sm:h-14 px-4 sm:px-6 pr-12 sm:pr-14 bg-muted/30 border-border/50 rounded-xl sm:rounded-2xl shadow-inner focus:shadow-md focus:ring-2 focus:ring-blue-500/20 text-foreground placeholder:text-muted-foreground text-sm sm:text-base"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-lg bg-card/60 backdrop-blur-sm shadow-inner border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {/* Confirm Password Field */}
-                <div className="space-y-2 relative">
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your password"
-                    required
-                    className="h-12 sm:h-14 px-4 sm:px-6 bg-muted/30 border-border/50 rounded-xl sm:rounded-2xl shadow-inner focus:shadow-md focus:ring-2 focus:ring-blue-500/20 text-foreground placeholder:text-muted-foreground text-sm sm:text-base"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isLoadingEmail}
-                  className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] border-0 text-sm sm:text-base"
-                >
-                  {isLoadingEmail ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Signing Up...</span>
-                    </div>
-                  ) : (
-                    "Sign Up with Email"
-                  )}
-                </Button>
-              </form>
-            ) : (
-              <form onSubmit={handleEmailSignIn} className="space-y-4 sm:space-y-6 mb-4 sm:mb-6">
-                {/* Email Field */}
-                <div className="space-y-2">
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    className="h-12 sm:h-14 px-4 sm:px-6 bg-muted/30 border-border/50 rounded-xl sm:rounded-2xl shadow-inner focus:shadow-md focus:ring-2 focus:ring-blue-500/20 text-foreground placeholder:text-muted-foreground text-sm sm:text-base"
-                  />
-                </div>
-                {/* Password Field */}
-                <div className="space-y-2 relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="h-12 sm:h-14 px-4 sm:px-6 pr-12 sm:pr-14 bg-muted/30 border-border/50 rounded-xl sm:rounded-2xl shadow-inner focus:shadow-md focus:ring-2 focus:ring-blue-500/20 text-foreground placeholder:text-muted-foreground text-sm sm:text-base"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 rounded-lg bg-card/60 backdrop-blur-sm shadow-inner border border-border/30 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isLoadingEmail}
-                  className="w-full h-12 sm:h-14 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl sm:rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-[1.02] border-0 text-sm sm:text-base"
-                >
-                  {isLoadingEmail ? (
-                    <div className="flex items-center space-x-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Signing In...</span>
-                    </div>
-                  ) : (
-                    "Sign In with Email"
-                  )}
-                </Button>
-              </form>
-            )}
-
-            {/* Divider */}
-            <div className="relative mb-4 sm:mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-              </div>
-              <div className="relative flex justify-center text-xs sm:text-sm">
-                <span className="px-3 sm:px-4 bg-card/80 backdrop-blur-sm text-muted-foreground font-medium rounded-lg sm:rounded-xl shadow-inner border border-border/30">
-                 
-                </span>
-              </div>
-            </div>
 
             {/* Google Login */}
             <Button

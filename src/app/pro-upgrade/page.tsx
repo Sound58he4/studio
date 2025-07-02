@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { ToastAction } from '@/components/ui/toast';
 import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +36,12 @@ const ProUpgrade = () => {
       discount_amount: number;
       final_amount: number;
       savings: number;
+    };
+    coupon?: {
+      code: string;
+      discount: number;
+      description: string;
+      applicable_plan: 'monthly' | 'yearly';
     };
     is_free?: boolean;
   } | null>(null);
@@ -144,6 +151,17 @@ const ProUpgrade = () => {
       const result = await validateCoupon(couponCode, selectedPlan, originalAmount);
       
       if (result.valid) {
+        // Auto-select the correct plan if the coupon is for a different plan
+        const couponPlan = result.coupon?.applicable_plan;
+        if (couponPlan && couponPlan !== selectedPlan) {
+          setSelectedPlan(couponPlan);
+          toast({
+            title: "🔄 Plan Auto-Selected",
+            description: `Switched to ${couponPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan for this coupon.`,
+            duration: 4000,
+          });
+        }
+        
         setAppliedCoupon(couponCode);
         setCouponValidation(result);
         toast({
@@ -152,12 +170,33 @@ const ProUpgrade = () => {
           duration: 6000,
         });
       } else {
-        setCouponValidation(result);
-        toast({
-          title: "❌ Invalid Coupon",
-          description: result.message || "The coupon code you entered is not valid.",
-          duration: 5000,
-        });
+        // If the coupon is valid but for a different plan, show a helpful message
+        if (result.error === 'Coupon not applicable to selected plan' && result.message) {
+          const requiredPlan = result.message.includes('Monthly Warrior') ? 'monthly' : 'yearly';            toast({
+              title: "🔄 Switch Plan Required",
+              description: `This coupon is for the ${requiredPlan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan. Click below to switch.`,
+              duration: 8000,
+              action: (
+                <ToastAction 
+                  altText="Switch Plan"
+                  onClick={() => {
+                    setSelectedPlan(requiredPlan);
+                    // Re-apply the coupon after switching plans
+                    setTimeout(() => applyCoupon(), 500);
+                  }}
+                >
+                  Switch Plan
+                </ToastAction>
+              )
+            });
+        } else {
+          setCouponValidation(result);
+          toast({
+            title: "❌ Invalid Coupon",
+            description: result.message || "The coupon code you entered is not valid.",
+            duration: 5000,
+          });
+        }
       }
     } catch (error) {
       console.error('Coupon validation error:', error);
@@ -184,22 +223,34 @@ const ProUpgrade = () => {
 
   const getDiscountedPrice = (originalPrice: number, plan: 'monthly' | 'yearly') => {
     if (couponValidation?.valid && couponValidation.pricing) {
-      return couponValidation.pricing.final_amount;
+      // Only apply discount if coupon is valid for this specific plan
+      const couponPlan = couponValidation.coupon?.applicable_plan;
+      if (couponPlan === plan) {
+        return couponValidation.pricing.final_amount;
+      }
     }
     return originalPrice;
   };
 
-  const getSavings = (originalPrice: number) => {
+  const getSavings = (originalPrice: number, plan: 'monthly' | 'yearly') => {
     if (couponValidation?.valid && couponValidation.pricing) {
-      return couponValidation.pricing.savings;
+      // Only show savings if coupon is valid for this specific plan
+      const couponPlan = couponValidation.coupon?.applicable_plan;
+      if (couponPlan === plan) {
+        return couponValidation.pricing.savings;
+      }
     }
     return 0;
   };
 
-  const getDiscountPercent = () => {
+  const getDiscountPercent = (plan: 'monthly' | 'yearly') => {
     if (couponValidation?.valid && couponValidation.pricing) {
-      const { original_amount, discount_amount } = couponValidation.pricing;
-      return Math.round((discount_amount / original_amount) * 100);
+      // Only show discount percentage if coupon is valid for this specific plan
+      const couponPlan = couponValidation.coupon?.applicable_plan;
+      if (couponPlan === plan) {
+        const { original_amount, discount_amount } = couponValidation.pricing;
+        return Math.round((discount_amount / original_amount) * 100);
+      }
     }
     return 0;
   };
@@ -294,6 +345,16 @@ const ProUpgrade = () => {
       console.error('Payment error:', error);
       // Error handling is already done in the hook
     }
+  };
+
+  const isCouponApplicableToSelectedPlan = () => {
+    if (!couponValidation?.valid || !couponValidation.coupon) return false;
+    const couponPlan = couponValidation.coupon.applicable_plan;
+    return couponPlan === selectedPlan;
+  };
+
+  const isSelectedPlanFree = () => {
+    return couponValidation?.is_free && isCouponApplicableToSelectedPlan();
   };
 
   return (
@@ -471,19 +532,19 @@ const ProUpgrade = () => {
                         </div>
                         
                         {/* Show original price and discount if coupon is applied */}
-                        {appliedCoupon && couponValidation?.valid && getSavings(plan.originalPrice) > 0 && (
+                        {appliedCoupon && couponValidation?.valid && getSavings(plan.originalPrice, plan.id as 'monthly' | 'yearly') > 0 && (
                           <div className={`flex items-center justify-center gap-2 ${isMobile ? 'mb-2' : 'mb-3'}`}>
                             <span className={`${isMobile ? 'text-base' : 'text-lg'} line-through ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
                               ₹{plan.originalPrice}
                             </span>
                             <Badge className={`${couponValidation.is_free ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'} text-sm font-bold`}>
-                              {getDiscountPercent()}% OFF
+                              {getDiscountPercent(plan.id as 'monthly' | 'yearly')}% OFF
                             </Badge>
                           </div>
                         )}
 
                         {/* Free plan indicator */}
-                        {couponValidation?.is_free && (
+                        {couponValidation?.is_free && couponValidation.coupon && couponValidation.coupon.applicable_plan === plan.id && (
                           <div className={`${isMobile ? 'p-3 mb-3' : 'p-4 mb-4'} rounded-xl ${isDark ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
                             <p className={`${isMobile ? 'text-sm' : 'text-base'} font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
                               🎉 COMPLETELY FREE!
@@ -527,13 +588,13 @@ const ProUpgrade = () => {
               </span>
             </div>
             <p className={`${isMobile ? 'text-sm' : 'text-base'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-              Apply your discount code below! Try "Bagom10" for Monthly Warrior at just ₹10! 
+              If a coupon code is provided on the Offers page, make sure to use it — you might get lucky!
             </p>
           </div>
 
           <div className={`flex ${isMobile ? 'flex-col gap-3' : 'gap-4'} max-w-lg mx-auto`}>
             <Input 
-              placeholder="Enter your coupon code (e.g., Bagom10, Bagom2)" 
+              placeholder="Enter your coupon code" 
               value={couponCode} 
               onChange={(e) => setCouponCode(e.target.value)}
               disabled={validatingCoupon || paymentLoading}
@@ -556,7 +617,20 @@ const ProUpgrade = () => {
                   <Badge className={`${couponValidation.is_free ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} ${isMobile ? 'text-base px-3 py-2' : 'text-lg px-4 py-2'}`}>
                     ✅ Coupon "{appliedCoupon}" activated!
                   </Badge>
-                  {couponValidation.pricing && (
+                  
+                  {/* Plan-specific message */}
+                  {!isCouponApplicableToSelectedPlan() && (
+                    <div className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl ${isDark ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'}`}>
+                      <p className={`${isMobile ? 'text-sm' : 'text-base'} font-medium ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>
+                        ⚠️ This coupon is only valid for the {couponValidation.coupon?.applicable_plan === 'monthly' ? 'Monthly Warrior' : 'Annual Champion'} plan.
+                      </p>
+                      <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-yellow-300' : 'text-yellow-600'} mt-1`}>
+                        Switch to that plan to apply the discount.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {couponValidation.pricing && isCouponApplicableToSelectedPlan() && (
                     <div className={`${isMobile ? 'p-4' : 'p-6'} rounded-xl ${isDark ? 'bg-green-500/20 border border-green-500/30' : 'bg-green-50 border border-green-200'}`}>
                       <p className={`${isMobile ? 'text-sm' : 'text-base'} font-medium ${isDark ? 'text-green-400' : 'text-green-700'}`}>
                         {couponValidation.message}
@@ -594,7 +668,6 @@ const ProUpgrade = () => {
           {!appliedCoupon && (
             <div className={`text-center ${isMobile ? 'mt-4' : 'mt-6'}`}>
               <p className={`${isMobile ? 'text-xs' : 'text-sm'} ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>
-                💡 Hint: Try "Bagom30" for monthly, "Bagoy50" for yearly, or "bago99" for 99% off!
               </p>
             </div>
           )}
@@ -625,13 +698,13 @@ const ProUpgrade = () => {
                 </>
               ) : (
                 <>
-                  {couponValidation?.is_free ? 'Activate Free Subscription' : 'Upgrade Now'}
+                  {isSelectedPlanFree() ? 'Activate Free Subscription' : 'Upgrade Now'}
                 </>
               )}
             </Button>
           )}
           <p className={`${isMobile ? 'text-sm mt-3' : 'text-base mt-4'} ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            {couponValidation?.is_free 
+            {isSelectedPlanFree()
               ? 'Your subscription will be activated instantly - no payment required!'
               : 'Join thousands of users already achieving their fitness goals!'
             }
