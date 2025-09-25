@@ -5,14 +5,11 @@
 
 [build.environment]
   NODE_VERSION = "18"
+  NPM_USE_PRODUCTION = "false"
 
 # Enable Netlify Next.js plugin
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_USE_PRODUCTION = "false"
 
 # Headers for PWA and security
 [[headers]]
