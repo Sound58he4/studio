@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/ai-instance';
 import { z } from 'genkit';
-import { getUserProfile } from '@/services/firestore'; // Import function to get profile
+import { getUserProfile } from '@/services/free-mode-firestore'; // Import function to get profile
 // Import FitnessGoal type and helper array
 import type { StoredUserProfile } from '@/app/dashboard/types';
 import { fitnessGoalValues } from '@/app/dashboard/types'; // Import the helper array
@@ -72,7 +72,7 @@ export async function suggestFoodItems(input: SuggestFoodItemsInput): Promise<Su
 
   // Extract relevant profile info for the prompt context
   const promptInput: z.infer<typeof FlowInputSchema> = {
-    fitnessGoal: userProfile.fitnessGoal, // Pass the goal
+    fitnessGoal: userProfile.fitnessGoal || 'stay_fit' as const, // Pass the goal with fallback
     localFoodStyle: userProfile.localFoodStyle || 'Not Specified',
     dietaryStyles: Array.isArray(userProfile.dietaryStyles) ? userProfile.dietaryStyles.join(', ') : 'Not Specified',
     foodPreferences: userProfile.foodPreferences || 'None',

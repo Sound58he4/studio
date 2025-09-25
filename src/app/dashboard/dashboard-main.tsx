@@ -3,22 +3,19 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, startOfDay, endOfDay, startOfWeek, endOfWeek, getDay, isWithinInterval, differenceInCalendarDays, isSameDay, subDays } from 'date-fns';
-import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/context/AuthContext';
-import { usePerformanceMonitor, useFirebasePerformance } from '@/hooks/use-performance';
-import {
+import { usePerformanceMonitor } from '@/hooks/use-performance';
+import { 
   getUserProfile, saveUserProfile, getFoodLogs, getExerciseLogs,
   addExerciseLog, deleteLogEntry, saveWorkoutPlan, getWorkoutPlan,
-  getCompletedWorkoutsForDate, saveCompletedWorkout, deleteCompletedWorkout, 
-  getDailyNutritionSummaries
-} from '@/services/firestore';
-import { hasProAccess } from '@/services/firestore/subscriptionService';
-import { createFirestoreServiceError } from '@/services/firestore/utils';
-import { db } from '@/lib/firebase/exports';
-import {
-  doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, runTransaction, serverTimestamp
-} from 'firebase/firestore';
-
+  getDashboardData, getDailyNutritionSummary, getDailyNutritionSummaries,
+  getCompletedWorkoutsForDate, saveCompletedWorkout, deleteCompletedWorkout
+} from '@/services/free-mode-firestore';
+import { hasProAccess } from '@/services/free-mode-subscription';
+// Firebase imports disabled for free mode
+// import { createFirestoreServiceError } from '@/services/firestore/utils';
+// import { db } from '@/lib/firebase/exports';
+// import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { calculateDailyTargets, CalculateTargetsInput, CalculateTargetsOutput } from '@/ai/flows/dashboard-update';
 import { generateWorkoutPlan, WeeklyWorkoutPlan as AIWeeklyWorkoutPlan, ExerciseDetail as AIExerciseDetail } from '@/ai/flows/generate-workout-plan';
 import { estimateCaloriesBurned, EstimateCaloriesBurnedInput } from '@/ai/flows/estimate-calories-burned';
@@ -95,13 +92,7 @@ const formatDateInUserTimezone = (date: Date, formatStr: string = 'yyyy-MM-dd'):
 
 const getUserProfileData = async (userId: string): Promise<StoredUserProfile | null> => {
   try {
-    const userProfileRef = doc(db, 'users', userId);
-    const userProfileSnap = await getDoc(userProfileRef);
-    
-    if (userProfileSnap.exists()) {
-      return userProfileSnap.data() as StoredUserProfile;
-    }
-    return null;
+    return await getUserProfile(userId);
   } catch (error: any) {
     console.error("[Dashboard] Error fetching user profile:", error);
     return null;
@@ -110,17 +101,15 @@ const getUserProfileData = async (userId: string): Promise<StoredUserProfile | n
 
 const getFoodLogsForDay = async (userId: string, date: Date): Promise<StoredFoodLogEntry[]> => {
   try {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const allLogs = await getFoodLogs(userId, dateStr);
+    // Filter by date range for the specific day
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
-
-    const foodLogsSnap = await getDocs(query(
-      collection(db, 'users', userId, 'foodLog'),
-      where('timestamp', '>=', dayStart.toISOString()),
-      where('timestamp', '<=', dayEnd.toISOString()),
-      orderBy('timestamp', 'desc')
-    ));
-
-    return foodLogsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as StoredFoodLogEntry));
+    return allLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= dayStart && logDate <= dayEnd;
+    });
   } catch (error: any) {
     console.error("[Dashboard] Error fetching food logs:", error);
     return [];
@@ -129,17 +118,15 @@ const getFoodLogsForDay = async (userId: string, date: Date): Promise<StoredFood
 
 const getExerciseLogsForDay = async (userId: string, date: Date): Promise<StoredExerciseLogEntry[]> => {
   try {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const allLogs = await getExerciseLogs(userId, dateStr);
+    // Filter by date range for the specific day
     const dayStart = startOfDay(date);
     const dayEnd = endOfDay(date);
-
-    const exerciseLogsSnap = await getDocs(query(
-      collection(db, 'users', userId, 'exerciseLog'),
-      where('timestamp', '>=', dayStart.toISOString()),
-      where('timestamp', '<=', dayEnd.toISOString()),
-      orderBy('timestamp', 'desc')
-    ));
-
-    return exerciseLogsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as StoredExerciseLogEntry));
+    return allLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= dayStart && logDate <= dayEnd;
+    });
   } catch (error: any) {
     console.error("[Dashboard] Error fetching exercise logs:", error);
     return [];
@@ -148,48 +135,10 @@ const getExerciseLogsForDay = async (userId: string, date: Date): Promise<Stored
 
 const getDailyNutritionSummaryData = async (userId: string, dateStr: string): Promise<DailyNutritionSummary | null> => {
   try {
-    const summaryDocRef = doc(db, 'users', userId, 'dailyNutritionSummaries', dateStr);
-    const summarySnap = await getDoc(summaryDocRef);
-    
-    if (summarySnap.exists()) {
-      const data = summarySnap.data() as DailyNutritionSummary;
-      console.log(`[Dashboard] Found existing daily nutrition summary for ${dateStr}:`, data);
-      return {
-        ...data,
-        id: dateStr // Ensure ID is set
-      };
-    }
-    
-    // Create new document with initial zero values if it doesn't exist
-    console.log(`[Dashboard] Creating new daily nutrition summary document for ${dateStr}`);
-    const currentTimestamp = new Date().toISOString();
-    const initialSummary: DailyNutritionSummary = {
-      id: dateStr,
-      totalCalories: 0,
-      totalProtein: 0,
-      totalCarbohydrates: 0,
-      totalFat: 0,
-      entryCount: 0,
-      lastUpdated: currentTimestamp
-    };
-    
-    try {
-      // Set the document with serverTimestamp for Firestore
-      await setDoc(summaryDocRef, {
-        ...initialSummary,
-        lastUpdated: serverTimestamp()
-      });
-      console.log(`[Dashboard] Successfully created daily nutrition summary document for ${dateStr}`);
-    } catch (createError: any) {
-      console.warn(`[Dashboard] Failed to create document for ${dateStr}, but returning zero values:`, createError);
-      // Continue to return initial summary even if document creation fails
-    }
-    
-    // Return the initial summary with ISO string timestamp for client usage
-    return initialSummary;
+    return await getDailyNutritionSummary(userId, dateStr);
   } catch (error: any) {
-    console.error("[Dashboard] Error fetching/creating daily nutrition summary:", error);
-    // Return zero values as fallback instead of null
+    console.error("[Dashboard] Error fetching daily nutrition summary:", error);
+    // Return zero values as fallback
     const fallbackSummary: DailyNutritionSummary = {
       id: dateStr,
       totalCalories: 0,
@@ -199,24 +148,20 @@ const getDailyNutritionSummaryData = async (userId: string, dateStr: string): Pr
       entryCount: 0,
       lastUpdated: new Date().toISOString()
     };
-    console.log(`[Dashboard] Returning fallback zero values for ${dateStr}`);
     return fallbackSummary;
   }
 };
 
 const getWeeklyExerciseLogsData = async (userId: string, date: Date): Promise<StoredExerciseLogEntry[]> => {
   try {
+    const allLogs = await getExerciseLogs(userId);
+    // Filter by week range
     const weekStart = startOfWeek(date, { weekStartsOn: 0 });
     const weekEnd = endOfWeek(date, { weekStartsOn: 0 });
-
-    const exerciseLogsSnap = await getDocs(query(
-      collection(db, 'users', userId, 'exerciseLog'),
-      where('timestamp', '>=', weekStart.toISOString()),
-      where('timestamp', '<=', weekEnd.toISOString()),
-      orderBy('timestamp', 'desc')
-    ));
-
-    return exerciseLogsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as StoredExerciseLogEntry));
+    return allLogs.filter(log => {
+      const logDate = new Date(log.timestamp);
+      return logDate >= weekStart && logDate <= weekEnd;
+    });
   } catch (error: any) {
     console.error("[Dashboard] Error fetching weekly exercise logs:", error);
     return [];
@@ -256,12 +201,7 @@ const getWeeklyNutritionSummariesData = async (userId: string, date: Date): Prom
 
 const getWorkoutPlanData = async (userId: string): Promise<WeeklyWorkoutPlan | null> => {
   try {
-    const workoutPlanSnap = await getDoc(doc(db, 'users', userId, 'workoutPlan', 'current'));
-    
-    if (workoutPlanSnap.exists()) {
-      return workoutPlanSnap.data() as WeeklyWorkoutPlan;
-    }
-    return null;
+    return await getWorkoutPlan(userId);
   } catch (error: any) {
     console.error("[Dashboard] Error fetching workout plan:", error);
     return null;
@@ -271,25 +211,7 @@ const getWorkoutPlanData = async (userId: string): Promise<WeeklyWorkoutPlan | n
 const getCompletedWorkoutsForDateData = async (userId: string, date: Date): Promise<CompletedWorkouts> => {
   try {
     const dateKey = format(date, 'yyyy-MM-dd');
-    const completedWorkoutsSnap = await getDoc(doc(db, 'users', userId, 'completedWorkouts', dateKey));
-
-    const completedWorkouts: CompletedWorkouts = {};
-    if (completedWorkoutsSnap.exists()) {
-      const data = completedWorkoutsSnap.data();
-      if (data) {
-        for (const exerciseName in data) {
-          completedWorkouts[exerciseName] = {
-            completed: data[exerciseName]?.completed ?? false,
-            timestamp: data[exerciseName]?.timestamp ?? new Date().toISOString(),
-            logId: data[exerciseName]?.logId ?? null,
-            loggedCalories: data[exerciseName]?.loggedCalories ?? null,
-            isEstimated: data[exerciseName]?.isEstimated ?? null,
-          };
-        }
-      }
-    }
-
-    return completedWorkouts;
+    return await getCompletedWorkoutsForDate(userId, dateKey);
   } catch (error: any) {
     console.error("[Dashboard] Error fetching completed workouts:", error);
     return {};
@@ -298,8 +220,12 @@ const getCompletedWorkoutsForDateData = async (userId: string, date: Date): Prom
 
 const getPointsData = async (userId: string): Promise<any> => {
   try {
-    const pointsSnap = await getDoc(doc(db, 'users', userId, 'points', 'current'));
-    return pointsSnap.exists() ? pointsSnap.data() : null;
+    // Return default points data for free mode
+    return {
+      totalPoints: 0,
+      weeklyPoints: 0,
+      lastUpdated: new Date().toISOString()
+    };
   } catch (error: any) {
     console.error("[Dashboard] Error fetching points data:", error);
     return null;
@@ -310,98 +236,50 @@ const batchGetDashboardData = async (request: BatchDataRequest): Promise<Dashboa
   const { userId, selectedDate, includeDailyLogs, includeWeeklyData, includeWorkoutData, includePointsData } = request;
 
   if (!userId) {
-    throw createFirestoreServiceError("User ID is required for dashboard data.", "invalid-argument");
+    throw new Error("User ID is required for dashboard data.");
   }
 
-  console.log(`[Dashboard] Batch fetching data for user: ${userId}`);
+  console.log(`[Dashboard] Free Mode - Batch fetching data for user: ${userId}`);
 
   try {
-    // Initialize all promises
-    const operations: Promise<any>[] = [];
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
     
-    // Always get user profile
-    operations.push(getUserProfileData(userId)); // 0
+    // Use free mode services for data fetching
+    const [userProfile, dailyFoodLogs, dailyExerciseLogs, workoutPlan, completedWorkouts] = await Promise.all([
+      getUserProfile(userId),
+      includeDailyLogs ? getFoodLogs(userId, dateStr) : [],
+      includeDailyLogs ? getExerciseLogs(userId, dateStr) : [],
+      includeWorkoutData ? getWorkoutPlan(userId) : null,
+      includeWorkoutData ? getCompletedWorkoutsForDate(userId, dateStr) : {}
+    ]);
 
-    // Add conditional operations based on request
-    if (includeDailyLogs) {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      operations.push(
-        getFoodLogsForDay(userId, selectedDate), // 1
-        getExerciseLogsForDay(userId, selectedDate), // 2
-        getDailyNutritionSummaryData(userId, dateStr) // 3
-      );
-    }
+    // Calculate nutrition summary from daily logs
+    const dailyNutritionSummary = includeDailyLogs ? await getDailyNutritionSummary(userId, dateStr) : null;
+    
+    // For weekly data, get summaries for the past 7 days
+    const weeklyNutritionSummaries = includeWeeklyData ? await getDailyNutritionSummaries(userId, 
+      format(new Date(selectedDate.getTime() - 6 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      dateStr
+    ) : [];
 
-    if (includeWeeklyData) {
-      operations.push(
-        getWeeklyExerciseLogsData(userId, selectedDate), // 4 or varies
-        getWeeklyNutritionSummariesData(userId, selectedDate) // 5 or varies
-      );
-    }
-
-    if (includeWorkoutData) {
-      operations.push(
-        getWorkoutPlanData(userId), // varies
-        getCompletedWorkoutsForDateData(userId, selectedDate) // varies
-      );
-    }
-
-    if (includePointsData) {
-      operations.push(getPointsData(userId)); // varies
-    }
-
-    // Execute all operations in parallel
-    const results = await Promise.allSettled(operations);
-
-    // Initialize result object
     const dashboardData: DashboardData = {
-      userProfile: extractFulfilledValue(results[0]),
-      dailyNutritionSummary: null,
-      weeklyNutritionSummaries: [],
-      dailyFoodLogs: [],
-      dailyExerciseLogs: [],
-      weeklyExerciseLogs: [],
-      completedWorkouts: {},
-      workoutPlan: null,
-      pointsData: null
+      userProfile,
+      dailyNutritionSummary,
+      weeklyNutritionSummaries,
+      dailyFoodLogs: dailyFoodLogs || [],
+      dailyExerciseLogs: dailyExerciseLogs || [],
+      weeklyExerciseLogs: [], // Could implement if needed
+      completedWorkouts: completedWorkouts || {},
+      workoutPlan,
+      pointsData: includePointsData ? { total: 100, weekly: 50, streak: 7 } : null // Mock points data
     };
 
-    // Extract results based on what was requested
-    let operationIndex = 1;
-
-    if (includeDailyLogs) {
-      dashboardData.dailyFoodLogs = extractFulfilledValue(results[operationIndex]) || [];
-      operationIndex++;
-      dashboardData.dailyExerciseLogs = extractFulfilledValue(results[operationIndex]) || [];
-      operationIndex++;
-      dashboardData.dailyNutritionSummary = extractFulfilledValue(results[operationIndex]);
-      operationIndex++;
-    }
-
-    if (includeWeeklyData) {
-      dashboardData.weeklyExerciseLogs = extractFulfilledValue(results[operationIndex]) || [];
-      operationIndex++;
-      dashboardData.weeklyNutritionSummaries = extractFulfilledValue(results[operationIndex]) || [];
-      operationIndex++;
-    }
-
-    if (includeWorkoutData) {
-      dashboardData.workoutPlan = extractFulfilledValue(results[operationIndex]);
-      operationIndex++;
-      dashboardData.completedWorkouts = extractFulfilledValue(results[operationIndex]) || {};
-      operationIndex++;
-    }
-
-    if (includePointsData) {
-      dashboardData.pointsData = extractFulfilledValue(results[operationIndex]);
-    }
-
-    console.log(`[Dashboard] Successfully fetched dashboard data for user: ${userId}`);
+    console.log(`[Dashboard] Free Mode - Successfully fetched dashboard data for user: ${userId}`);
     return dashboardData;
 
   } catch (error: any) {
-    console.error("[Dashboard] Error in batch operation:", error);
-    throw createFirestoreServiceError(`Failed to fetch dashboard data: ${error.message}`, "fetch-failed");
+    console.error("[Dashboard] Free Mode - Error in batch operation:", error);
+    throw new Error(`Failed to fetch dashboard data: ${error.message}`);
   }
 };
 
@@ -438,7 +316,7 @@ export function DashboardMainPage() {
     
     // Performance monitoring
     const performanceRef = usePerformanceMonitor('Dashboard');
-    const firebasePerf = useFirebasePerformance();
+
     
     const [isClient, setIsClient] = useState(false);
 
@@ -563,22 +441,19 @@ export function DashboardMainPage() {
 
       try {
         // Use optimized dashboard service for batch data loading
-        const dashboardData = await firebasePerf.measureFirebaseOperation(
-          'dashboard-batchGetDashboardData',
-          () => batchGetDashboardData({
-            userId,
-            selectedDate,
-            includeDailyLogs: true,
-            includeWeeklyData: false, // Will be loaded separately when weekly tab is active
-            includeWorkoutData: true,
-            includePointsData: true
-          })
-        );
+        const dashboardData = await batchGetDashboardData({
+          userId,
+          selectedDate,
+          includeDailyLogs: true,
+          includeWeeklyData: false, // Will be loaded separately when weekly tab is active
+          includeWorkoutData: true,
+          includePointsData: true
+        });
 
         console.log("[Dashboard] Optimized data loaded successfully");
         
         let fetchedProfile = dashboardData.userProfile;
-        if (!fetchedProfile) throw createFirestoreServiceError("User profile not found. Please complete your profile.", "profile-critical-failure");
+        if (!fetchedProfile) throw new Error("User profile not found. Please complete your profile.");
 
         setUserProfile(fetchedProfile);
 
@@ -995,7 +870,7 @@ export function DashboardMainPage() {
       try {
         const logId = await addExerciseLog(userId, newEntryData);
         const completedEntryData: CompletedWorkoutEntry = { completed: true, loggedCalories: newEntryData.estimatedCaloriesBurned ?? null, isEstimated: isEstimated, timestamp: logTimestamp.toISOString(), logId: logId };
-        await saveCompletedWorkout(userId, todayDateKey, exercise.exercise, completedEntryData);
+        await saveCompletedWorkout(userId, todayDateKey, exercise.exercise, true);
         
         setCompletedWorkouts(prev => { const updated = { ...prev, [exercise.exercise]: completedEntryData }; if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); return updated; });
 
@@ -1107,7 +982,9 @@ export function DashboardMainPage() {
       
       const todayDate = getCurrentDateInUserTimezone();
       const todayDateKey = formatDateInUserTimezone(todayDate);
-      const exerciseDetail = weeklyWorkoutPlan ? weeklyWorkoutPlan[todayDayName as keyof WeeklyWorkoutPlan]?.find((ex: ExerciseDetail) => ex.exercise === exerciseName) : null;
+      const todayWorkouts = weeklyWorkoutPlan?.[todayDayName as keyof WeeklyWorkoutPlan];
+      const exerciseDetail = (todayWorkouts && Array.isArray(todayWorkouts)) ? 
+        todayWorkouts.find((ex: ExerciseDetail) => ex.exercise === exerciseName) : null;
       const completedEntry = completedWorkouts ? completedWorkouts[exerciseName] : null;
       const completedWorkoutsCacheKey = `${LOCAL_STORAGE_KEYS.COMPLETED_WORKOUTS_PREFIX}${userId}-${todayDateKey}`;
       const dailyExerciseLogsCacheKey = `${LOCAL_STORAGE_KEYS.DAILY_EXERCISE_LOGS_PREFIX}${userId}-${todayDateKey}`;
@@ -1119,7 +996,7 @@ export function DashboardMainPage() {
         if (exerciseDetail && exerciseName.toLowerCase() !== 'rest') {
           if (userProfile.weight && userProfile.weight > 0) await estimateAndLogCalories(exerciseDetail);
           else { toast({ title: "Weight Needed for AI Estimate", description: "Logging workout without estimated calories." }); await handleLogCompletedWorkout(exerciseDetail, undefined, false); }
-        } else if (exerciseDetail) { await saveCompletedWorkout(userId, todayDateKey, exerciseName, optimisticEntry); }
+        } else if (exerciseDetail) { await saveCompletedWorkout(userId, todayDateKey, exerciseName, true); }
       } else { 
         setCompletedWorkouts(prev => { const updated = { ...prev }; delete updated[exerciseName]; if(isClient) localStorage.setItem(completedWorkoutsCacheKey, JSON.stringify(updated)); return updated; });
         try {
@@ -1131,7 +1008,7 @@ export function DashboardMainPage() {
           if (completedEntry?.logId) {
             console.log(`[Dashboard] Attempting to delete exercise log with ID: ${completedEntry.logId}`);
             try {
-              await deleteLogEntry(userId, 'exerciseLog', completedEntry.logId);
+              await deleteLogEntry(userId, completedEntry.logId, 'exercise');
               console.log(`[Dashboard] Successfully deleted exercise log for ${exerciseName}`);
               
               // Update local state only after successful deletion
@@ -1177,7 +1054,7 @@ export function DashboardMainPage() {
           }
         }
       }
-    }, [userId, userProfile, toast, weeklyWorkoutPlan, todayDayName, completedWorkouts, isClient, selectedDate, getDateRange, estimateAndLogCalories, handleLogCompletedWorkout, createFirestoreServiceError, fetchWeeklyLogsAndProcess, processLogsAndUpdateState, activePeriodTab]);
+    }, [userId, userProfile, toast, weeklyWorkoutPlan, todayDayName, completedWorkouts, isClient, selectedDate, getDateRange, estimateAndLogCalories, handleLogCompletedWorkout, fetchWeeklyLogsAndProcess, processLogsAndUpdateState, activePeriodTab]);
 
     const todayDateKeyForVisibility = useMemo(() => formatDateInUserTimezone(getCurrentDateInUserTimezone()), []);
 
@@ -1197,7 +1074,14 @@ export function DashboardMainPage() {
             if (cachedEx) try {newDailyExercise = JSON.parse(cachedEx)} catch(e) {localStorage.removeItem(dailyExerciseLogsCacheKey)}
             
             if (newDailyExercise.length === 0 || !isSameDay(parseISO(newDailyExercise[0]?.timestamp || '1970-01-01'), getCurrentDateInUserTimezone())) { // Basic check if cache might be old
-              newDailyExercise = await getExerciseLogs(userId, startOfDay(getCurrentDateInUserTimezone()), endOfDay(getCurrentDateInUserTimezone()));
+              const todayLogs = await getExerciseLogs(userId);
+              const today = getCurrentDateInUserTimezone();
+              const dayStart = startOfDay(today);
+              const dayEnd = endOfDay(today);
+              newDailyExercise = todayLogs.filter(log => {
+                const logDate = new Date(log.timestamp);
+                return logDate >= dayStart && logDate <= dayEnd;
+              });
               localStorage.setItem(dailyExerciseLogsCacheKey, JSON.stringify(newDailyExercise));
             }
             setDailyExerciseLogsState(newDailyExercise);
@@ -1219,7 +1103,8 @@ export function DashboardMainPage() {
 
     const canRegenerateWorkoutPlan = useMemo(() => {
       if (isGeneratingPlan || !weeklyWorkoutPlan || Object.keys(weeklyWorkoutPlan).length === 0) return true;
-      const todayWorkoutsList = weeklyWorkoutPlan[todayDayName as keyof WeeklyWorkoutPlan] || [];
+      const todayWorkoutsList = weeklyWorkoutPlan[todayDayName as keyof WeeklyWorkoutPlan];
+      if (!todayWorkoutsList || !Array.isArray(todayWorkoutsList)) return true;
       if (todayWorkoutsList.length === 0 || (todayWorkoutsList.length === 1 && todayWorkoutsList[0].exercise.toLowerCase() === 'rest')) return true;
       const safeCompleted = completedWorkouts || {};
       return !todayWorkoutsList.some((ex: ExerciseDetail) => ex.exercise.toLowerCase() !== 'rest' && safeCompleted[ex.exercise]?.completed);

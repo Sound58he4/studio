@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { getUserProfile, saveUserProfile } from '@/services/firestore';
+import { getUserProfile, saveUserProfile } from '@/services/free-mode-firestore';
 
 interface AppSettings {
   theme: 'light' | 'dark' | 'system';

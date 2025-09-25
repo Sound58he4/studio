@@ -14,9 +14,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import {
-    getUserProfile, saveUserProfile, searchUsers, sendViewRequest, getIncomingViewRequests,
-    acceptViewRequest, declineViewRequest, getFriends, removeFriend
-} from '@/services/firestore';
+    getUserProfile, saveUserProfile, getUserSettings, saveUserSettings
+} from '@/services/free-mode-firestore';
+// Social features disabled in free mode
+// import { searchUsers, sendViewRequest, getIncomingViewRequests, acceptViewRequest, declineViewRequest, getFriends, removeFriend } from '@/services/firestore';
 import { deleteCompleteUserAccount } from '@/services/accountDeletionService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';

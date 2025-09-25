@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { buttonVariants } from "@/components/ui/button";
 import { useAuth } from '@/context/AuthContext';
-import { getFoodLogs, getExerciseLogs, deleteLogEntry, clearAllLogs } from '@/services/firestore';
+import { getFoodLogs, getExerciseLogs, deleteLogEntry, clearAllLogs } from '@/services/free-mode-firestore';
 import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 
@@ -80,8 +80,8 @@ export default function HistoryPage() {
         const veryEndDate = new Date(2100, 0, 1); // Far future date
 
         const [foodData, exerciseData] = await Promise.all([
-             getFoodLogs(userId, veryStartDate, veryEndDate),
-             getExerciseLogs(userId, veryStartDate, veryEndDate)
+             getFoodLogs(userId),
+             getExerciseLogs(userId)
         ]);
 
         setAllFoodLogs(foodData);
@@ -149,7 +149,7 @@ export default function HistoryPage() {
        const collectionName = type === 'food' ? 'foodLog' : 'exerciseLog';
        console.log(`[History Page] Attempting to delete ${type} log via Service - ID: ${idToDelete}, User: ${userId}`);
        try {
-           await deleteLogEntry(userId, collectionName, idToDelete); // Use service function
+           await deleteLogEntry(userId, idToDelete, collectionName === 'foodLog' ? 'food' : 'exercise'); // Use service function
            toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} Log Entry Deleted` });
            fetchLogs(); // Refetch logs to update the UI
        } catch (error) {
@@ -165,7 +165,7 @@ export default function HistoryPage() {
       const collectionName = type === 'food' ? 'foodLog' : 'exerciseLog';
       console.log(`[History Page] Attempting to clear all ${type} history via Service for user: ${userId}`);
       try {
-          await clearAllLogs(userId, collectionName); // Use service function
+          await clearAllLogs(userId); // Use service function
           toast({ title: `${type.charAt(0).toUpperCase() + type.slice(1)} History Cleared`, description: `All ${type} log entries deleted.` });
           if (type === 'food') setAllFoodLogs([]); else setAllExerciseLogs([]);
       } catch (error) {

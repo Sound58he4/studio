@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
 import { useAuth } from '@/context/AuthContext'; 
-import { addFoodLog, getUserProfile } from '@/services/firestore'; 
+import { addFoodLog, getUserProfile } from '@/services/free-mode-firestore'; 
 import { hasProAccess } from '@/services/free-mode-subscription';
 import type { FirestoreFoodLogData, StoredUserProfile, FitnessGoal } from '@/app/dashboard/types';
 import { mealHealthAssessment, MealHealthAssessmentInput, MealHealthAssessmentOutput } from '@/ai/flows/meal-health-assessment';

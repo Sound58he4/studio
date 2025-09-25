@@ -27,7 +27,7 @@ import {
   Dumbbell,
   Activity
 } from 'lucide-react';
-import { getUserProfile, getFoodLogs } from '@/services/firestore';
+import { getUserProfile, getFoodLogs } from '@/services/free-mode-firestore';
 import { StoredUserProfile, StoredFoodLogEntry } from '@/app/dashboard/types';
 import { db } from '@/lib/firebase/exports';
 import { 
@@ -266,7 +266,7 @@ export default function PointsPage() {
       const todayStart = startOfDay(new Date());
       const todayEnd = endOfDay(new Date());      const [profileData, todayFoodLogs, existingPoints] = await Promise.all([
         getUserProfile(userId),
-        getFoodLogs(userId, todayStart, todayEnd),
+        getFoodLogs(userId),
         getUserPointsData(userId),
       ]);
 

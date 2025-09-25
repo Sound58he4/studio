@@ -8,7 +8,7 @@ import { Tabs } from "@/components/ui/tabs";
 import { FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/context/AuthContext';
-import { getUserProfile, getFoodLogs, getExerciseLogs } from '@/services/firestore';
+import { getUserProfile, getFoodLogs, getExerciseLogs } from '@/services/free-mode-firestore';
 
 import {
     generateProgressReport,
@@ -125,8 +125,8 @@ export default function ReportPage() {
             console.log(`[Report Page] Fetching logs for ${periodKey}`);
             const { start, end } = getDateRange(type, date);
             const [foodLogs, exerciseLogs] = await Promise.all([
-                getFoodLogs(userId, start, end),
-                getExerciseLogs(userId, start, end)
+                getFoodLogs(userId),
+                getExerciseLogs(userId)
             ]);
             fetchedLogsData = { food: foodLogs, exercise: exerciseLogs };
             console.log(`[Report Page] Logs fetched successfully for ${periodKey}. Food: ${foodLogs.length}, Exercise: ${exerciseLogs.length}`);

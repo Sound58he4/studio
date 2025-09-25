@@ -12,7 +12,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles, ClipboardList, PlusCircle, Trash2, CalendarDays, Save, Edit, AlertCircle, Wand2, Info, Youtube, Check, X, FileText, RefreshCw, ArrowLeft, ChevronLeft, ChevronRight, Calendar, Dumbbell, Crown } from 'lucide-react';
 import { getDay, format } from 'date-fns';
-import { getUserProfile, getWorkoutPlan, saveWorkoutPlan } from '@/services/firestore'; // Removed unused imports
+import { getUserProfile, getWorkoutPlan, saveWorkoutPlan } from '@/services/free-mode-firestore'; // Free mode services
 import { generateWorkoutPlan, WeeklyWorkoutPlan as AIWeeklyWorkoutPlan, ExerciseDetail as AIExerciseDetail } from '@/ai/flows/generate-workout-plan';
 import { generateSimpleWorkout, SimpleWorkoutInput, SimpleWorkoutOutput } from '@/ai/flows/generate-simple-workout';
 import { StoredUserProfile, WeeklyWorkoutPlan, ExerciseDetail } from '@/app/dashboard/types';

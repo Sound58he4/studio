@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/context/AuthContext';
-import { getUserProfile, saveUserProfile, isDisplayNameTaken } from '@/services/firestore';
+import { getUserProfile, saveUserProfile, isDisplayNameTaken } from '@/services/free-mode-firestore';
 import { hasProAccess } from '@/services/free-mode-subscription';
 import { calculateDailyTargets, CalculateTargetsInput } from '@/ai/flows/dashboard-update';
 import type { StoredUserProfile, Gender, FitnessGoal, ActivityLevel, DietaryStyle, CommonAllergy, TranslatePreference } from '@/app/dashboard/types';
