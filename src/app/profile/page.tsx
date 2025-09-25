@@ -52,7 +52,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from '@/context/AuthContext';
 import { getUserProfile, saveUserProfile, isDisplayNameTaken } from '@/services/firestore';
-import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { hasProAccess } from '@/services/free-mode-subscription';
 import { calculateDailyTargets, CalculateTargetsInput } from '@/ai/flows/dashboard-update';
 import type { StoredUserProfile, Gender, FitnessGoal, ActivityLevel, DietaryStyle, CommonAllergy, TranslatePreference } from '@/app/dashboard/types';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -176,7 +176,7 @@ export default function ProfilePage() {
     title: '',
     message: ''
   });
-  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(true);
   const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
 
   // Dark theme state and detection
@@ -1337,14 +1337,9 @@ export default function ProfilePage() {
 
                           {/* Manual Targets Option */}
                           <motion.div
-                            whileTap={{ scale: userHasProAccess ? 0.98 : 1 }}
+                            whileTap={{ scale: 0.98 }}
                             className={cn(
-                              "relative p-4 border-0 rounded-2xl transition-all duration-300 backdrop-blur-sm",
-                              !userHasProAccess 
-                                ? "opacity-60 cursor-not-allowed"
-                                : !field.value 
-                                  ? "cursor-pointer"
-                                  : "cursor-pointer",
+                              "relative p-4 border-0 rounded-2xl transition-all duration-300 backdrop-blur-sm cursor-pointer",
                               !field.value 
                                 ? isDark
                                   ? "bg-[#2a2a2a] shadow-lg ring-2 ring-orange-500/50 border border-orange-500/30" 
@@ -1383,20 +1378,15 @@ export default function ProfilePage() {
                               <div className="flex-1 space-y-2">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Settings className={cn(
-                                      "h-4 w-4",
-                                      userHasProAccess ? "text-orange-500" : "text-gray-400"
-                                    )} />
+                                    <Settings className="h-4 w-4 text-orange-500" />
                                     <ShadCnFormLabel className={cn(
                                       "text-sm sm:text-base font-semibold cursor-pointer",
-                                      userHasProAccess 
-                                        ? isDark ? 'text-white' : 'text-gray-800'
-                                        : 'text-gray-500'
+                                      isDark ? 'text-white' : 'text-gray-800'
                                     )}>
                                       Manual Targets (Advanced)
                                     </ShadCnFormLabel>
                                   </div>
-                                  {!userHasProAccess && (
+                                  {false && (
                                     <span className={cn(
                                       "px-2 py-1 text-xs rounded-full font-medium",
                                       isDark 

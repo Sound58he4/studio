@@ -24,7 +24,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, isToday, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
-import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { hasProAccess } from '@/services/free-mode-subscription';
 import { useRouter } from 'next/navigation';
 
 type FormState = Omit<FirestoreQuickLogData, 'createdAt' | 'timestamp' | 'logMethod' | 'originalDescription'> & {
@@ -60,8 +60,8 @@ export default function QuickLogPage() {
   const { userId, loading: authLoading } = useAuth();
   
   // Pro access state
-  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
-  const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(true);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(false);
   
   const [items, setItems] = useState<StoredQuickLogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);

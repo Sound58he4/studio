@@ -420,9 +420,9 @@ export function DashboardMainPage() {
     const { toast } = useToast();
     const { userId, loading: authLoading } = useAuth();
     
-    // Pro access state
-    const [userHasProAccess, setUserHasProAccess] = useState(false);
-    const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
+    // Pro access state (Always true in free mode)
+    const [userHasProAccess, setUserHasProAccess] = useState(true);
+    const [isCheckingProAccess, setIsCheckingProAccess] = useState(false);
     
     // Upgrade to PRO handler
     const handleUpgradeToPro = () => {
@@ -1386,10 +1386,10 @@ export function DashboardMainPage() {
                                                             ? 'border-orange-500/50 bg-[#1a1a1a] hover:bg-orange-500/10 text-orange-400 hover:text-orange-300' 
                                                             : 'border-orange-300 bg-white/50 backdrop-blur-sm hover:bg-orange-50 text-orange-600 hover:text-orange-700'
                                                 }`} 
-                                                onClick={userHasProAccess ? handleWarriorStatusClick : handleUpgradeToPro}
+                                                onClick={handleWarriorStatusClick}
                                             >
                                                 <Crown size={12} className="mr-1.5" />
-                                                {userHasProAccess ? "You're a Warrior" : "Upgrade to PRO"}
+                                                You're a Warrior
                                             </Button>
                                         )}
                                     </div>

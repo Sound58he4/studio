@@ -10,6 +10,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   userId: string | null; // Explicitly add userId
+  isPro: boolean; // Always true for free mode
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,7 +26,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const authValue = useMemo(() => ({
     user,
     userId,
-    loading
+    loading,
+    isPro: true // Always true for free mode
   }), [user, userId, loading]);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, userId }}>
+    <AuthContext.Provider value={{ user, loading, userId, isPro: true }}>
       {children}
     </AuthContext.Provider>
   );

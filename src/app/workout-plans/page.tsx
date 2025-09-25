@@ -34,7 +34,7 @@ import {
 import { convertLightWorkoutToExercises } from '@/data/workouts/light-workout-plan';
 import { convertMaxWorkoutToExercises } from '@/data/workouts/max-workout-plan';
 import { convertXtremeWorkoutToExercises } from '@/data/workouts/xtreme-workout-plan';
-import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { hasProAccess } from '@/services/free-mode-subscription';
 
 // --- Types ---
 export type DayOfWeek = 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
@@ -121,10 +121,8 @@ export default function WorkoutPlansPage() {
     const [isDark, setIsDark] = useState(false);
     
     // Pro access state
-    const [userHasProAccess, setUserHasProAccess] = useState(false);
-    const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
-
-    // Detect theme from HTML class (consistent with Settings page)
+  const [userHasProAccess, setUserHasProAccess] = useState(true);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState(false);    // Detect theme from HTML class (consistent with Settings page)
     useEffect(() => {
         const updateDark = () => {
             setIsDark(document.documentElement.classList.contains('dark'));
@@ -447,17 +445,9 @@ export default function WorkoutPlansPage() {
         }));
     };
 
-    // Multi-day PDF Workout Handler with Pro access check
+    // Multi-day PDF Workout Handler (FREE MODE - No Pro access check)
     const handleAddMultiDayPDFWorkouts = (assignments: PDFWorkoutAssignment[]) => {
-        // Check if user has Pro access
-        if (!userHasProAccess) {
-            toast({
-                title: "🔒 Pro Feature",
-                description: "PDF workout plans are available for Pro users only. Upgrade to unlock this feature!",
-                variant: "destructive",
-            });
-            return;
-        }
+        // All features are free now - no Pro check needed
 
         assignments.forEach(({ day, pdfWorkout, replaceExisting }) => {
             // Add PDF to the PDF workouts state (for display)
@@ -1031,51 +1021,15 @@ export default function WorkoutPlansPage() {
                                                                 </p>
                                                             </div>
                                                         </div>
-                                                        {userHasProAccess ? (
-                                                            <MultiDayPDFWorkoutSelector
-                                                                onAddPDFWorkouts={handleAddMultiDayPDFWorkouts}
-                                                            />
-                                                        ) : (
-                                                            <div className={`text-center p-6 rounded-2xl ${
-                                                                isDark 
-                                                                    ? 'bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-500/20' 
-                                                                    : 'bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-200'
-                                                            }`}>
-                                                                <Crown className={`w-12 h-12 mx-auto mb-3 ${
-                                                                    isDark ? 'text-purple-400' : 'text-purple-600'
-                                                                }`} />
-                                                                <p className={`text-sm font-semibold mb-2 ${
-                                                                    isDark ? 'text-purple-300' : 'text-purple-800'
-                                                                }`}>
-                                                                    Pro Feature
-                                                                </p>
-                                                                <p className={`text-xs mb-4 ${
-                                                                    isDark ? 'text-purple-400/70' : 'text-purple-600/70'
-                                                                }`}>
-                                                                    Upgrade to Pro to access PDF workout plans
-                                                                </p>
-                                                                <Button 
-                                                                    asChild
-                                                                    size="sm" 
-                                                                    className={`text-xs px-4 py-2 rounded-xl ${
-                                                                        isDark 
-                                                                            ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700' 
-                                                                            : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600'
-                                                                    } text-white`}
-                                                                >
-                                                                    <Link href="/pro-upgrade">
-                                                                        <Crown className="w-3 h-3 mr-1" />
-                                                                        Upgrade to Pro
-                                                                    </Link>
-                                                                </Button>
-                                                            </div>
-                                                        )}
+                                                        <MultiDayPDFWorkoutSelector
+                                                            onAddPDFWorkouts={handleAddMultiDayPDFWorkouts}
+                                                        />
                                                     </CardContent>
                                                 </Card>
                                             </motion.div>
 
-                                            {/* PDF Workouts Display - Pro Only */}
-                                            {userHasProAccess && pdfWorkouts[activeDay]?.length > 0 && (
+                                            {/* PDF Workouts Display - Always Available in Free Mode */}
+                                            {pdfWorkouts[activeDay]?.length > 0 && (
                                                 <div className="mb-6">
                                                     <h3 className="font-semibold mb-3 text-sm text-gray-600 uppercase tracking-wide">PDF Workouts</h3>
                                                     <div className="space-y-3">

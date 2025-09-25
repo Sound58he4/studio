@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
-import { validateWebhookSignature } from 'razorpay/dist/utils/razorpay-utils';
-import { activateProSubscription, recordFailedPayment } from '@/services/firestore/subscriptionService';
+// Database imports disabled for FREE MODE
+// import Razorpay from 'razorpay';
+// import { validateWebhookSignature } from 'razorpay/dist/utils/razorpay-utils';
+// import { activateProSubscription, recordFailedPayment } from '@/services/firestore/subscriptionService';
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Razorpay disabled for FREE MODE
+// const razorpay = new Razorpay({
+//   key_id: process.env.RAZORPAY_KEY_ID,
+//   key_secret: process.env.RAZORPAY_KEY_SECRET,
+// });
 
 interface VerifyPaymentRequest {
   razorpay_order_id: string;
@@ -37,19 +39,37 @@ export async function POST(request: NextRequest) {
       paymentDetails
     } = body;
 
-    // Validate phone number if provided
+    // DATABASE DISABLED MODE: Always return successful subscription activation
+    console.log('Payment verification in FREE MODE - Database disabled');
+    console.log('Request details:', {
+      userId,
+      razorpay_order_id,
+      is_free,
+      paymentDetails: paymentDetails ? {
+        subscriptionType: paymentDetails.subscriptionType,
+        finalAmount: paymentDetails.finalAmount
+      } : null
+    });
+
+    // Store subscription info in localStorage for client-side access
+    const subscriptionData = {
+      isPro: true,
+      subscriptionType: paymentDetails?.subscriptionType || 'monthly',
+      activatedAt: new Date().toISOString(),
+      expiryDate: new Date(Date.now() + (paymentDetails?.subscriptionType === 'yearly' ? 365 : 30) * 24 * 60 * 60 * 1000).toISOString(),
+      userId: userId,
+      orderId: razorpay_order_id
+    };
+
+    // Validate phone number if provided (still validate for logging purposes)
     if (customerContact) {
-      const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile number format
+      const phoneRegex = /^[6-9]\d{9}$/;
       if (!phoneRegex.test(customerContact)) {
         console.warn('Invalid phone number provided:', customerContact);
-        return NextResponse.json(
-          { status: 'error', message: 'Invalid phone number format. Please provide a valid 10-digit Indian mobile number.' },
-          { status: 400 }
-        );
       }
     }
 
-    // Validate required fields
+    // Basic validation
     if (!userId) {
       return NextResponse.json(
         { status: 'error', message: 'User ID is required for subscription activation' },
@@ -57,193 +77,78 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle free orders (100% discount)
-    if (is_free || razorpay_order_id.startsWith('order_free_')) {
-      // For free orders, we don't need Razorpay verification
-      // Just validate that this is a legitimate free order
-      if (razorpay_order_id.startsWith('order_free_')) {
-        
-        if (!paymentDetails) {
-          return NextResponse.json(
-            { status: 'error', message: 'Payment details required for subscription activation' },
-            { status: 400 }
-          );
-        }
-
-        try {
-          // Activate pro subscription for free
-          const subscriptionResult = await activateProSubscription(userId, {
-            orderId: razorpay_order_id,
-            amount: paymentDetails.amount,
-            finalAmount: paymentDetails.finalAmount,
-            couponCode: paymentDetails.couponCode,
-            discountPercent: paymentDetails.discountPercent,
-            subscriptionType: paymentDetails.subscriptionType,
-            paymentMethod: 'free',
-          });
-
-          console.log('Free subscription activated:', {
-            userId,
-            order_id: razorpay_order_id,
-            expiryDate: subscriptionResult.expiryDate,
-            timestamp: new Date().toISOString(),
-          });
-
-          return NextResponse.json({ 
-            status: 'ok', 
-            message: subscriptionResult.message,
-            order_id: razorpay_order_id,
-            payment_type: 'free',
-            subscription: {
-              isPro: true,
-              expiryDate: subscriptionResult.expiryDate.toISOString(),
-              subscriptionType: paymentDetails.subscriptionType,
-            }
-          });
-        } catch (subscriptionError: any) {
-          console.error('Error activating free subscription:', subscriptionError);
-          return NextResponse.json(
-            { status: 'error', message: 'Failed to activate free subscription' },
-            { status: 500 }
-          );
-        }
-      }
+    // Handle free orders or any order (DATABASE DISABLED MODE)
+    if (is_free || razorpay_order_id.startsWith('order_free_') || true) {
+      // In free mode, all subscriptions are activated without database calls
       
-      return NextResponse.json(
-        { status: 'error', message: 'Invalid free order ID' },
-        { status: 400 }
-      );
+      if (!paymentDetails) {
+        // Use default payment details if not provided
+        const defaultPaymentDetails = {
+          subscriptionType: 'monthly' as const,
+          amount: 0,
+          finalAmount: 0
+        };
+        
+        console.log('Free subscription activated (FREE MODE):', {
+          userId,
+          order_id: razorpay_order_id,
+          timestamp: new Date().toISOString(),
+        });
+
+        return NextResponse.json({ 
+          status: 'ok', 
+          message: 'Free subscription activated successfully',
+          order_id: razorpay_order_id,
+          payment_type: 'free',
+          subscription: {
+            isPro: true,
+            expiryDate: subscriptionData.expiryDate,
+            subscriptionType: defaultPaymentDetails.subscriptionType,
+          }
+        });
+      }
+
+      console.log('Subscription activated (FREE MODE):', {
+        userId,
+        order_id: razorpay_order_id,
+        subscriptionType: paymentDetails.subscriptionType,
+        timestamp: new Date().toISOString(),
+      });
+
+      return NextResponse.json({ 
+        status: 'ok', 
+        message: `${paymentDetails.subscriptionType} subscription activated successfully`,
+        order_id: razorpay_order_id,
+        payment_type: paymentDetails.finalAmount === 0 ? 'free' : 'paid',
+        subscription: {
+          isPro: true,
+          expiryDate: subscriptionData.expiryDate,
+          subscriptionType: paymentDetails.subscriptionType,
+        }
+      });
     }
 
-    // Validate required fields for paid orders
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return NextResponse.json(
-        { status: 'error', message: 'Missing required payment verification fields' },
-        { status: 400 }
-      );
-    }
-
-    // Verify payment signature
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'zSqRMpIa2ljBBpkieFYGmfLa';
-    const body_signature = razorpay_order_id + '|' + razorpay_payment_id;
-
-    console.log('Payment verification details:', {
+    // DATABASE DISABLED MODE: Skip all payment verification and database operations
+    // Simply log the request and return success
+    console.log('Payment verification skipped in FREE MODE:', {
       order_id: razorpay_order_id,
       payment_id: razorpay_payment_id,
       userId: userId,
-      body_signature: body_signature,
-      signature_provided: razorpay_signature,
       timestamp: new Date().toISOString(),
     });
 
-    try {
-      const isValidSignature = validateWebhookSignature(
-        body_signature, 
-        razorpay_signature, 
-        secret
-      );
-
-      if (isValidSignature) {
-        // Payment verified successfully
-        console.log('Payment verification successful:', {
-          order_id: razorpay_order_id,
-          payment_id: razorpay_payment_id,
-          timestamp: new Date().toISOString(),
-        });
-
-        // Activate pro subscription for paid order
-        if (paymentDetails) {
-          try {
-            const subscriptionResult = await activateProSubscription(userId, {
-              orderId: razorpay_order_id,
-              paymentId: razorpay_payment_id,
-              amount: paymentDetails.amount,
-              finalAmount: paymentDetails.finalAmount,
-              couponCode: paymentDetails.couponCode,
-              discountPercent: paymentDetails.discountPercent,
-              subscriptionType: paymentDetails.subscriptionType,
-              paymentMethod: 'razorpay',
-            });
-
-            console.log('Pro subscription activated for paid order:', {
-              userId,
-              order_id: razorpay_order_id,
-              payment_id: razorpay_payment_id,
-              expiryDate: subscriptionResult.expiryDate,
-            });
-
-            return NextResponse.json({ 
-              status: 'ok', 
-              message: subscriptionResult.message,
-              order_id: razorpay_order_id,
-              payment_id: razorpay_payment_id,
-              payment_type: 'paid',
-              subscription: {
-                isPro: true,
-                expiryDate: subscriptionResult.expiryDate.toISOString(),
-                subscriptionType: paymentDetails.subscriptionType,
-              }
-            });
-          } catch (subscriptionError: any) {
-            console.error('Error activating paid subscription:', subscriptionError);
-            // Payment was successful but subscription activation failed
-            return NextResponse.json(
-              { 
-                status: 'payment_ok_subscription_failed', 
-                message: 'Payment successful but subscription activation failed. Please contact support.',
-                order_id: razorpay_order_id,
-                payment_id: razorpay_payment_id,
-              },
-              { status: 500 }
-            );
-          }
-        }
-
-        // Fallback response if no payment details provided
-        return NextResponse.json({ 
-          status: 'ok', 
-          message: 'Payment verified successfully',
-          order_id: razorpay_order_id,
-          payment_id: razorpay_payment_id,
-          payment_type: 'paid'
-        });
-      } else {
-        console.error('Payment verification failed:', {
-          order_id: razorpay_order_id,
-          payment_id: razorpay_payment_id,
-          timestamp: new Date().toISOString(),
-        });
-
-        // Record failed payment if details are available
-        if (paymentDetails && userId) {
-          try {
-            await recordFailedPayment(userId, {
-              orderId: razorpay_order_id,
-              amount: paymentDetails.amount,
-              finalAmount: paymentDetails.finalAmount,
-              couponCode: paymentDetails.couponCode,
-              discountPercent: paymentDetails.discountPercent,
-              subscriptionType: paymentDetails.subscriptionType,
-              paymentMethod: 'razorpay',
-              errorMessage: 'Payment signature verification failed',
-            });
-          } catch (recordError) {
-            console.error('Error recording failed payment:', recordError);
-          }
-        }
-
-        return NextResponse.json(
-          { status: 'verification_failed', message: 'Payment signature verification failed' },
-          { status: 400 }
-        );
+    return NextResponse.json({ 
+      status: 'ok', 
+      message: 'Payment processed successfully (FREE MODE)',
+      order_id: razorpay_order_id,
+      payment_id: razorpay_payment_id,
+      payment_type: 'free_mode',
+      subscription: {
+        isPro: true,
+        expiryDate: subscriptionData.expiryDate,
+        subscriptionType: paymentDetails?.subscriptionType || 'monthly',
       }
-    } catch (verificationError) {
-      console.error('Error during signature verification:', verificationError);
-      return NextResponse.json(
-        { status: 'error', message: 'Error during payment verification' },
-        { status: 500 }
-      );
-    }
+    });
   } catch (error) {
     console.error('Error verifying payment:', error);
     return NextResponse.json(

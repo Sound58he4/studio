@@ -12,7 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useToast } from '@/hooks/use-toast';
 import { useRazorpay } from '@/hooks/use-razorpay';
 import { useAuth } from '@/context/AuthContext';
-import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { hasProAccess } from '@/services/free-mode-subscription';
 
 const ProUpgrade = () => {
   const router = useRouter();
@@ -48,8 +48,8 @@ const ProUpgrade = () => {
   const [validatingCoupon, setValidatingCoupon] = useState(false);
   
   // Pro access state
-  const [userHasProAccess, setUserHasProAccess] = useState(false);
-  const [isCheckingProAccess, setIsCheckingProAccess] = useState(true);
+  const [userHasProAccess, setUserHasProAccess] = useState(true);
+  const [isCheckingProAccess, setIsCheckingProAccess] = useState(false);
 
   // Initialize Razorpay - only if user is authenticated
   const { initiatePayment, validateCoupon, loading: paymentLoading } = useRazorpay({

@@ -1,0 +1,97 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isNewUser() {
+      return isAuthenticated() && request.auth.uid != null;
+    }
+    
+    // USERS COLLECTION - Main user profiles and all sub-collections
+    match /users/{userId} {
+      // Owner can read/write their own data
+      allow read, write: if isOwner(userId);
+      
+      // New users can create their initial profile (for signup)
+      allow create: if isNewUser() && request.auth.uid == userId;
+      
+      // Other authenticated users can only read
+      allow read: if isAuthenticated();
+      
+      // All sub-collections follow the same pattern
+      match /{document=**} {
+        // Owner can read/write their own data
+        allow read, write: if isOwner(userId);
+        
+        // New users can create their initial data
+        allow create: if isNewUser() && request.auth.uid == userId;
+        
+        // Other authenticated users can only read
+        allow read: if isAuthenticated();
+      }
+    }
+    
+    // CHATS COLLECTION - Chat rooms between users and AI
+    match /chats/{chatId} {
+      // AI chat access (format: ai_{userId})
+      allow read, write: if chatId.matches('ai_(.*)') && 
+                            isOwner(chatId.split('_')[1]);
+      
+      // User-to-user chat access (format: {userId1}_{userId2})
+      allow read, write: if chatId.matches('(.+)_(.+)') && 
+                            (isOwner(chatId.split('_')[0]) || isOwner(chatId.split('_')[1]));
+      
+      // New users can create AI chats and user chats
+      allow create: if isNewUser() && 
+                       (chatId.matches('ai_(.*)') && request.auth.uid == chatId.split('_')[1]) ||
+                       (chatId.matches('(.+)_(.+)') && 
+                        (request.auth.uid == chatId.split('_')[0] || request.auth.uid == chatId.split('_')[1]));
+      
+      // Other authenticated users can only read
+      allow read: if isAuthenticated();
+      
+      // MESSAGES Sub-collection
+      match /messages/{messageId} {
+        // AI chat message access
+        allow read, write: if chatId.matches('ai_(.*)') && 
+                              isOwner(chatId.split('_')[1]);
+        
+        // User-to-user chat message access
+        allow read, write: if chatId.matches('(.+)_(.+)') && 
+                              (isOwner(chatId.split('_')[0]) || isOwner(chatId.split('_')[1]));
+        
+        // New users can create messages in their chats
+        allow create: if isNewUser() && 
+                         ((chatId.matches('ai_(.*)') && request.auth.uid == chatId.split('_')[1]) ||
+                          (chatId.matches('(.+)_(.+)') && 
+                           (request.auth.uid == chatId.split('_')[0] || request.auth.uid == chatId.split('_')[1])));
+        
+        // Other authenticated users can only read
+        allow read: if isAuthenticated();
+      }
+    }
+    
+    // ERROR LOGS COLLECTION - Application error tracking
+    match /errorLogs/{errorId} {
+      // Allow authenticated users to write error logs
+      allow write: if isAuthenticated();
+      
+      // Allow authenticated users to read error logs
+      allow read: if isAuthenticated();
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

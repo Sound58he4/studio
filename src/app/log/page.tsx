@@ -24,7 +24,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"; 
 import { useAuth } from '@/context/AuthContext'; 
 import { addFoodLog, getUserProfile } from '@/services/firestore'; 
-import { hasProAccess } from '@/services/firestore/subscriptionService';
+import { hasProAccess } from '@/services/free-mode-subscription';
 import type { FirestoreFoodLogData, StoredUserProfile, FitnessGoal } from '@/app/dashboard/types';
 import { mealHealthAssessment, MealHealthAssessmentInput, MealHealthAssessmentOutput } from '@/ai/flows/meal-health-assessment';
 
@@ -108,7 +108,7 @@ export default function LogFoodPage() {
   const [isAssessingHealth, setIsAssessingHealth] = useState(false);
 
   // Pro access state
-  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(false);
+  const [userHasProAccess, setUserHasProAccess] = useState<boolean>(true);
   const [isCheckingProAccess, setIsCheckingProAccess] = useState<boolean>(true);
 
   // Detect theme from HTML class (consistent with Overview page)
