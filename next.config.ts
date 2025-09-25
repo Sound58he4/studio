@@ -1,7 +1,8 @@
 
 import type { NextConfig } from 'next';
 
-const nextConfigBase: NextConfig = {  // Enable experimental features for better performance
+const nextConfigBase: NextConfig = {
+  // Enable experimental features for better performance
   experimental: {
     // Optimize package imports
     optimizePackageImports: [
